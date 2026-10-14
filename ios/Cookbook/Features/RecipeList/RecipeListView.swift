@@ -6,6 +6,7 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var showingCreate = false
     @State private var showingImport = false
+    @State private var showingSettings = false
     @State private var instagramImport: InstagramImportRequest?
     @State private var showingLinkPrompt = false
     @State private var typedLink = ""
@@ -30,6 +31,13 @@ struct RecipeListView: View {
                         onDeleted: { model.recipeDeleted(id: id) })
                 }
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button {
@@ -88,6 +96,9 @@ struct RecipeListView: View {
                 .task { await checkClipboard() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { Task { await checkClipboard() } }
+                }
+                .sheet(isPresented: $showingSettings, onDismiss: { Task { await model.refresh() } }) {
+                    SettingsView()
                 }
                 .sheet(isPresented: $showingImport) {
                     ImportCaptionView(
@@ -164,6 +175,15 @@ struct RecipeListView: View {
         switch model.phase {
         case .loading:
             ProgressView("Loading recipes…")
+        case .failed(let error) where error.isUnauthenticated:
+            ContentUnavailableView {
+                Label("Pair This Device", systemImage: "lock.iphone")
+            } description: {
+                Text("The Cookbook server on your Mac needs a pairing code before this device can see your recipes.")
+            } actions: {
+                Button("Open Settings") { showingSettings = true }
+                    .buttonStyle(.borderedProminent)
+            }
         case .failed(let error):
             ErrorStateView(error: error) { await model.refresh() }
         case .loaded where model.recipes.isEmpty && !model.activeSearch.isEmpty:

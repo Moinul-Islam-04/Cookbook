@@ -31,10 +31,10 @@ def ensure_dev_user(session_factory: sessionmaker) -> None:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s %(message)s")
-    if settings.auth_mode != "dev":
+    if settings.auth_mode not in ("dev", "token"):
         raise RuntimeError(
-            "Only COOKBOOK_AUTH_MODE=dev is implemented. Real authentication arrives in "
-            "Milestone 4; until then this server must stay local and single-user."
+            f"Unknown COOKBOOK_AUTH_MODE {settings.auth_mode!r}. Use 'token' for any server "
+            "another device can reach, or 'dev' (no authentication) on 127.0.0.1 only."
         )
 
     # Sessions run in UTC so every timestamp the API returns is UTC.

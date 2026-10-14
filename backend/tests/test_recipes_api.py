@@ -315,6 +315,6 @@ def test_saved_data_survives_server_restart(engine: Engine) -> None:
         assert second.get(f"/v1/recipes/{created['id']}").json() == created
 
 
-def test_non_dev_auth_mode_refuses_to_start() -> None:
-    with pytest.raises(RuntimeError, match="Only COOKBOOK_AUTH_MODE=dev"):
+def test_unknown_auth_mode_refuses_to_start() -> None:
+    with pytest.raises(RuntimeError, match="Unknown COOKBOOK_AUTH_MODE"):
         create_app(Settings(database_url=TEST_DATABASE_URL, auth_mode="jwt"))

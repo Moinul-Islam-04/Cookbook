@@ -12,7 +12,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
-| 4–5 | Not started. |
+| 4 Images and authentication | **In progress.** Device-token sign-in done; photos next; then the iPhone over Tailscale. |
+| 5 | Not started. |
 
 ### What works (backend, verified)
 
@@ -56,8 +57,11 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ### Not verified / known limitations
 
-- No authentication. A fixed dev user owns everything, and the server refuses to start
-  in any other auth mode. **Keep it on 127.0.0.1; do not deploy it.**
+- Authentication is a device token per phone (`COOKBOOK_AUTH_MODE=token`). Create one
+  with `python -m app.tokens create --name "iPhone" --server <url>` and paste the printed
+  pairing code in the app's **Settings** (the gear icon). `dev` mode has no
+  authentication and is for local tests only. Single user, self-hosted: see
+  `docs/DECISIONS.md`.
 - Not built yet, each in a later milestone:
   - images (Milestone 4)
 - Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).

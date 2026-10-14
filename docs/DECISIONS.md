@@ -286,3 +286,43 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Open decision:** Keep Qwen (free, private, slow), try a smaller local model, or switch
   to Claude Haiku 5.5 (fast, costs per caption, sends captions to Anthropic) and run
   `eval` on it.
+
+## 2026-10-14: Self-hosted on the owner's Mac, reached over Tailscale
+
+- **Context:** The owner wants the app on their iPhone at no extra cost.
+- **Decision:** The backend, PostgreSQL, Ollama and photo storage all run on the owner's
+  Mac. The iPhone reaches the Mac over Tailscale (free personal plan): a private,
+  encrypted network between the owner's devices, with no public exposure. The API stays
+  bound to 127.0.0.1, and `tailscale serve` publishes it to the tailnet over HTTPS.
+- **Consequences:** It costs $0 and keeps captions and photos private. The app works only
+  while the Mac is awake and online, and backups are our job (a nightly `pg_dump`). The
+  stack is cloud-ready (Postgres, S3-compatible storage, configuration through the
+  environment), so moving it is a hosting change.
+- **Revisit:** When the app needs to work with the laptop off, when there's more than one
+  user, or when moving to a paid model API.
+
+## 2026-10-14: Device tokens instead of managed auth (auth_mode=token)
+
+- **Context:** The brief prefers managed auth (verifying signature, issuer, audience and
+  expiry). That fits a multi-user service. This is one owner on a self-hosted backend,
+  and a provider would add an account, and possibly a cost, for no benefit yet.
+- **Decision:**
+  - `python -m app.tokens create --name … --server …` issues an opaque random token
+    (`ckb_` plus 256 bits) and prints it once, with a pairing code.
+  - The server stores only its SHA-256 (`api_tokens`), with an expiry (1 year by
+    default), `revoked_at` and `last_used_at`.
+  - Every `/v1` request needs `Authorization: Bearer`. Unknown, forged, expired or
+    revoked tokens get 401 `unauthenticated`. `/healthz` stays open, for reachability
+    checks.
+  - iOS stores the token in the Keychain (`AfterFirstUnlockThisDeviceOnly`, never
+    synced). The server URL goes in UserDefaults, and is set by pasting the pairing code
+    in Settings.
+  - `dev` mode (no auth) remains for local tests. Any other mode refuses to start.
+- **Verified:** 11 auth tests, covering forged, malformed, expired and revoked tokens, a
+  hash-only store, and user B getting 404 on all of user A's recipes and drafts (including
+  saving A's draft). Removing the expiry and revocation check fails them. All three iOS
+  contract suites pass against a token-mode server. The Simulator was paired through the
+  real Settings → Paste flow, and the list loaded.
+- **Revisit:** Before a second user or a public deployment. Then use a managed provider
+  (Sign in with Apple, Supabase or Clerk), with JWT verification replacing the hash lookup
+  in `app/deps.py`.

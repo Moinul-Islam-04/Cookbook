@@ -1,15 +1,32 @@
 import Foundation
 
 nonisolated enum AppConfig {
-    /// The Simulator shares the Mac's network stack, so 127.0.0.1 reaches a local uvicorn.
-    /// Override with the COOKBOOK_API_URL environment variable in the scheme.
-    static let apiBaseURL: URL = {
+    private static let serverKey = "serverURL"
+
+    /// The paired server, else the scheme's COOKBOOK_API_URL, else 127.0.0.1 (the Simulator
+    /// shares the Mac's network, so that reaches a local uvicorn in dev mode).
+    static var apiBaseURL: URL {
+        if let saved = UserDefaults.standard.string(forKey: serverKey), let url = URL(string: saved) {
+            return url
+        }
         if let override = ProcessInfo.processInfo.environment["COOKBOOK_API_URL"],
            let url = URL(string: override) {
             return url
         }
         return URL(string: "http://127.0.0.1:8000")!
-    }()
+    }
+
+    static var isPaired: Bool { KeychainToken.read() != nil }
+
+    static func pair(_ code: PairingCode) {
+        UserDefaults.standard.set(code.server.absoluteString, forKey: serverKey)
+        KeychainToken.save(code.token)
+    }
+
+    static func unpair() {
+        UserDefaults.standard.removeObject(forKey: serverKey)
+        KeychainToken.delete()
+    }
 }
 
 /// Every way a request can fail, kept distinct so the UI never reports a decoding bug
@@ -21,6 +38,11 @@ nonisolated enum APIError: Error, Equatable {
     case server(status: Int, body: ErrorBody)
     /// The server answered with something that isn't valid JSON for the expected type.
     case badResponse(status: Int, detail: String)
+
+    var isUnauthenticated: Bool {
+        if case .server(401, _) = self { return true }
+        return false
+    }
 
     var isStaleVersion: Bool {
         if case .server(409, let body) = self, body.code == "stale_version" { return true }
@@ -46,7 +68,7 @@ nonisolated enum APIError: Error, Equatable {
         case .transport(.timedOut):
             return "The server took too long to respond."
         case .transport:
-            return "Can't reach the Cookbook server. Is it running on \(AppConfig.apiBaseURL.host() ?? "localhost")?"
+            return "Can't reach the Cookbook server at \(AppConfig.apiBaseURL.host() ?? "localhost"). Is your Mac awake and on Tailscale?"
         case .server(_, let body):
             return body.message
         case .badResponse:
@@ -65,8 +87,22 @@ nonisolated enum APIError: Error, Equatable {
 }
 
 nonisolated struct APIClient {
-    var baseURL = AppConfig.apiBaseURL
+    /// nil: use the paired server (read per request, so pairing takes effect immediately).
+    var baseURL: URL?
+    /// nil: use the Keychain token.
+    var token: String?
     var session = URLSession.shared
+
+    init(baseURL: URL? = nil, token: String? = nil, session: URLSession = .shared) {
+        self.baseURL = baseURL
+        self.token = token
+        self.session = session
+    }
+
+    /// Reachability only; /healthz needs no token.
+    func health() async throws {
+        let _: [String: String] = try await send("GET", "healthz")
+    }
 
     // MARK: Recipes
 
@@ -126,12 +162,15 @@ nonisolated struct APIClient {
         body: (some Encodable)? = NoBody?.none,
         timeout: TimeInterval = 15
     ) async throws -> Response {
-        var url = baseURL.appending(path: path)
+        var url = (baseURL ?? AppConfig.apiBaseURL).appending(path: path)
         if !query.isEmpty { url.append(queryItems: query) }
 
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let bearer = token ?? KeychainToken.read() {
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+        }
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         if let body {
             request.httpBody = try Self.encoder.encode(body)

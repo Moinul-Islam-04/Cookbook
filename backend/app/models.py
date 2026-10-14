@@ -67,6 +67,28 @@ class User(Base):
     created_at: Mapped[datetime] = timestamp()
 
 
+class ApiToken(Base):
+    """A device's bearer token. Only a SHA-256 hash is stored; the token is shown once."""
+
+    __tablename__ = "api_tokens"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    created_at: Mapped[datetime] = timestamp()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint("btrim(name) <> ''", name="name_not_blank"),
+        Index("ix_api_tokens_user_id", "user_id"),
+    )
+
+
 class Recipe(Base):
     __tablename__ = "recipes"
 
