@@ -63,6 +63,14 @@ struct RecipeDetailView: View {
                     .listRowSeparator(.hidden)
             }
 
+            RecipePhotosSection(
+                recipe: recipe,
+                onChanged: {
+                    await load()
+                    onChanged()
+                },
+                onError: { actionError = $0 })
+
             Section("Ingredients") {
                 if recipe.ingredients.isEmpty {
                     Text("No ingredients yet").foregroundStyle(.secondary)

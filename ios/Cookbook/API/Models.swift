@@ -17,8 +17,20 @@ nonisolated struct Recipe: Decodable, Identifiable, Equatable {
     let version: Int
     let ingredients: [Ingredient]
     let steps: [Step]
+    let images: [RecipeImage]
     /// Server-computed: "ingredients" and/or "steps" when that list is empty.
     let missing: [String]
+}
+
+nonisolated struct RecipeImage: Decodable, Identifiable, Equatable {
+    let id: UUID
+    let position: Int
+    let width: Int
+    let height: Int
+    /// Relative, signed and short-lived; resolve with AppConfig.resolve. No auth header needed.
+    let url: String
+    let thumbnailUrl: String
+    let urlsExpireAt: Date
 }
 
 nonisolated struct Ingredient: Decodable, Identifiable, Equatable {
@@ -45,6 +57,8 @@ nonisolated struct RecipeSummary: Decodable, Identifiable, Equatable {
     let ingredientCount: Int
     let stepCount: Int
     let missing: [String]
+    /// The first photo's signed thumbnail path, if any.
+    let thumbnailUrl: String?
     let createdAt: Date
     let updatedAt: Date
 }

@@ -170,11 +170,18 @@ def validate_extraction(raw: str, source_text: str) -> DraftContent:
         else:
             quantity = line_qty
 
+        # When the model's unit is missing or not in the line (Qwen writes "cup(s)"), use
+        # the line's own unit, but only if the amount we kept is the line's leading amount
+        # ("½ cup soy sauce" -> "cup"). Otherwise drop it and flag the row.
         unit, _ = _clip(item.unit, 40)
+        line_unit_applies = line_unit is not None and (item.quantity is None or quantity == line_qty)
         if unit is not None and not _unit_in(unit, raw_text):
-            unit = None
-            reasons.append("unit_not_in_source")
-        elif unit is None and item.quantity is None:
+            if line_unit_applies:
+                unit = line_unit
+            else:
+                unit = None
+                reasons.append("unit_not_in_source")
+        elif unit is None and line_unit_applies:
             unit = line_unit
 
         ingredients.append(

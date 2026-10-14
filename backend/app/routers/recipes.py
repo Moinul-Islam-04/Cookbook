@@ -13,13 +13,15 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import exists, or_, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user_id, get_db
 from app.drafts import owned_draft, reject_if_saved
+from app.images import ImageSigner
+from app.routers.images import delete_objects, image_out
 from app.errors import ApiError, not_found
 from app.models import IdempotencyKey, Recipe, RecipeIngredient, RecipeStep, User
 from app.schemas import (
@@ -40,6 +42,13 @@ router = APIRouter(prefix="/v1/recipes", tags=["recipes"])
 
 DbSession = Annotated[Session, Depends(get_db)]
 UserId = Annotated[uuid.UUID, Depends(get_current_user_id)]
+
+
+def get_signer(request: Request) -> ImageSigner:
+    return request.app.state.image_signer
+
+
+Signer = Annotated[ImageSigner, Depends(get_signer)]
 
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
@@ -89,7 +98,7 @@ def _missing(recipe: Recipe) -> list[str]:
     return missing
 
 
-def _to_out(recipe: Recipe) -> RecipeOut:
+def _to_out(recipe: Recipe, signer: ImageSigner) -> RecipeOut:
     return RecipeOut(
         id=recipe.id,
         title=recipe.title,
@@ -101,6 +110,7 @@ def _to_out(recipe: Recipe) -> RecipeOut:
         version=recipe.version,
         ingredients=[IngredientOut.model_validate(i) for i in recipe.ingredients],
         steps=[StepOut.model_validate(s) for s in recipe.steps],
+        images=[image_out(i, signer) for i in recipe.images],
         missing=_missing(recipe),
     )
 
@@ -215,6 +225,7 @@ def create_recipe(
     db: DbSession,
     user_id: UserId,
     response: Response,
+    signer: Signer,
     idempotency_key: IdempotencyKeyHeader = None,
 ) -> RecipeOut | JSONResponse:
     post = _parse_source(body.source_url)
@@ -276,7 +287,7 @@ def create_recipe(
         draft.status = "saved"
         draft.saved_recipe_id = recipe.id
         draft.updated_at = now
-    out = _to_out(recipe)
+    out = _to_out(recipe, signer)
     if idempotency_key is not None:
         db.add(
             IdempotencyKey(
@@ -297,6 +308,7 @@ def create_recipe(
 def list_recipes(
     db: DbSession,
     user_id: UserId,
+    signer: Signer,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     cursor: Annotated[str | None, Query(max_length=300)] = None,
     q: Annotated[str | None, Query(max_length=200)] = None,
@@ -334,6 +346,7 @@ def list_recipes(
                 id=r.id,
                 title=r.title,
                 source_url=r.source_url,
+                thumbnail_url=signer.sign(r.images[0].thumb_object_key)[0] if r.images else None,
                 ingredient_count=len(r.ingredients),
                 step_count=len(r.steps),
                 missing=_missing(r),
@@ -347,12 +360,14 @@ def list_recipes(
 
 
 @router.get("/{recipe_id}", response_model=RecipeOut)
-def get_recipe(recipe_id: uuid.UUID, db: DbSession, user_id: UserId) -> RecipeOut:
-    return _to_out(_owned_recipe(db, user_id, recipe_id))
+def get_recipe(recipe_id: uuid.UUID, db: DbSession, user_id: UserId, signer: Signer) -> RecipeOut:
+    return _to_out(_owned_recipe(db, user_id, recipe_id), signer)
 
 
 @router.patch("/{recipe_id}", response_model=RecipeOut)
-def update_recipe(recipe_id: uuid.UUID, body: RecipePatch, db: DbSession, user_id: UserId) -> RecipeOut:
+def update_recipe(
+    recipe_id: uuid.UUID, body: RecipePatch, db: DbSession, user_id: UserId, signer: Signer
+) -> RecipeOut:
     fields = body.model_fields_set
     if "source_url" in fields:
         post = _parse_source(body.source_url)
@@ -389,12 +404,14 @@ def update_recipe(recipe_id: uuid.UUID, body: RecipePatch, db: DbSession, user_i
     recipe.version += 1
     recipe.updated_at = datetime.now(UTC)
     db.commit()  # all field and child changes commit together or not at all
-    return _to_out(recipe)
+    return _to_out(recipe, signer)
 
 
 @router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_recipe(recipe_id: uuid.UUID, db: DbSession, user_id: UserId) -> Response:
+def delete_recipe(recipe_id: uuid.UUID, request: Request, db: DbSession, user_id: UserId) -> Response:
     recipe = _owned_recipe(db, user_id, recipe_id)
-    db.delete(recipe)  # ingredients and steps go with it (ON DELETE CASCADE)
+    keys = [k for i in recipe.images for k in (i.object_key, i.thumb_object_key)]
+    db.delete(recipe)  # ingredients, steps and photo rows go with it (ON DELETE CASCADE)
     db.commit()
+    delete_objects(request.app.state.store, keys)  # after commit; failures -> cleanup
     return Response(status_code=status.HTTP_204_NO_CONTENT)

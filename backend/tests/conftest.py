@@ -49,12 +49,26 @@ def engine() -> Iterator[Engine]:
 @pytest.fixture(autouse=True)
 def clean_tables(engine: Engine) -> None:
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE users, recipes, recipe_ingredients, recipe_steps, idempotency_keys, import_drafts, api_tokens CASCADE"))
+        conn.execute(text("TRUNCATE users, recipes, recipe_ingredients, recipe_steps, idempotency_keys, import_drafts, api_tokens, recipe_images CASCADE"))
+
+
+def test_settings(**overrides) -> Settings:
+    """Settings for tests: never read backend/.env (a developer's local MinIO, Ollama or
+    auth mode must not leak in), in-memory photo storage, the deterministic extractor."""
+    values = dict(
+        database_url=TEST_DATABASE_URL,
+        auth_mode="dev",
+        storage_backend="memory",
+        extraction_provider="fake",
+        image_signing_key="test-signing-key",
+    )
+    values.update(overrides)
+    return Settings(_env_file=None, **values)
 
 
 @pytest.fixture
 def app(engine: Engine):
-    return create_app(Settings(database_url=TEST_DATABASE_URL, auth_mode="dev"))
+    return create_app(test_settings())
 
 
 @pytest.fixture

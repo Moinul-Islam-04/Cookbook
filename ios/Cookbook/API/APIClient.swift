@@ -18,6 +18,11 @@ nonisolated enum AppConfig {
 
     static var isPaired: Bool { KeychainToken.read() != nil }
 
+    /// Signed photo paths from the API ("/v1/image-files/...") as full URLs on the server.
+    static func resolve(_ path: String) -> URL? {
+        URL(string: path, relativeTo: apiBaseURL)?.absoluteURL
+    }
+
     static func pair(_ code: PairingCode) {
         UserDefaults.standard.set(code.server.absoluteString, forKey: serverKey)
         KeychainToken.save(code.token)
@@ -134,6 +139,26 @@ nonisolated struct APIClient {
         let _: Empty = try await send("DELETE", "v1/recipes/\(id.uuidString.lowercased())")
     }
 
+    // MARK: Photos
+
+    func uploadImage(recipeID: UUID, jpeg: Data) async throws -> RecipeImage {
+        let boundary = "cookbook-\(UUID().uuidString)"
+        var body = Data()
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\n".utf8))
+        body.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
+        body.append(jpeg)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        return try await send(
+            "POST", "v1/recipes/\(recipeID.uuidString.lowercased())/images",
+            rawBody: (body, "multipart/form-data; boundary=\(boundary)"), timeout: 60)
+    }
+
+    func deleteImage(recipeID: UUID, imageID: UUID) async throws {
+        let _: Empty = try await send(
+            "DELETE", "v1/recipes/\(recipeID.uuidString.lowercased())/images/\(imageID.uuidString.lowercased())")
+    }
+
     // MARK: Import drafts
 
     /// Runs extraction on the server; a local model can take up to the server's 120 s limit.
@@ -160,6 +185,7 @@ nonisolated struct APIClient {
         query: [URLQueryItem] = [],
         headers: [String: String] = [:],
         body: (some Encodable)? = NoBody?.none,
+        rawBody: (Data, String)? = nil,
         timeout: TimeInterval = 15
     ) async throws -> Response {
         var url = (baseURL ?? AppConfig.apiBaseURL).appending(path: path)
@@ -175,6 +201,9 @@ nonisolated struct APIClient {
         if let body {
             request.httpBody = try Self.encoder.encode(body)
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        } else if let (data, contentType) = rawBody {
+            request.httpBody = data
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
 
         let data: Data

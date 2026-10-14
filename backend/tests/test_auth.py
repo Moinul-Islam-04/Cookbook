@@ -12,13 +12,13 @@ from sqlalchemy.orm import Session
 from app.auth import PAIRING_PREFIX, issue_token, pairing_code
 from app.config import Settings
 from app.main import create_app
-from tests.conftest import TEST_DATABASE_URL
+from tests.conftest import TEST_DATABASE_URL, test_settings
 from tests.test_recipes_api import TOMATO_PASTA, assert_error
 
 
 @pytest.fixture
 def token_app(engine: Engine):
-    return create_app(Settings(database_url=TEST_DATABASE_URL, auth_mode="token"))
+    return create_app(test_settings(auth_mode="token"))
 
 
 @pytest.fixture

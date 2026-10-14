@@ -7,3 +7,6 @@ alembic==1.20.0
 pydantic==2.14.1
 pydantic-settings==2.16.0
 httpx==0.28.1  # Ollama client
+boto3==1.43.114  # S3-compatible object storage (MinIO, R2, S3)
+Pillow==12.3.0  # decode/validate/re-encode photos
+python-multipart==0.0.32  # FastAPI file uploads

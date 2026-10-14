@@ -120,6 +120,12 @@ class Recipe(Base):
         passive_deletes=True,
         lazy="selectin",
     )
+    images: Mapped[list["RecipeImage"]] = relationship(
+        order_by="RecipeImage.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
 
     __table_args__ = (
         CheckConstraint("btrim(title) <> ''", name="title_not_blank"),
@@ -221,6 +227,34 @@ class RecipeIngredient(Base):
         CheckConstraint("quantity IS NULL OR quantity > 0", name="quantity_positive"),
         CheckConstraint("unit IS NULL OR btrim(unit) <> ''", name="unit_not_blank"),
         CheckConstraint("btrim(raw_text) <> ''", name="raw_text_not_blank"),
+    )
+
+
+class RecipeImage(Base):
+    """A photo's metadata. The bytes live in object storage under `object_key` (full size)
+    and `thumb_object_key`; deleting the row makes them unreadable (reads check the row),
+    and the cleanup command removes the objects."""
+
+    __tablename__ = "recipe_images"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    recipe_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    object_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    thumb_object_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    content_type: Mapped[str] = mapped_column(Text, nullable=False)
+    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = timestamp()
+
+    __table_args__ = (
+        UniqueConstraint("recipe_id", "position"),
+        CheckConstraint("position >= 0", name="position_nonnegative"),
+        CheckConstraint("byte_size > 0", name="byte_size_positive"),
+        CheckConstraint("width > 0 AND height > 0", name="dimensions_positive"),
     )
 
 

@@ -586,3 +586,23 @@ def test_comma_list_in_one_entry_is_split_when_every_piece_has_an_amount() -> No
     kept = validate("- 3 cloves garlic, minced\n- Cook", {"is_recipe": True,
         "ingredients": [{"raw_text": "3 cloves garlic, minced"}], "steps": [{"instruction": "Cook"}]})
     assert [i["raw_text"] for i in kept["ingredients"]] == ["3 cloves garlic, minced"]
+
+
+def test_missing_unit_is_read_from_the_line_when_the_amount_matches() -> None:
+    caption = "Ingredients\n- ½ cup soy sauce\n- 2 eggs, beaten with 1 tbsp milk\nSteps\n- Mix."
+    d = validate(caption, {"is_recipe": True, "ingredients": [
+        {"raw_text": "½ cup soy sauce", "name": "soy sauce", "quantity": 0.5},
+        {"raw_text": "2 eggs, beaten with 1 tbsp milk", "name": "eggs", "quantity": 1}],
+        "steps": [{"instruction": "Mix."}]})
+    assert (d["ingredients"][0]["quantity"], d["ingredients"][0]["unit"]) == (0.5, "cup")
+    # Model said 1 (the milk's amount), not the line's leading 2: no unit is borrowed.
+    assert d["ingredients"][1]["unit"] is None
+
+
+def test_unit_written_differently_by_the_model_falls_back_to_the_lines_unit() -> None:
+    caption = "Ingredients\n- ½ cup soy sauce\nSteps\n- Mix."
+    d = validate(caption, {"is_recipe": True, "ingredients": [
+        {"raw_text": "½ cup soy sauce", "name": "soy sauce", "quantity": 0.5, "unit": "cup(s)"}],
+        "steps": [{"instruction": "Mix."}]})
+    row = d["ingredients"][0]
+    assert (row["quantity"], row["unit"], row["needs_review"]) == (0.5, "cup", False)

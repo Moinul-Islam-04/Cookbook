@@ -271,6 +271,18 @@ private struct RecipeRow: View {
     let recipe: RecipeSummary
 
     var body: some View {
+        HStack(spacing: 12) {
+            if recipe.thumbnailUrl != nil {
+                RemotePhoto(path: recipe.thumbnailUrl)
+                    .frame(width: 56, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityHidden(true)
+            }
+            details
+        }
+    }
+
+    private var details: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(recipe.title)
                 .font(.headline)

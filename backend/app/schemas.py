@@ -124,6 +124,17 @@ class StepOut(BaseModel):
     instruction: str
 
 
+class RecipeImageOut(BaseModel):
+    id: uuid.UUID
+    position: int
+    width: int
+    height: int
+    # Relative, signed, short-lived: resolve against the API base URL. No auth header needed.
+    url: str
+    thumbnail_url: str
+    urls_expire_at: datetime
+
+
 class RecipeOut(BaseModel):
     id: uuid.UUID
     title: str
@@ -135,6 +146,7 @@ class RecipeOut(BaseModel):
     version: int
     ingredients: list[IngredientOut]
     steps: list[StepOut]
+    images: list[RecipeImageOut] = []
     missing: list[str]
 
 
@@ -145,6 +157,8 @@ class RecipeSummary(BaseModel):
     ingredient_count: int
     step_count: int
     missing: list[str]
+    # The first photo's thumbnail (signed, short-lived), if any.
+    thumbnail_url: str | None = None
     created_at: datetime
     updated_at: datetime
 

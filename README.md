@@ -12,7 +12,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
-| 4 Images and authentication | **In progress.** Device-token sign-in done; photos next; then the iPhone over Tailscale. |
+| 4 Images and authentication | **In progress.** Device-token sign-in and photos done; iPhone over Tailscale next. |
 | 5 | Not started. |
 
 ### What works (backend, verified)
@@ -63,7 +63,6 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
   authentication and is for local tests only. Single user, self-hosted: see
   `docs/DECISIONS.md`.
 - Not built yet, each in a later milestone:
-  - images (Milestone 4)
 - Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
   Python 3.11+ is required.
 - Quantities allow up to 3 decimal places (e.g. 0.333). The client should round
@@ -197,6 +196,20 @@ Checks run:
   injected words, 0 errors (`backend/eval/RESULTS.md`).
 
 Not yet checked by hand: the Import Caption and review screens in the Simulator.
+
+### Photos
+
+On a recipe, tap **Add Photo**. The photo is resized and converted to JPEG on the phone,
+then validated, stripped of metadata (including GPS), stored in MinIO, and shown through
+short-lived signed URLs. Long-press a photo to delete it. MinIO runs on 127.0.0.1 only:
+
+```bash
+brew install minio
+# credentials come from backend/.env (COOKBOOK_S3_ACCESS_KEY / COOKBOOK_S3_SECRET_KEY)
+cd backend && set -a && . ./.env && set +a && \
+  MINIO_ROOT_USER=$COOKBOOK_S3_ACCESS_KEY MINIO_ROOT_PASSWORD=$COOKBOOK_S3_SECRET_KEY MINIO_BROWSER=off \
+  minio server --address 127.0.0.1:9000 "$HOME/Library/Application Support/Cookbook/minio"
+```
 
 ## Local setup (macOS)
 

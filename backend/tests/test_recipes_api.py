@@ -10,7 +10,7 @@ from app.config import Settings
 from app.main import create_app
 from app.models import RecipeIngredient
 from app.routers import recipes as recipes_router
-from tests.conftest import TEST_DATABASE_URL, count
+from tests.conftest import TEST_DATABASE_URL, count, test_settings
 
 TOMATO_PASTA = {
     "title": "Tomato pasta",
@@ -307,7 +307,7 @@ def test_other_user_cannot_see_or_change_recipes(client: TestClient, make_user, 
 
 
 def test_saved_data_survives_server_restart(engine: Engine) -> None:
-    settings = Settings(database_url=TEST_DATABASE_URL, auth_mode="dev")
+    settings = test_settings(auth_mode="dev")
     with TestClient(create_app(settings)) as first:
         created = create(first)
     # A brand-new app instance with a fresh connection pool reads the same data.
@@ -317,4 +317,4 @@ def test_saved_data_survives_server_restart(engine: Engine) -> None:
 
 def test_unknown_auth_mode_refuses_to_start() -> None:
     with pytest.raises(RuntimeError, match="Unknown COOKBOOK_AUTH_MODE"):
-        create_app(Settings(database_url=TEST_DATABASE_URL, auth_mode="jwt"))
+        create_app(test_settings(auth_mode="jwt"))

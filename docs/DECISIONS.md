@@ -326,3 +326,46 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Revisit:** Before a second user or a public deployment. Then use a managed provider
   (Sign in with Apple, Supabase or Clerk), with JWT verification replacing the hash lookup
   in `app/deps.py`.
+
+## 2026-10-14: Photos in S3-compatible storage (MinIO locally), served by signed API URLs
+
+- **Decision:**
+  - `app/storage.py` defines a small interface: put, get, delete and list. It has an
+    `S3Store` (boto3) and a `MemoryStore` (tests). Locally, MinIO runs on
+    **127.0.0.1:9000 only**, with generated credentials in `backend/.env`. Homebrew's
+    service would listen on all interfaces with `minioadmin`, so it isn't used. Moving to
+    Cloudflare R2 or AWS S3 is a config change.
+  - Uploads (`POST /v1/recipes/{id}/images`, multipart):
+    - The server decodes the file with Pillow and accepts only JPEG, PNG or WebP of at
+      most 10 MB and 50 MP. Content-Type and extension aren't trusted, and decompression
+      bombs are rejected.
+    - It applies the EXIF rotation, then re-encodes to JPEG with **no metadata**, so GPS
+      and camera details never reach storage.
+    - It stores a 2048 px full image and a 600 px thumbnail under random keys
+      (`users/{uid}/recipes/{rid}/{uuid}.jpg`).
+    - The order is: process, store the objects, then commit the row. If the commit fails,
+      the objects are deleted. There are at most 10 photos per recipe.
+  - Reads: the API returns relative URLs, `/v1/image-files/{key}?exp=…&sig=…`, signed
+    with HMAC-SHA256 under `COOKBOOK_IMAGE_SIGNING_KEY`. TTL is 10 minutes, with expiry
+    rounded to a boundary so URLs stay cacheable. The signature authorizes the read, so
+    no bearer token is needed and SwiftUI's `AsyncImage` can load it. The read also
+    requires the `recipe_images` row, so **a deleted photo stops loading immediately**,
+    even inside its TTL.
+  - Deleting a photo or a recipe deletes its objects after commit. Failures, and objects
+    left by interrupted uploads, are orphans: `python -m app.cleanup` removes
+    unreferenced objects older than 1 hour.
+- **Alternatives:** Presigned MinIO URLs, as the brief suggests ("short lived signed read
+  URLs"). The phone would then also need to reach MinIO over Tailscale, which means a
+  second exposed service and its own TLS. Our own signed endpoint gives the same
+  property (expiring, unguessable, nothing public) with one origin. With R2 we could
+  switch to presigned redirects.
+- **Accepted:** a device that already loaded a photo may show its cached copy for up to
+  the TTL after deletion (`Cache-Control: private`). The server refuses fresh reads.
+- **Verified:** 18 photo tests, covering validation, GPS stripping, rotation, bombs,
+  tampering, expiry, delete-while-in-TTL, recipe delete, ownership, storage outages,
+  rollback on the photo limit, orphan cleanup, and token mode. Live checks against
+  MinIO, and the Swift client contract (upload, signed load without a token, 404 after
+  delete).
+- **Also fixed:** tests read `backend/.env`, so the first run uploaded about 30 objects to
+  the real MinIO, since cleaned. Tests now use `make_settings()`, which never reads
+  `.env`.
