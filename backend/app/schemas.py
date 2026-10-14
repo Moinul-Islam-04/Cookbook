@@ -67,6 +67,9 @@ class StepIn(RequestModel):
 
 
 class RecipeCreate(RequestModel):
+    # Set when saving a reviewed import draft: the recipe records the caption as its
+    # source, and the draft is marked saved in the same transaction.
+    draft_id: uuid.UUID | None = None
     title: Title
     notes: Notes | None = None
     # An Instagram post or reel link. Normalized by the server; other hosts are rejected.
@@ -163,3 +166,100 @@ class ErrorBody(BaseModel):
     retryable: bool = False
     request_id: str | None = None
     details: dict[str, Any] | None = None
+
+
+# ---------- import drafts (Milestone 3) ----------
+
+MAX_SOURCE_TEXT = 10_000
+SourceText = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_SOURCE_TEXT)
+]
+
+
+class DraftWarning(BaseModel):
+    code: str
+    message: str
+    field: str | None = None
+    # duplicate_post: the recipe that already has this post.
+    recipe_id: uuid.UUID | None = None
+
+
+class IngredientDraft(BaseModel):
+    """Like IngredientIn, but name may be missing and a row can be flagged for review."""
+
+    name: str | None = None
+    quantity: Quantity | None = None
+    unit: str | None = None
+    raw_text: str
+    needs_review: bool = False
+    # e.g. "not_in_source", "quantity_not_in_source", "name_missing"
+    review_reasons: list[str] = []
+
+
+class StepDraft(BaseModel):
+    instruction: str
+    needs_review: bool = False
+    review_reasons: list[str] = []
+
+
+class DraftContent(BaseModel):
+    title: str | None
+    ingredients: list[IngredientDraft]
+    steps: list[StepDraft]
+    warnings: list[DraftWarning]
+
+
+class ImportDraftCreate(RequestModel):
+    # The caption the user pasted. Treated as data only: it never changes extraction rules.
+    source_text: SourceText
+    source_url: SourceUrl | None = None
+
+    _blank_optional = field_validator("source_url", mode="before")(_blank_to_none)
+
+
+class IngredientDraftIn(RequestModel):
+    name: IngredientName | None = None
+    quantity: Quantity | None = None
+    unit: Unit | None = None
+    raw_text: RawText
+    needs_review: bool = False
+
+    _blank_optional = field_validator("name", "unit", mode="before")(_blank_to_none)
+
+
+class StepDraftIn(RequestModel):
+    instruction: Instruction
+    needs_review: bool = False
+
+
+class ImportDraftPatch(RequestModel):
+    """Persist the user's corrections so they survive a failed save or an app restart."""
+
+    version: int = Field(ge=1)
+    title: Title | None = None
+    ingredients: list[IngredientDraftIn] | None = Field(default=None, max_length=MAX_INGREDIENTS)
+    steps: list[StepDraftIn] | None = Field(default=None, max_length=MAX_STEPS)
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self) -> "ImportDraftPatch":
+        for field in ("ingredients", "steps"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null; omit it to leave it unchanged")
+        return self
+
+
+class ImportDraftOut(BaseModel):
+    id: uuid.UUID
+    status: str  # "ready" | "saved"
+    source_text: str
+    source_url: str | None
+    title: str | None
+    ingredients: list[IngredientDraft]
+    steps: list[StepDraft]
+    warnings: list[DraftWarning]
+    extraction_version: str
+    version: int
+    saved_recipe_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    expires_at: datetime

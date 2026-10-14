@@ -19,6 +19,7 @@ from sqlalchemy import exists, or_, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user_id, get_db
+from app.drafts import owned_draft, reject_if_saved
 from app.errors import ApiError, not_found
 from app.models import IdempotencyKey, Recipe, RecipeIngredient, RecipeStep, User
 from app.schemas import (
@@ -237,6 +238,21 @@ def create_recipe(
                 status_code=prior.response_status, content=prior.response_body, headers=headers
             )
 
+    draft = None
+    if body.draft_id is not None:
+        draft = owned_draft(db, user_id, body.draft_id, lock=True)
+        reject_if_saved(draft)
+        # A reviewed import must be a usable recipe (brief §3); manual ones may be partial.
+        missing = [
+            FieldError(field=f, message=f"Add at least one {f[:-1]} before saving.")
+            for f in ("ingredients", "steps")
+            if not getattr(body, f)
+        ]
+        if missing:
+            raise ApiError(422, "invalid_request", "Some fields are invalid.", field_errors=missing)
+        if post is None and "source_url" not in body.model_fields_set and draft.source_url:
+            post = _parse_source(draft.source_url)
+
     if post is not None and not body.allow_duplicate:
         _reject_duplicate(db, user_id, post.post_key)
 
@@ -247,7 +263,8 @@ def create_recipe(
         updated_at=now,
         title=body.title,
         notes=body.notes,
-        source_kind="manual",
+        source_kind="caption" if draft else "manual",
+        source_text=draft.source_text if draft else None,
         source_url=post.canonical_url if post else None,
         source_post_key=post.post_key if post else None,
         ingredients=_ingredient_rows(body.ingredients),
@@ -255,6 +272,10 @@ def create_recipe(
     )
     db.add(recipe)
     db.flush()
+    if draft is not None:
+        draft.status = "saved"
+        draft.saved_recipe_id = recipe.id
+        draft.updated_at = now
     out = _to_out(recipe)
     if idempotency_key is not None:
         db.add(
@@ -267,7 +288,7 @@ def create_recipe(
                 recipe_id=recipe.id,
             )
         )
-    db.commit()  # recipe, children and idempotency record commit together or not at all
+    db.commit()  # recipe, children, draft status and idempotency record: all or nothing
     response.headers["Location"] = f"/v1/recipes/{recipe.id}"
     return out
 

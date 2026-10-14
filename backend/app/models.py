@@ -140,6 +140,44 @@ class IdempotencyKey(Base):
     )
 
 
+class ImportDraft(Base):
+    """An extracted, not-yet-saved recipe. Separate from recipes, so drafts never show up
+    in the cookbook or its search; saving creates a recipe and marks the draft saved."""
+
+    __tablename__ = "import_drafts"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="ready", server_default="ready")
+    source_text: Mapped[str] = mapped_column(Text, nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    source_post_key: Mapped[str | None] = mapped_column(Text)
+    # Validated DraftContent (title, ingredients, steps, warnings) as JSON, including the
+    # user's corrections. Draft rows are edited as a whole, so they aren't normalized.
+    content: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    extraction_version: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    # SET NULL: deleting the saved recipe leaves the (saved, soon expiring) draft behind.
+    saved_recipe_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = timestamp()
+    updated_at: Mapped[datetime] = timestamp()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('ready', 'saved')", name="status_valid"),
+        CheckConstraint("btrim(source_text) <> ''", name="source_text_not_blank"),
+        CheckConstraint("char_length(source_text) <= 10000", name="source_text_length"),
+        CheckConstraint("version >= 1", name="version_positive"),
+        Index("ix_import_drafts_user_id", "user_id"),
+        Index("ix_import_drafts_saved_recipe_id", "saved_recipe_id"),
+        Index("ix_import_drafts_expires_at", "expires_at"),
+    )
+
+
 class RecipeIngredient(Base):
     __tablename__ = "recipe_ingredients"
 

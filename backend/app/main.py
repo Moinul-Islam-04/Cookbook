@@ -14,8 +14,9 @@ from sqlalchemy.orm import sessionmaker
 
 from app.config import DEV_USER_ID, Settings, get_settings
 from app.errors import install_error_handlers
+from app.extraction import make_extractor
 from app.models import User
-from app.routers import recipes
+from app.routers import import_drafts, recipes
 
 log = logging.getLogger("cookbook")
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
@@ -51,6 +52,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Cookbook API", version="0.1.0", lifespan=lifespan)
     app.state.engine = engine
     app.state.sessionmaker = session_factory
+    app.state.settings = settings
+    # Tests swap this for a FakeExtractor with canned responses.
+    app.state.extractor = make_extractor(settings.extraction_provider)
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):
@@ -73,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     install_error_handlers(app)
     app.include_router(recipes.router)
+    app.include_router(import_drafts.router)
 
     @app.get("/healthz", tags=["health"])
     def healthz() -> dict[str, str]:

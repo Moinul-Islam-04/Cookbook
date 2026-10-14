@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://localhost:5432/cookbook"
     auth_mode: str = "dev"
+    # Which extraction provider turns captions into drafts. Only "fake" exists so far.
+    extraction_provider: str = "fake"
+    extraction_timeout_s: float = 20.0
+    draft_ttl_hours: int = 24
 
 
 @lru_cache
