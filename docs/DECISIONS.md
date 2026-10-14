@@ -166,3 +166,50 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   scale. The brief says to improve PostgreSQL search before adding anything else.
 - **Revisit:** If searches slow down with a few thousand recipes, add `pg_trgm` indexes
   on `recipes.title` and `recipe_ingredients.name`.
+
+## 2026-10-14: Extraction behind a provider adapter; fake first, model choice open
+
+- **Context:** The brief leaves the AI provider and cost limit open. Choosing one involves
+  cost and privacy, so it's the owner's decision. Tests must never depend on a live model.
+- **Decision:** A provider implements `extract(source_text) -> str` (raw JSON, shaped like
+  `ExtractionOutput`) and a `version` string that's stored on each draft. `run_extraction`
+  enforces `COOKBOOK_EXTRACTION_TIMEOUT_S`. The validator handles every provider the same
+  way. Today's providers:
+  - `RuleBasedExtractor` (`rules-1`) is the development default. It reads header and bullet
+    caption layouts, with no model and no network.
+  - `FakeExtractor` returns canned responses keyed by caption, for tests.
+- **Next:** Add Ollama (Qwen 2.5) and Claude Haiku 5.5 adapters and compare them on the
+  same captions, then pick one.
+- **Revisit:** After the comparison.
+
+## 2026-10-14: Source fidelity is enforced on the server, after the model
+
+- **Decision:** `app/extraction/validate.py` treats model output as untrusted:
+  - A quantity is kept only if that amount appears in the ingredient's own `raw_text`.
+  - A unit is kept only if it appears as a whole word.
+  - Ingredients and steps whose text isn't in the caption are kept but flagged
+    `needs_review`, with reasons.
+  - A title that isn't in the caption is cleared, with a `title_missing` warning.
+  - A non-recipe gets `no_recipe_found` and empty lists.
+  - Malformed output returns 502, a timeout 504, and a provider error 503 with no details.
+- **Known limit (tested):** The check proves text came *from the caption*. It can't tell
+  whether that text is a legitimate step. Injected instructions quoted word for word
+  pass. The defenses for that are the extraction prompt (caption sent as delimited data)
+  and the user's review before saving. The app never claims allergy safety or nutrition.
+- **Alternatives:** Trusting a well-prompted model. Rejected because the brief forbids
+  invented quantities, and this check works whatever model is behind it.
+
+## 2026-10-14: Drafts are a separate table with whole-draft JSONB content
+
+- **Decision:** `import_drafts` holds the caption, the normalized link, the validated
+  content as JSONB, `extraction_version`, `version`, `status` (ready/saved),
+  `saved_recipe_id` (`SET NULL`) and `expires_at` (24 hours). Drafts never appear in
+  recipe lists or search. `POST /v1/recipes` with `draft_id` saves atomically: it locks
+  the owner and the draft, requires at least one ingredient and one step, sets
+  `source_kind=caption` and `source_text`, and marks the draft saved. An expired draft
+  returns 410 `draft_expired`. `python -m app.cleanup` deletes expired drafts and
+  idempotency keys older than 24 hours. It isn't scheduled yet.
+- **Alternatives:** Normalized draft child tables. Rejected because drafts are short-lived
+  and always edited whole.
+- **iOS:** The review screen PATCHes corrections before each save attempt (best effort),
+  so they survive a failed save or an app restart. Flags clear when a row is edited.

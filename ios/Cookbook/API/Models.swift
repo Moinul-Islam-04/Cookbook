@@ -72,6 +72,7 @@ nonisolated struct ErrorBody: Decodable, Equatable {
 
     struct Details: Decodable, Equatable {
         let currentVersion: Int?
+        let savedRecipeId: UUID?
         let existingRecipeId: UUID?
         let existingTitle: String?
     }
@@ -92,6 +93,8 @@ nonisolated struct StepInput: Encodable, Equatable {
 }
 
 nonisolated struct RecipeCreate: Encodable, Equatable {
+    /// Set when saving a reviewed import draft.
+    var draftId: UUID?
     var title: String
     var notes: String?
     /// An Instagram post or reel link; the server normalizes it and rejects other hosts.

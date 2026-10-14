@@ -1,11 +1,15 @@
 import SwiftUI
 
-/// Create or edit a recipe. Unsaved text is never thrown away by a failed save: errors are
-/// shown inline and the form stays as the user left it.
+/// Create, edit, or review an imported recipe. Unsaved text is never thrown away by a
+/// failed save: errors are shown inline and the form stays as the user left it.
 struct RecipeEditorView: View {
     enum Mode {
         case create
+        /// A new recipe started from existing text, e.g. "Enter Manually" after an import failed.
+        case createPrefilled(RecipeForm)
         case edit(Recipe)
+        /// Review an import draft: shows the caption and flags, saves via draft_id.
+        case review(ImportDraft)
     }
 
     let mode: Mode
@@ -28,6 +32,7 @@ struct RecipeEditorView: View {
     /// The last create attempt. A retry of the identical body reuses its Idempotency-Key, so
     /// a save whose response was lost isn't stored twice; any edit gets a fresh key.
     @State private var lastAttempt: (body: RecipeCreate, key: String)?
+    @State private var showCaption = true
 
     private struct Duplicate {
         let id: UUID
@@ -45,15 +50,23 @@ struct RecipeEditorView: View {
         case .create:
             initial = RecipeForm()
             _version = State(initialValue: nil)
+        case .createPrefilled(let prefill):
+            initial = prefill
+            _version = State(initialValue: nil)
         case .edit(let recipe):
             initial = RecipeForm(recipe: recipe)
             _version = State(initialValue: recipe.version)
+        case .review(let draft):
+            initial = RecipeForm(draft: draft)
+            // The draft's version, for persisting corrections with PATCH /import-drafts.
+            _version = State(initialValue: draft.version)
         }
         _form = State(initialValue: initial)
         _baseline = State(initialValue: initial)
     }
 
-    private var hasChanges: Bool { form != baseline }
+    /// Leaving a review discards the import, so it always asks; other modes ask only if edited.
+    private var hasChanges: Bool { draft != nil || form != baseline }
 
     var body: some View {
         NavigationStack {
@@ -62,6 +75,10 @@ struct RecipeEditorView: View {
                     Section {
                         ErrorBanner(error: saveError)
                     }
+                }
+
+                if let draft {
+                    captionSection(draft)
                 }
 
                 Section("Title") {
@@ -92,7 +109,7 @@ struct RecipeEditorView: View {
                         .lineLimit(3...8)
                 }
             }
-            .navigationTitle(isCreating ? "New Recipe" : "Edit Recipe")
+            .navigationTitle(draft != nil ? "Review Recipe" : isCreating ? "New Recipe" : "Edit Recipe")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -112,8 +129,11 @@ struct RecipeEditorView: View {
             }
             // A swipe-down shouldn't silently discard typing.
             .interactiveDismissDisabled(hasChanges || isSaving)
-            .confirmationDialog("Discard your changes?", isPresented: $confirmDiscard, titleVisibility: .visible) {
-                Button("Discard Changes", role: .destructive) { dismiss() }
+            .confirmationDialog(
+                draft != nil ? "Discard this import?" : "Discard your changes?",
+                isPresented: $confirmDiscard, titleVisibility: .visible
+            ) {
+                Button(draft != nil ? "Discard Import" : "Discard Changes", role: .destructive) { dismiss() }
                 Button("Keep Editing", role: .cancel) {}
             }
             .alert("This recipe changed somewhere else", isPresented: $showStaleVersion) {
@@ -145,13 +165,51 @@ struct RecipeEditorView: View {
     }
 
     private var isCreating: Bool {
-        if case .create = mode { return true }
-        return false
+        if case .edit = mode { return false }
+        return true
     }
 
     private var recipeID: UUID? {
         if case .edit(let recipe) = mode { return recipe.id }
         return nil
+    }
+
+    private var draft: ImportDraft? {
+        if case .review(let draft) = mode { return draft }
+        return nil
+    }
+
+    // MARK: Review
+
+    @ViewBuilder
+    private func captionSection(_ draft: ImportDraft) -> some View {
+        Section {
+            DisclosureGroup("Original caption", isExpanded: $showCaption) {
+                Text(draft.sourceText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            ForEach(draft.warnings) { warning in
+                Label(warning.message, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .foregroundStyle(.orange)
+            }
+        } footer: {
+            Text("Check everything against the caption. Nothing is saved until you tap Save.")
+        }
+    }
+
+    private static func reviewText(_ reasons: [String]) -> String {
+        let text: [String: String] = [
+            "not_in_source": "Not found in the caption",
+            "quantity_not_in_source": "Amount wasn't in the caption, so it was removed",
+            "unit_not_in_source": "Unit wasn't in the caption, so it was removed",
+            "name_missing": "Name is missing",
+            "name_not_in_source": "Name doesn't match the caption",
+            "too_long": "Shortened to fit",
+        ]
+        return reasons.map { text[$0] ?? "Check this" }.joined(separator: " · ")
     }
 
     // MARK: Sections
@@ -177,6 +235,11 @@ struct RecipeEditorView: View {
                         FieldErrorText(fieldErrors["ingredients.\(index).name"])
                         FieldErrorText(fieldErrors["ingredients.\(index).quantity"])
                     }
+                    if row.needsReview {
+                        Label(Self.reviewText(row.reviewReasons), systemImage: "exclamationmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                 }
             }
             .onDelete { form.ingredients.remove(atOffsets: $0) }
@@ -187,6 +250,7 @@ struct RecipeEditorView: View {
             } label: {
                 Label("Add Ingredient", systemImage: "plus")
             }
+            FieldErrorText(fieldErrors["ingredients"])
         } header: {
             HStack {
                 Text("Ingredients")
@@ -201,13 +265,20 @@ struct RecipeEditorView: View {
     private var stepsSection: some View {
         Section("Steps") {
             ForEach(Array($form.steps.enumerated()), id: \.element.id) { offset, $step in
-                HStack(alignment: .firstTextBaseline) {
-                    Text("\(offset + 1).")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    TextField("Describe this step", text: $step.instruction, axis: .vertical)
-                        .lineLimit(1...6)
-                        .accessibilityLabel("Step \(offset + 1)")
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(offset + 1).")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                        TextField("Describe this step", text: $step.instruction, axis: .vertical)
+                            .lineLimit(1...6)
+                            .accessibilityLabel("Step \(offset + 1)")
+                    }
+                    if step.needsReview {
+                        Label(Self.reviewText(step.reviewReasons), systemImage: "exclamationmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                 }
             }
             .onDelete { form.steps.remove(atOffsets: $0) }
@@ -218,6 +289,7 @@ struct RecipeEditorView: View {
             } label: {
                 Label("Add Step", systemImage: "plus")
             }
+            FieldErrorText(fieldErrors["steps"])
         }
     }
 
@@ -231,7 +303,7 @@ struct RecipeEditorView: View {
     private func save(allowDuplicate: Bool = false) async {
         guard !isSaving else { return }
         saveError = nil
-        fieldErrors = form.validationErrors
+        fieldErrors = form.validationErrors(reviewedImport: draft != nil)
         guard fieldErrors.isEmpty else { return }
 
         isSaving = true
@@ -243,7 +315,14 @@ struct RecipeEditorView: View {
                     id: recipeID,
                     form.patchBody(version: version, against: baseline, allowDuplicate: allowDuplicate))
             } else {
-                let body = form.createBody(allowDuplicate: allowDuplicate)
+                if let draft, let version {
+                    // Persist corrections first, so they survive if the save below fails or
+                    // the app is closed. Best effort: the save is what matters.
+                    if let updated = try? await api.updateDraft(id: draft.id, form.draftPatch(version: version)) {
+                        self.version = updated.version
+                    }
+                }
+                let body = form.createBody(allowDuplicate: allowDuplicate, draftID: draft?.id)
                 let key = lastAttempt?.body == body ? lastAttempt!.key : UUID().uuidString
                 lastAttempt = (body, key)
                 saved = try await api.createRecipe(body, idempotencyKey: key)

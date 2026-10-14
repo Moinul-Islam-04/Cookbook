@@ -12,6 +12,14 @@ nonisolated struct RecipeForm: Equatable {
         /// The server's raw_text and the fields it was loaded with. If the user leaves the
         /// row untouched, the original wording ("salt to taste") is sent back unchanged.
         var original: Original?
+        /// From an import draft: why the server couldn't match this row to the caption.
+        /// Shown until the user edits the row.
+        var reviewReasons: [String] = []
+
+        var needsReview: Bool { !reviewReasons.isEmpty && isUnedited }
+        var isUnedited: Bool {
+            original.map { $0.quantity == quantity.trimmed && $0.unit == unit.trimmed && $0.name == name.trimmed } ?? true
+        }
 
         struct Original: Equatable {
             let quantity: String
@@ -26,6 +34,10 @@ nonisolated struct RecipeForm: Equatable {
     struct StepRow: Identifiable, Equatable {
         let id = UUID()
         var instruction = ""
+        var reviewReasons: [String] = []
+        var originalInstruction: String?
+
+        var needsReview: Bool { !reviewReasons.isEmpty && instruction.trimmed == originalInstruction }
     }
 
     var title = ""
@@ -51,13 +63,44 @@ nonisolated struct RecipeForm: Equatable {
         steps = recipe.steps.map { StepRow(instruction: $0.instruction) }
     }
 
+    /// The editable form for reviewing an import draft. Rows keep the draft's raw_text as
+    /// their original wording and carry its review flags.
+    init(draft: ImportDraft) {
+        title = draft.title ?? ""
+        sourceUrl = draft.sourceUrl ?? ""
+        ingredients = draft.ingredients.map { ing in
+            let quantity = ing.quantity.map(QuantityText.format) ?? ""
+            let unit = ing.unit ?? ""
+            let name = ing.name ?? ""
+            return IngredientRow(
+                quantity: quantity, unit: unit, name: name,
+                original: .init(quantity: quantity, unit: unit, name: name, rawText: ing.rawText),
+                reviewReasons: ing.needsReview ? ing.reviewReasons : [])
+        }
+        steps = draft.steps.map {
+            StepRow(instruction: $0.instruction,
+                    reviewReasons: $0.needsReview ? $0.reviewReasons : [],
+                    originalInstruction: $0.instruction)
+        }
+        if ingredients.isEmpty { ingredients = [IngredientRow()] }
+        if steps.isEmpty { steps = [StepRow()] }
+    }
+
     // MARK: Validation
 
     /// Problems the server would also reject, caught before sending. Keyed the same way as
     /// server field errors ("title", "ingredients.2.quantity") so one display path serves both.
-    var validationErrors: [String: String] {
+    var validationErrors: [String: String] { validationErrors(reviewedImport: false) }
+
+    /// A reviewed import must have at least one ingredient and one step (the server
+    /// enforces the same rule); manual recipes may be saved incomplete.
+    func validationErrors(reviewedImport: Bool) -> [String: String] {
         var errors: [String: String] = [:]
         if title.trimmed.isEmpty { errors["title"] = "Give the recipe a title." }
+        if reviewedImport {
+            if nonBlankIngredients.isEmpty { errors["ingredients"] = "Add at least one ingredient before saving." }
+            if stepInputs.isEmpty { errors["steps"] = "Add at least one step before saving." }
+        }
         for (index, row) in nonBlankIngredients.enumerated() {
             if row.name.trimmed.isEmpty {
                 errors["ingredients.\(index).name"] = "Add the ingredient's name."
@@ -71,8 +114,9 @@ nonisolated struct RecipeForm: Equatable {
 
     // MARK: Requests
 
-    func createBody(allowDuplicate: Bool = false) -> RecipeCreate {
+    func createBody(allowDuplicate: Bool = false, draftID: UUID? = nil) -> RecipeCreate {
         RecipeCreate(
+            draftId: draftID,
             title: title.trimmed,
             notes: notes.trimmed.nilIfEmpty,
             sourceUrl: sourceUrl.trimmed.nilIfEmpty,
@@ -93,6 +137,25 @@ nonisolated struct RecipeForm: Equatable {
         if ingredientInputs != baseline.ingredientInputs { patch.ingredients = ingredientInputs }
         if stepInputs != baseline.stepInputs { patch.steps = stepInputs }
         return patch
+    }
+
+    /// Persists the reviewer's corrections to the draft, so they survive a failed save or
+    /// an app restart. Sends the whole draft each time; drafts are small.
+    func draftPatch(version: Int) -> ImportDraftPatch {
+        ImportDraftPatch(
+            version: version,
+            title: title.trimmed.nilIfEmpty,
+            ingredients: zip(nonBlankIngredients, ingredientInputs).map { row, input in
+                IngredientDraftInput(
+                    name: input.name.nilIfEmpty, quantity: input.quantity, unit: input.unit,
+                    // The draft schema needs raw_text; compose it when the server would.
+                    rawText: input.rawText ?? [row.quantity.trimmed, row.unit.trimmed, row.name.trimmed]
+                        .filter { !$0.isEmpty }.joined(separator: " "),
+                    needsReview: row.needsReview)
+            },
+            steps: steps.filter { !$0.instruction.trimmed.isEmpty }.map {
+                StepDraftInput(instruction: $0.instruction.trimmed, needsReview: $0.needsReview)
+            })
     }
 
     /// Blank rows are the form's "add another" affordance, not data; they are never sent.

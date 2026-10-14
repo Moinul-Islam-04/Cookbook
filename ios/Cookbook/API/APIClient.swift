@@ -98,6 +98,21 @@ nonisolated struct APIClient {
         let _: Empty = try await send("DELETE", "v1/recipes/\(id.uuidString.lowercased())")
     }
 
+    // MARK: Import drafts
+
+    /// Runs extraction on the server; can take several seconds with a real model.
+    func createDraft(_ body: ImportDraftCreate) async throws -> ImportDraft {
+        try await send("POST", "v1/import-drafts", body: body, timeout: 60)
+    }
+
+    func draft(id: UUID) async throws -> ImportDraft {
+        try await send("GET", "v1/import-drafts/\(id.uuidString.lowercased())")
+    }
+
+    func updateDraft(id: UUID, _ body: ImportDraftPatch) async throws -> ImportDraft {
+        try await send("PATCH", "v1/import-drafts/\(id.uuidString.lowercased())", body: body)
+    }
+
     // MARK: Transport
 
     private struct Empty: Decodable {}
@@ -108,12 +123,13 @@ nonisolated struct APIClient {
         _ path: String,
         query: [URLQueryItem] = [],
         headers: [String: String] = [:],
-        body: (some Encodable)? = NoBody?.none
+        body: (some Encodable)? = NoBody?.none,
+        timeout: TimeInterval = 15
     ) async throws -> Response {
         var url = baseURL.appending(path: path)
         if !query.isEmpty { url.append(queryItems: query) }
 
-        var request = URLRequest(url: url, timeoutInterval: 15)
+        var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }

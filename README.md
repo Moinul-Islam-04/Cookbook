@@ -11,7 +11,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 0 Runnable baseline | Backend and iOS project done. Instagram access spike not run. |
 | 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
-| 3–5 | Not started. |
+| 3 Extraction and review | **In progress.** Import flow done with a rule-based/fake extractor (no AI yet). Real model choice pending. |
+| 4–5 | Not started. |
 
 ### What works (backend, verified)
 
@@ -58,7 +59,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - No authentication. A fixed dev user owns everything, and the server refuses to start
   in any other auth mode. **Keep it on 127.0.0.1; do not deploy it.**
 - Not built yet, each in a later milestone:
-  - import drafts and AI extraction (Milestone 3)
+  - a real AI extraction provider (Milestone 3: the adapter, drafts and review are done)
   - images (Milestone 4)
 - Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
   Python 3.11+ is required.
@@ -141,6 +142,45 @@ Checks run:
 
 Not yet checked by hand: typing a search, the duplicate alert, and Open Existing navigation.
 
+### Milestone 3 (so far): paste a caption → draft → review → save
+
+- `POST /v1/import-drafts` takes `{source_text, source_url?}` and returns a draft: title,
+  ingredients and steps, each row with `needs_review` and reasons, plus warnings.
+  `GET`/`PATCH /v1/import-drafts/{id}` read and save corrections. Drafts expire after
+  24 hours and don't appear in the cookbook or search.
+- Extraction runs through `app/extraction` and is configured with
+  `COOKBOOK_EXTRACTION_PROVIDER` (only `fake` today). The default is a rule-based reader
+  for typical captions (an "Ingredients" header, bullet or numbered lines), with no model,
+  no network and no cost. **No AI is involved yet.**
+- The server checks every draft against the caption. Invented amounts and units are
+  removed, text that isn't in the caption is flagged, and a non-recipe gets "No usable
+  recipe found". See `docs/DECISIONS.md`.
+- `POST /v1/recipes` with `draft_id` saves the reviewed recipe and marks the draft saved,
+  once. It requires at least one ingredient and one step.
+- iOS: **+ → Import Caption**. Paste the caption and optional link, then tap Read Recipe.
+  The review screen shows the original caption, warnings and orange flags on unmatched
+  rows; edit and save. If reading fails, "Enter Manually Instead" keeps the caption in
+  Notes.
+- Run `cd backend && .venv/bin/python -m app.cleanup` to delete expired drafts and old
+  idempotency keys. It isn't scheduled yet.
+
+Checks run:
+
+- `pytest`: 127 passed, three consecutive runs. The tests include the brief's fixture
+  list:
+  - missing amounts, mixed and Unicode fractions, "to taste"
+  - non-recipes and contradictory captions
+  - prompt injection, malformed JSON, provider timeouts and errors
+  - draft lifecycle: patch, expiry (410), owner scoping, save-once, simultaneous saves,
+    rollback, cleanup
+- Mutation checks: removing the double-save guard, or the quantity-in-caption check,
+  fails the tests.
+- iOS: `xcodebuild` with 0 warnings. The real client code ran against the live server:
+  25 Milestone 3 checks passed (draft, persisted corrections, save, replay, save-once,
+  duplicate warning, non-recipe, bad link), and the Milestone 1 and 2 checks still pass.
+
+Not yet checked by hand: the Import Caption and review screens in the Simulator.
+
 ## Local setup (macOS)
 
 ```bash
@@ -196,12 +236,7 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Walk through Milestone 2 in the Simulator: search by an ingredient, save a reel link
-twice, and try Open Existing and Save Anyway. Then start Milestone 3:
-- an `import_drafts` table and resource
-- a typed extraction adapter with a deterministic fake, plus fixtures from brief §3
-- a paste-caption form and review screen, then an explicit save through
-  `POST /v1/recipes` with `draft_id`
-
-The AI provider is still open: compare local Qwen 2.5 (Ollama) and Claude Haiku 5.5
-behind the adapter.
+Try **+ → Import Caption** in the Simulator with a few real captions. Then add two
+extraction providers behind the adapter: local Qwen 2.5 via Ollama, and Claude Haiku 5.5
+with `ANTHROPIC_API_KEY` in `backend/.env`. Run both on the same set of captions to
+compare fidelity, flags, latency and cost, and record the choice in `docs/DECISIONS.md`.

@@ -5,6 +5,7 @@ struct RecipeListView: View {
     @State private var path: [UUID] = []
     @State private var searchText = ""
     @State private var showingCreate = false
+    @State private var showingImport = false
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
 
@@ -21,10 +22,19 @@ struct RecipeListView: View {
                 }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingCreate = true
+                        Menu {
+                            Button {
+                                showingImport = true
+                            } label: {
+                                Label("Import Caption", systemImage: "text.viewfinder")
+                            }
+                            Button {
+                                showingCreate = true
+                            } label: {
+                                Label("New Recipe", systemImage: "square.and.pencil")
+                            }
                         } label: {
-                            Label("New Recipe", systemImage: "plus")
+                            Label("Add Recipe", systemImage: "plus")
                         }
                     }
                 }
@@ -32,6 +42,14 @@ struct RecipeListView: View {
                     RecipeEditorView(
                         mode: .create,
                         onSaved: { _ in Task { await model.recipeSaved() } },
+                        onOpenExisting: { id in path = [id] })
+                }
+                .sheet(isPresented: $showingImport) {
+                    ImportCaptionView(
+                        onSaved: { saved in
+                            Task { await model.recipeSaved() }
+                            path = [saved.id]
+                        },
                         onOpenExisting: { id in path = [id] })
                 }
                 // Re-runs whenever the search text changes, cancelling the previous run (and
@@ -60,8 +78,9 @@ struct RecipeListView: View {
             } description: {
                 Text("Recipes you add will show up here.")
             } actions: {
-                Button("Add a Recipe") { showingCreate = true }
+                Button("Import a Caption") { showingImport = true }
                     .buttonStyle(.borderedProminent)
+                Button("Add Manually") { showingCreate = true }
             }
             .refreshable { await model.refresh() }
         case .loaded:
