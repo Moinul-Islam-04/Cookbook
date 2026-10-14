@@ -2,20 +2,29 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
+from typing import TYPE_CHECKING
 
 from app.extraction.base import ExtractionError, ExtractionTimeout, Extractor
 from app.extraction.fake import FakeExtractor, RuleBasedExtractor
 from app.extraction.validate import MalformedOutput, validate_extraction
 from app.schemas import DraftContent
 
+if TYPE_CHECKING:
+    from app.config import Settings
+
 # Bounded pool: a stalled provider can occupy at most this many threads.
 _pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="extract")
 
 
-def make_extractor(provider: str) -> Extractor:
+def make_extractor(settings: "Settings") -> Extractor:
+    provider = settings.extraction_provider
     if provider in ("fake", "rules"):
         return RuleBasedExtractor()
-    raise RuntimeError(f"Unknown COOKBOOK_EXTRACTION_PROVIDER {provider!r}; only 'fake' exists so far.")
+    if provider == "ollama":
+        from app.extraction.ollama import OllamaExtractor
+
+        return OllamaExtractor(settings.ollama_url, settings.ollama_model, settings.extraction_timeout_s)
+    raise RuntimeError(f"Unknown COOKBOOK_EXTRACTION_PROVIDER {provider!r}; use 'fake' or 'ollama'.")
 
 
 def run_extraction(extractor: Extractor, source_text: str, timeout_s: float) -> DraftContent:
@@ -29,7 +38,7 @@ def run_extraction(extractor: Extractor, source_text: str, timeout_s: float) -> 
         raw = future.result(timeout=timeout_s)
     except FutureTimeout:
         raise ExtractionTimeout() from None
-    except (ExtractionError, MalformedOutput):
+    except (ExtractionError, ExtractionTimeout, MalformedOutput):
         raise
     except Exception as e:  # provider bug or SDK error: never leak details to clients
         raise ExtractionError(type(e).__name__) from e

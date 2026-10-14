@@ -12,8 +12,13 @@ from decimal import Decimal
 
 from pydantic import ValidationError
 
-from app.extraction.base import ExtractionOutput
-from app.extraction.quantities import amounts_in, expand_unicode_fractions, parse_amount
+from app.extraction.base import ExtractionOutput, RawIngredient
+from app.extraction.quantities import (
+    amounts_in,
+    expand_unicode_fractions,
+    parse_amount,
+    split_ingredient_line,
+)
 from app.schemas import (
     MAX_INGREDIENTS,
     MAX_STEPS,
@@ -24,6 +29,8 @@ from app.schemas import (
 )
 
 MAX_QUANTITY = Decimal("9999999.999")  # NUMERIC(10, 3)
+# A model may write 1/3 as 0.33; accept that as the caption's amount, and store the exact one.
+QUANTITY_TOLERANCE = Decimal("0.01")
 
 
 class MalformedOutput(Exception):
@@ -40,6 +47,37 @@ def _norm(text: str) -> str:
 def _in_source(fragment: str, source_norm: str) -> bool:
     frag = _norm(fragment).strip(" .,;:!-•*")
     return bool(frag) and frag in source_norm
+
+
+def _source_amount(claimed: Decimal, raw_text: str) -> Decimal | None:
+    """The amount written in raw_text that the model's number refers to, if any."""
+    for amount in amounts_in(raw_text):
+        if abs(amount - claimed) <= QUANTITY_TOLERANCE:
+            return amount
+    return None
+
+
+def _unit_in(unit: str, raw_text: str) -> bool:
+    """Whole-word match, but allow "500g" (digit before) and cup/cups (plural)."""
+    stem = re.escape(unit.lower().rstrip("s"))
+    return bool(re.search(rf"(?<![a-z]){stem}(?:e?s)?(?![a-z])", _norm(raw_text)))
+
+
+def _split_comma_lists(items: list[RawIngredient]) -> list[RawIngredient]:
+    """Split "3 bananas, 1 egg, 1 cup flour" (one entry from a model) into three.
+
+    Only when every comma-separated piece starts with an amount, so "3 cloves garlic,
+    minced" stays whole. Pieces are caption text, so nothing is invented; the model's
+    quantity/unit/name for the merged line are dropped and re-read per piece.
+    """
+    result = []
+    for item in items:
+        pieces = [p.strip() for p in item.raw_text.split(",")]
+        if len(pieces) > 1 and all(p and split_ingredient_line(p)[0] is not None for p in pieces):
+            result += [RawIngredient(raw_text=p) for p in pieces]
+        else:
+            result.append(item)
+    return result
 
 
 def _clip(text: str | None, limit: int) -> tuple[str | None, bool]:
@@ -68,7 +106,9 @@ def validate_extraction(raw: str, source_text: str) -> DraftContent:
     source = _norm(source_text)
     warnings: list[DraftWarning] = []
 
-    if not out.is_recipe or (not out.ingredients and not out.steps):
+    # "Not a recipe" plus a stray sentence in steps is chatter (seen in eval); "not a
+    # recipe" with ingredients is kept for review with a warning, so nothing real is lost.
+    if not out.ingredients and (not out.steps or not out.is_recipe):
         return DraftContent(
             title=None,
             ingredients=[],
@@ -88,8 +128,13 @@ def validate_extraction(raw: str, source_text: str) -> DraftContent:
     if title is None:
         warnings.append(DraftWarning(code="title_missing", message="Give this recipe a title.", field="title"))
 
+    if not out.is_recipe:
+        warnings.append(
+            DraftWarning(code="uncertain_recipe", message="This might not be a recipe. Check everything carefully.")
+        )
+
     ingredients: list[IngredientDraft] = []
-    raw_ingredients = out.ingredients
+    raw_ingredients = _split_comma_lists(out.ingredients)
     if len(raw_ingredients) > MAX_INGREDIENTS:
         raw_ingredients = raw_ingredients[:MAX_INGREDIENTS]
         warnings.append(DraftWarning(code="too_many_items", message=f"Only the first {MAX_INGREDIENTS} ingredients were kept."))
@@ -101,26 +146,36 @@ def validate_extraction(raw: str, source_text: str) -> DraftContent:
         if not _in_source(raw_text, source):
             reasons.append("not_in_source")
 
+        # What the line itself says, read deterministically. Used only to fill fields the
+        # model left empty: it comes from the caption, so it can't be invented.
+        line_qty, line_unit, line_name = split_ingredient_line(raw_text)
+
         name, name_clipped = _clip(item.name, 200)
         if name_clipped:
             reasons.append("too_long")
+        if name is None:
+            name, _ = _clip(line_name, 200)
         if name is None:
             reasons.append("name_missing")
         elif _norm(name) not in _norm(raw_text):
             reasons.append("name_not_in_source")
 
         # A quantity is kept only if that amount is written in this ingredient's own text.
-        quantity = parse_amount(str(item.quantity)) if item.quantity is not None else None
-        if item.quantity is not None and (
-            quantity is None or quantity > MAX_QUANTITY or quantity not in amounts_in(raw_text)
-        ):
-            quantity = None
-            reasons.append("quantity_not_in_source")
+        if item.quantity is not None:
+            claimed = parse_amount(str(item.quantity))
+            quantity = _source_amount(claimed, raw_text) if claimed is not None else None
+            if quantity is None or quantity > MAX_QUANTITY:
+                quantity = None
+                reasons.append("quantity_not_in_source")
+        else:
+            quantity = line_qty
 
         unit, _ = _clip(item.unit, 40)
-        if unit is not None and not re.search(rf"(?<!\w){re.escape(unit.lower())}(?!\w)", _norm(raw_text)):
+        if unit is not None and not _unit_in(unit, raw_text):
             unit = None
             reasons.append("unit_not_in_source")
+        elif unit is None and item.quantity is None:
+            unit = line_unit
 
         ingredients.append(
             IngredientDraft(

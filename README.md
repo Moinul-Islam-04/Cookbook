@@ -11,7 +11,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 0 Runnable baseline | Backend and iOS project done. Instagram access spike not run. |
 | 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
-| 3 Extraction and review | **In progress.** Import flow done with a rule-based/fake extractor (no AI yet). Real model choice pending. |
+| 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4–5 | Not started. |
 
 ### What works (backend, verified)
@@ -59,7 +59,6 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - No authentication. A fixed dev user owns everything, and the server refuses to start
   in any other auth mode. **Keep it on 127.0.0.1; do not deploy it.**
 - Not built yet, each in a later milestone:
-  - a real AI extraction provider (Milestone 3: the adapter, drafts and review are done)
   - images (Milestone 4)
 - Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
   Python 3.11+ is required.
@@ -149,9 +148,13 @@ Not yet checked by hand: typing a search, the duplicate alert, and Open Existing
   `GET`/`PATCH /v1/import-drafts/{id}` read and save corrections. Drafts expire after
   24 hours and don't appear in the cookbook or search.
 - Extraction runs through `app/extraction` and is configured with
-  `COOKBOOK_EXTRACTION_PROVIDER` (only `fake` today). The default is a rule-based reader
-  for typical captions (an "Ingredients" header, bullet or numbered lines), with no model,
-  no network and no cost. **No AI is involved yet.**
+  `COOKBOOK_EXTRACTION_PROVIDER`:
+  - `ollama` uses a local `qwen2.5:7b`. Captions stay on the Mac, it's free, and it takes
+    about 15–40 s per caption.
+  - `fake` (the default when unset) is a rule-based reader for neat layouts, with no
+    model at all.
+  Results are in `backend/eval/RESULTS.md`; rerun them with `python -m eval.run_eval
+  fake ollama`.
 - The server checks every draft against the caption. Invented amounts and units are
   removed, text that isn't in the caption is flagged, and a non-recipe gets "No usable
   recipe found". See `docs/DECISIONS.md`.
@@ -179,6 +182,9 @@ Checks run:
   25 Milestone 3 checks passed (draft, persisted corrections, save, replay, save-once,
   duplicate warning, non-recipe, bad link), and the Milestone 1 and 2 checks still pass.
 
+- Qwen evaluation: 12/12 recipe detection, 47/50 ingredients, 46/47 exact quantities, 0
+  injected words, 0 errors (`backend/eval/RESULTS.md`).
+
 Not yet checked by hand: the Import Caption and review screens in the Simulator.
 
 ## Local setup (macOS)
@@ -197,6 +203,10 @@ alembic upgrade head            # apply migrations
 pytest -q                       # expect 48 passed
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
+
+To use the local model, run `brew install ollama && brew services start ollama && ollama pull
+qwen2.5:7b`, then set `COOKBOOK_EXTRACTION_PROVIDER=ollama` in `.env`. That's about 4.7 GB and
+needs about 8 GB of free RAM while running.
 
 Open http://127.0.0.1:8000/docs for the interactive API. The iOS Simulator reaches the
 Mac's `127.0.0.1` directly. A physical device would need the Mac's LAN IP, which is a
@@ -236,7 +246,7 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Try **+ → Import Caption** in the Simulator with a few real captions. Then add two
-extraction providers behind the adapter: local Qwen 2.5 via Ollama, and Claude Haiku 5.5
-with `ANTHROPIC_API_KEY` in `backend/.env`. Run both on the same set of captions to
-compare fidelity, flags, latency and cost, and record the choice in `docs/DECISIONS.md`.
+Import a few real Instagram captions in the Simulator (**+ → Import Caption**), and add
+any that go wrong to `backend/eval/captions.json`. If Qwen's speed or accuracy isn't good
+enough, add a Claude Haiku adapter and run the same evaluation. Then Milestone 4:
+images and authentication.

@@ -54,7 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessionmaker = session_factory
     app.state.settings = settings
     # Tests swap this for a FakeExtractor with canned responses.
-    app.state.extractor = make_extractor(settings.extraction_provider)
+    app.state.extractor = make_extractor(settings)
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):

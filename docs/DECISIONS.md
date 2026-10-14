@@ -213,3 +213,26 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   and always edited whole.
 - **iOS:** The review screen PATCHes corrections before each save attempt (best effort),
   so they survive a failed save or an app restart. Flags clear when a row is edited.
+
+## 2026-10-14: Local Qwen 2.5 7B via Ollama is the extraction provider (for now)
+
+- **Context:** The owner chose to try a free, local model first, and to fall back to
+  Claude Haiku only if it performs badly.
+- **Decision:** Use `COOKBOOK_EXTRACTION_PROVIDER=ollama` with `qwen2.5:7b`.
+  - The request uses structured output: the JSON schema with per-field `maxLength`,
+    temperature 0, `num_predict` 2048 and `repeat_penalty` 1.1.
+  - The caption is sent inside `<caption>` delimiters, with the instruction to treat it as
+    data. The extraction timeout is 60 s, and the iOS request timeout is 90 s.
+  - On the 12-caption evaluation it scored 12/12 recipe detection, 47/50 ingredients,
+    46/47 exact quantities and 0 injected words. See `backend/eval/RESULTS.md`.
+- **Consequences:**
+  - Captions never leave the Mac, and extraction is free.
+  - It's slow: 15–40 s per caption on an M2, plus a few seconds the first time the model
+    loads.
+  - It only works while Ollama is running on the same machine as the API, so it isn't
+    deployable to a small cloud server as is.
+- **Alternatives:** Claude Haiku 5.5. Likely faster and better on messy prose, but it
+  costs money per caption and sends captions to Anthropic. The adapter and evaluation
+  are ready for it.
+- **Revisit:** If latency hurts real use, if accuracy drops on real captions, or when
+  the backend is deployed.
