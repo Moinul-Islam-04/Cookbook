@@ -33,6 +33,7 @@ struct RecipeEditorView: View {
     /// a save whose response was lost isn't stored twice; any edit gets a fresh key.
     @State private var lastAttempt: (body: RecipeCreate, key: String)?
     @State private var showCaption = true
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private struct Duplicate {
         let id: UUID
@@ -219,14 +220,18 @@ struct RecipeEditorView: View {
             ForEach($form.ingredients) { $row in
                 let index = sentIndex(of: row.id)
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack {
+                    // Side by side normally; stacked at accessibility sizes, where fixed-width
+                    // quantity/unit fields would clip their text.
+                    (typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                        : AnyLayout(HStackLayout())) {
                         TextField("Qty", text: $row.quantity)
                             .keyboardType(.numbersAndPunctuation)
-                            .frame(maxWidth: 56)
+                            .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 64)
                             .accessibilityLabel("Quantity")
                         TextField("Unit", text: $row.unit)
                             .textInputAutocapitalization(.never)
-                            .frame(maxWidth: 72)
+                            .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 84)
                             .accessibilityLabel("Unit")
                         TextField("Ingredient", text: $row.name)
                             .accessibilityLabel("Ingredient name")
@@ -255,7 +260,12 @@ struct RecipeEditorView: View {
             HStack {
                 Text("Ingredients")
                 Spacer()
-                EditButton().font(.caption).textCase(nil)
+                EditButton()
+                    .font(.subheadline)
+                    .textCase(nil)
+                    .frame(minWidth: 44, minHeight: 44)  // 44 pt hit target
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Reorder or delete ingredients")
             }
         } footer: {
             Text("Leave quantity empty for things like \"salt to taste\".")
@@ -270,6 +280,7 @@ struct RecipeEditorView: View {
                         Text("\(offset + 1).")
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
+                            .accessibilityHidden(true)  // the field is announced as "Step N"
                         TextField("Describe this step", text: $step.instruction, axis: .vertical)
                             .lineLimit(1...6)
                             .accessibilityLabel("Step \(offset + 1)")

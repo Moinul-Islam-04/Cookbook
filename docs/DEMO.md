@@ -96,10 +96,23 @@ privately over Tailscale.
   was exercised by an XCUITest driver and by hand.
 - Captions only: no reel audio or video. Screenshot OCR (on-device Vision) is the next
   import source.
-- Dynamic Type: at the largest accessibility size, list rows squeezed into hyphenated
-  columns ("in-gre-di-ents"). Rows now stack vertically at accessibility sizes. That
-  change builds but hasn't been seen rendered with data yet. Not yet checked: VoiceOver
-  end to end, and the iOS 17 runtime.
+- Accessibility (checked 2026-10-14):
+  - **Dynamic Type at the largest size, with real data:** list rows, the editor's ingredient
+    fields and the step rows stack vertically instead of squeezing ("in-gre-di-ents" before
+    the fix). Verified with screenshots of the list, a recipe and the editor.
+  - **Apple's automated audit** (`performAccessibilityAudit`) on the list, recipe, editor,
+    Import and Settings screens, then fixed:
+    - "Missing ingredients" orange-on-white contrast
+    - the caption placeholder's contrast
+    - Quantity/Unit fields clipping their text
+    - the ingredients Edit button's 44 pt hit target
+    - step numbers being separate VoiceOver stops
+  - **Remaining audit findings are system styling:** iOS 27 toolbar buttons, secondary text
+    and section headers.
+  - **VoiceOver labels**, read from the accessibility tree: list rows read as one element
+    ("Tomato pasta, 3 ingredients, 1 step"), steps as "Step 1: Cook pasta.", and
+    thumbnails are hidden.
+  - Not yet: a full hands-on VoiceOver session on the phone, and the iOS 17 runtime.
 - Grocery lists and meal planning are deliberately out of scope.
 
 ## Questions to practice

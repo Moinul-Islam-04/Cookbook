@@ -70,7 +70,7 @@ struct ImportCaptionView: View {
                     ZStack(alignment: .topLeading) {
                         if caption.isEmpty {
                             Text("Paste the recipe caption here")
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                                 .padding(.top, 8)
                                 .padding(.leading, 5)
                                 .accessibilityHidden(true)

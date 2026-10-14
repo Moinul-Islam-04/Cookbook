@@ -94,7 +94,9 @@ struct RecipeDetailView: View {
                             .foregroundStyle(.secondary)
                         Text(step.instruction)
                     }
-                    .accessibilityElement(children: .combine)
+                    // VoiceOver: "Step 1: Cook pasta." rather than "1., Cook pasta."
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Step \(offset + 1): \(step.instruction)")
                 }
             }
 

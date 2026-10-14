@@ -318,9 +318,14 @@ private struct RecipeRow: View {
                     .foregroundStyle(.secondary)
             }
             if !recipe.missing.isEmpty {
-                Label("Missing \(recipe.missing.joined(separator: " and "))", systemImage: "exclamationmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                // Orange icon, secondary text: orange text on white fails WCAG contrast.
+                Label {
+                    Text("Missing \(recipe.missing.joined(separator: " and "))")
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "exclamationmark.circle").foregroundStyle(.orange)
+                }
+                .font(.caption)
             }
         }
         .padding(.vertical, 2)
