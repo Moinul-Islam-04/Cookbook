@@ -49,7 +49,7 @@ def engine() -> Iterator[Engine]:
 @pytest.fixture(autouse=True)
 def clean_tables(engine: Engine) -> None:
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE users, recipes, recipe_ingredients, recipe_steps CASCADE"))
+        conn.execute(text("TRUNCATE users, recipes, recipe_ingredients, recipe_steps, idempotency_keys CASCADE"))
 
 
 @pytest.fixture

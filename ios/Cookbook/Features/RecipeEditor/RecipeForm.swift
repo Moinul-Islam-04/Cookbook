@@ -30,6 +30,8 @@ nonisolated struct RecipeForm: Equatable {
 
     var title = ""
     var notes = ""
+    /// Instagram post or reel link, as typed or pasted.
+    var sourceUrl = ""
     var ingredients: [IngredientRow] = [IngredientRow()]
     var steps: [StepRow] = [StepRow()]
 
@@ -38,6 +40,7 @@ nonisolated struct RecipeForm: Equatable {
     init(recipe: Recipe) {
         title = recipe.title
         notes = recipe.notes ?? ""
+        sourceUrl = recipe.sourceUrl ?? ""
         ingredients = recipe.ingredients.map { ing in
             let quantity = ing.quantity.map(QuantityText.format) ?? ""
             let unit = ing.unit ?? ""
@@ -68,19 +71,25 @@ nonisolated struct RecipeForm: Equatable {
 
     // MARK: Requests
 
-    func createBody() -> RecipeCreate {
+    func createBody(allowDuplicate: Bool = false) -> RecipeCreate {
         RecipeCreate(
             title: title.trimmed,
             notes: notes.trimmed.nilIfEmpty,
+            sourceUrl: sourceUrl.trimmed.nilIfEmpty,
+            allowDuplicate: allowDuplicate,
             ingredients: ingredientInputs,
             steps: stepInputs)
     }
 
     /// Sends only what changed relative to `baseline` (the form as loaded from the server).
-    func patchBody(version: Int, against baseline: RecipeForm) -> RecipePatch {
+    func patchBody(version: Int, against baseline: RecipeForm, allowDuplicate: Bool = false) -> RecipePatch {
         var patch = RecipePatch(version: version)
+        patch.allowDuplicate = allowDuplicate
         if title.trimmed != baseline.title.trimmed { patch.title = title.trimmed }
         if notes.trimmed != baseline.notes.trimmed { patch.notes = .some(notes.trimmed.nilIfEmpty) }
+        if sourceUrl.trimmed != baseline.sourceUrl.trimmed {
+            patch.sourceUrl = .some(sourceUrl.trimmed.nilIfEmpty)
+        }
         if ingredientInputs != baseline.ingredientInputs { patch.ingredients = ingredientInputs }
         if stepInputs != baseline.stepInputs { patch.steps = stepInputs }
         return patch
@@ -98,13 +107,21 @@ nonisolated struct RecipeForm: Equatable {
             let unchanged = row.original.map {
                 $0.quantity == quantity && $0.unit == unit && $0.name == name
             } ?? false
+            let parsed = QuantityText.parse(quantity)
+            let rawText: String?
+            if unchanged {
+                rawText = row.original?.rawText
+            } else if let parsed, quantity != QuantityText.format(parsed) {
+                // The user wrote "1/3" or "1 1/2": keep their wording rather than letting the
+                // server compose "0.333 cup" from the rounded number.
+                rawText = [quantity, unit, name].filter { !$0.isEmpty }.joined(separator: " ")
+            } else {
+                // Edited or new rows with a plain number (or none) let the server compose
+                // raw_text from the new values, so "2 tomatoes" doesn't survive a change to 3.
+                rawText = nil
+            }
             return IngredientInput(
-                name: name,
-                quantity: QuantityText.parse(quantity),
-                unit: unit.nilIfEmpty,
-                // Edited rows drop raw_text so the server recomposes it from the new values;
-                // otherwise "2 tomatoes" would survive a change to 3.
-                rawText: unchanged ? row.original?.rawText : nil)
+                name: name, quantity: parsed, unit: unit.nilIfEmpty, rawText: rawText)
         }
     }
 

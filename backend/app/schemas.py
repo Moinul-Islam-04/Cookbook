@@ -29,6 +29,7 @@ IngredientName = Annotated[
 Unit = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
 RawText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 Notes = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+SourceUrl = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2048)]
 Instruction = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
 ]
@@ -68,11 +69,15 @@ class StepIn(RequestModel):
 class RecipeCreate(RequestModel):
     title: Title
     notes: Notes | None = None
+    # An Instagram post or reel link. Normalized by the server; other hosts are rejected.
+    source_url: SourceUrl | None = None
+    # Save even if this post is already in the cookbook (the user chose "Save Anyway").
+    allow_duplicate: bool = False
     # Empty lists are allowed: incomplete recipes are saved and flagged via `missing`.
     ingredients: list[IngredientIn] = Field(default_factory=list, max_length=MAX_INGREDIENTS)
     steps: list[StepIn] = Field(default_factory=list, max_length=MAX_STEPS)
 
-    _blank_optional = field_validator("notes", mode="before")(_blank_to_none)
+    _blank_optional = field_validator("notes", "source_url", mode="before")(_blank_to_none)
 
 
 class RecipePatch(RequestModel):
@@ -81,10 +86,13 @@ class RecipePatch(RequestModel):
     version: int = Field(ge=1)
     title: Title | None = None
     notes: Notes | None = None
+    # null clears the link.
+    source_url: SourceUrl | None = None
+    allow_duplicate: bool = False
     ingredients: list[IngredientIn] | None = Field(default=None, max_length=MAX_INGREDIENTS)
     steps: list[StepIn] | None = Field(default=None, max_length=MAX_STEPS)
 
-    _blank_optional = field_validator("notes", mode="before")(_blank_to_none)
+    _blank_optional = field_validator("notes", "source_url", mode="before")(_blank_to_none)
 
     @model_validator(mode="after")
     def _reject_explicit_nulls(self) -> "RecipePatch":
@@ -130,6 +138,7 @@ class RecipeOut(BaseModel):
 class RecipeSummary(BaseModel):
     id: uuid.UUID
     title: str
+    source_url: str | None
     ingredient_count: int
     step_count: int
     missing: list[str]

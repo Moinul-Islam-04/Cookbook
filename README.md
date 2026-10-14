@@ -9,8 +9,9 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | Milestone | State |
 | --- | --- |
 | 0 Runnable baseline | Backend and iOS project done. Instagram access spike not run. |
-| 1 Manual recipe persistence | **Backend done and tested.** SwiftUI screens built; Simulator walkthrough of create/edit/delete still to do by hand. |
-| 2–5 | Not started. |
+| 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
+| 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
+| 3–5 | Not started. |
 
 ### What works (backend, verified)
 
@@ -54,12 +55,9 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ### Not verified / known limitations
 
-- **iOS create/edit/delete not yet exercised by hand in the Simulator.** See "iOS" below
-  for what has been checked.
 - No authentication. A fixed dev user owns everything, and the server refuses to start
   in any other auth mode. **Keep it on 127.0.0.1; do not deploy it.**
 - Not built yet, each in a later milestone:
-  - search (`q`), duplicate-post warnings and idempotency keys (Milestone 2)
   - import drafts and AI extraction (Milestone 3)
   - images (Milestone 4)
 - Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
@@ -106,6 +104,42 @@ The project has no XCTest target yet.
 
 Run: start the backend (below), open `ios/Cookbook.xcodeproj`, pick an iPhone Simulator, ⌘R.
 Set `COOKBOOK_API_URL` in the scheme's environment to use a different server.
+
+### Milestone 2: search, source links, duplicates, safe retries
+
+- `GET /v1/recipes?q=` matches title or any ingredient name, case-insensitive. Each
+  recipe appears once. Cursors are bound to their search.
+- `source_url` on create and PATCH accepts Instagram post and reel links only. It's
+  normalized to the shortcode and never fetched. Other links get a 422 on `source_url`.
+- Saving a post you already saved returns 409 `duplicate_recipe` with the existing
+  recipe's ID and title. `allow_duplicate: true` saves a deliberate copy.
+- `Idempotency-Key` header on `POST /v1/recipes`. A retry with the same body returns
+  the original recipe, and the same key with a different body returns 409.
+- iOS:
+  - a search bar (300 ms debounce, stale requests cancelled, an empty-results state)
+  - a "Source" link field in the editor and "View on Instagram" on the detail screen
+  - an "Already in your cookbook" alert with Open Existing / Save Anyway / Keep Editing
+  - creates send an idempotency key
+- Fixed from Milestone 1: fractions keep their wording. "1/3 cup lemon juice" stays as
+  typed, while `quantity` is still stored as 0.333.
+
+Checks run:
+
+- `pytest`: 94 passed, three consecutive runs. The new tests cover:
+  - URL normalization and rejection (hosts, credentials, ports, paths, length)
+  - search: title, ingredient, case, once per recipe, wildcard escaping, owner scoping,
+    pagination, and the cursor tied to its search
+  - duplicates, including a PATCH to the same link and 4 simultaneous saves (one 201,
+    three 409s)
+  - idempotency: replay, a different body, keys per user, replay after delete, and 3
+    concurrent requests with one key
+- Removing the owner-row lock makes both concurrency tests fail (checked by hand).
+- iOS: `xcodebuild` with 0 warnings. The real client code was compiled into a harness
+  and run against the live server: 18 Milestone 2 checks and the 33 Milestone 1 checks
+  all passed.
+- Simulator: the app launches and shows the search bar and list.
+
+Not yet checked by hand: typing a search, the duplicate alert, and Open Existing navigation.
 
 ## Local setup (macOS)
 
@@ -162,7 +196,12 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Walk through Milestone 1's exit check on the Simulator by hand. Create a recipe with an
-unmeasured ingredient, relaunch the app, edit it, force a stale edit (PATCH from `curl`
-while the editor is open), and delete it. Then add an XCTest target and port the
-contract checks. Milestone 2 (search, duplicate safeguards) follows.
+Walk through Milestone 2 in the Simulator: search by an ingredient, save a reel link
+twice, and try Open Existing and Save Anyway. Then start Milestone 3:
+- an `import_drafts` table and resource
+- a typed extraction adapter with a deterministic fake, plus fixtures from brief §3
+- a paste-caption form and review screen, then an explicit save through
+  `POST /v1/recipes` with `draft_id`
+
+The AI provider is still open: compare local Qwen 2.5 (Ollama) and Claude Haiku 5.5
+behind the adapter.

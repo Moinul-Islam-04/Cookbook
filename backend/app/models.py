@@ -17,12 +17,13 @@ from sqlalchemy import (
     Integer,
     MetaData,
     Numeric,
+    PrimaryKeyConstraint,
     Text,
     UniqueConstraint,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 NAMING_CONVENTION = {
@@ -107,6 +108,35 @@ class Recipe(Base):
         Index("ix_recipes_user_id_created_at_id", "user_id", "created_at", "id"),
         # Duplicate-post checks (Milestone 2). Not unique: deliberate copies are allowed.
         Index("ix_recipes_user_id_source_post_key", "user_id", "source_post_key"),
+    )
+
+
+class IdempotencyKey(Base):
+    """A completed POST /v1/recipes, replayed when a client retries with the same key.
+
+    Keyed per user, so two users can't collide on (or probe) each other's keys.
+    """
+
+    __tablename__ = "idempotency_keys"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    key: Mapped[str] = mapped_column(Text)
+    # SHA-256 of the validated request body; a different body under the same key conflicts.
+    request_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    response_status: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_body: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # SET NULL: deleting the recipe must not delete the record of the request.
+    recipe_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("recipes.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = timestamp()
+
+    __table_args__ = (
+        PrimaryKeyConstraint("user_id", "key"),
+        CheckConstraint("char_length(key) BETWEEN 1 AND 255", name="key_length"),
+        Index("ix_idempotency_keys_recipe_id", "recipe_id"),
     )
 
 

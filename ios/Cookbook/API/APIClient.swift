@@ -27,6 +27,15 @@ nonisolated enum APIError: Error, Equatable {
         return false
     }
 
+    /// The post is already in the cookbook: the ID and title of the recipe that has it.
+    var duplicateOf: (id: UUID, title: String)? {
+        if case .server(409, let body) = self, body.code == "duplicate_recipe",
+           let id = body.details?.existingRecipeId {
+            return (id, body.details?.existingTitle ?? "")
+        }
+        return nil
+    }
+
     var fieldErrors: [ErrorBody.FieldError] {
         if case .server(_, let body) = self { return body.fieldErrors }
         return []
@@ -61,8 +70,11 @@ nonisolated struct APIClient {
 
     // MARK: Recipes
 
-    func listRecipes(cursor: String? = nil, limit: Int = 20) async throws -> RecipePage {
+    /// `search` matches titles and ingredient names. A cursor only continues the search it
+    /// came from; the server rejects it for any other query.
+    func listRecipes(search: String = "", cursor: String? = nil, limit: Int = 20) async throws -> RecipePage {
         var query = [URLQueryItem(name: "limit", value: String(limit))]
+        if !search.isEmpty { query.append(URLQueryItem(name: "q", value: search)) }
         if let cursor { query.append(URLQueryItem(name: "cursor", value: cursor)) }
         return try await send("GET", "v1/recipes", query: query)
     }
@@ -71,8 +83,11 @@ nonisolated struct APIClient {
         try await send("GET", "v1/recipes/\(id.uuidString.lowercased())")
     }
 
-    func createRecipe(_ body: RecipeCreate) async throws -> Recipe {
-        try await send("POST", "v1/recipes", body: body)
+    /// Retrying with the same `idempotencyKey` and body returns the original recipe instead
+    /// of saving a second copy (e.g. when the first response was lost to a timeout).
+    func createRecipe(_ body: RecipeCreate, idempotencyKey: String? = nil) async throws -> Recipe {
+        let headers = idempotencyKey.map { ["Idempotency-Key": $0] } ?? [:]
+        return try await send("POST", "v1/recipes", headers: headers, body: body)
     }
 
     func updateRecipe(id: UUID, _ body: RecipePatch) async throws -> Recipe {
@@ -92,6 +107,7 @@ nonisolated struct APIClient {
         _ method: String,
         _ path: String,
         query: [URLQueryItem] = [],
+        headers: [String: String] = [:],
         body: (some Encodable)? = NoBody?.none
     ) async throws -> Response {
         var url = baseURL.appending(path: path)
@@ -100,6 +116,7 @@ nonisolated struct APIClient {
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         if let body {
             request.httpBody = try Self.encoder.encode(body)
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -110,6 +127,8 @@ nonisolated struct APIClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch let error as URLError {
+            // A superseded search cancels its task; that's not a failure to show anyone.
+            if error.code == .cancelled || Task.isCancelled { throw CancellationError() }
             throw APIError.transport(error.code)
         }
         guard let http = response as? HTTPURLResponse else {

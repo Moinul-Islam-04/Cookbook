@@ -1,23 +1,26 @@
-"""/v1/recipes: manual recipe create, list, read, update, delete.
+"""/v1/recipes: manual recipe create, list/search, read, update, delete.
 
-Every query is scoped to the current user's ID. Search (q), duplicate-post
-warnings and idempotency keys are Milestone 2 and intentionally absent here.
+Every query is scoped to the current user's ID. Creates and source-link edits lock the
+owner's users row, so a duplicate-post check and the insert that follows it can't
+interleave with another save, and a retried Idempotency-Key waits for the first attempt.
 """
 
 import base64
+import hashlib
 import json
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
-from sqlalchemy import select, tuple_
+from fastapi import APIRouter, Depends, Header, Query, Response, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import exists, or_, select, tuple_
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user_id, get_db
 from app.errors import ApiError, not_found
-from app.models import Recipe, RecipeIngredient, RecipeStep
+from app.models import IdempotencyKey, Recipe, RecipeIngredient, RecipeStep, User
 from app.schemas import (
     FieldError,
     IngredientIn,
@@ -30,6 +33,7 @@ from app.schemas import (
     StepIn,
     StepOut,
 )
+from app.source_urls import InstagramPost, UnsupportedSourceUrl, parse_instagram_url
 
 router = APIRouter(prefix="/v1/recipes", tags=["recipes"])
 
@@ -38,6 +42,12 @@ UserId = Annotated[uuid.UUID, Depends(get_current_user_id)]
 
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
+
+# Printable ASCII, no spaces: UUIDs and similar client-generated tokens.
+IdempotencyKeyHeader = Annotated[
+    str | None,
+    Header(alias="Idempotency-Key", min_length=1, max_length=255, pattern=r"^[\x21-\x7e]+$"),
+]
 
 
 # ---------- helpers ----------
@@ -94,18 +104,32 @@ def _to_out(recipe: Recipe) -> RecipeOut:
     )
 
 
-def _encode_cursor(recipe: Recipe) -> str:
-    raw = json.dumps([recipe.created_at.isoformat(), str(recipe.id)]).encode()
+def _search_tag(term: str) -> str:
+    # Short fingerprint of the search term, so a cursor can't be reused with a different q.
+    return hashlib.sha256(term.encode()).hexdigest()[:12]
+
+
+def _encode_cursor(recipe: Recipe, term: str) -> str:
+    raw = json.dumps([recipe.created_at.isoformat(), str(recipe.id), _search_tag(term)]).encode()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+def _decode_cursor(cursor: str, term: str) -> tuple[datetime, uuid.UUID]:
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
-        created_at_s, id_s = json.loads(base64.urlsafe_b64decode(padded))
+        created_at_s, id_s, tag = json.loads(base64.urlsafe_b64decode(padded))
         created_at = datetime.fromisoformat(created_at_s)
         if created_at.tzinfo is None:
             raise ValueError("naive timestamp")
+        if tag != _search_tag(term):
+            raise ApiError(
+                422,
+                "invalid_request",
+                "Some fields are invalid.",
+                field_errors=[
+                    FieldError(field="cursor", message="This cursor belongs to a different search.")
+                ],
+            )
         return created_at.astimezone(UTC), uuid.UUID(id_s)
     except (ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
         raise ApiError(
@@ -114,6 +138,56 @@ def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
             "Some fields are invalid.",
             field_errors=[FieldError(field="cursor", message="Invalid pagination cursor.")],
         ) from None
+
+
+def _lock_owner(db: Session, user_id: uuid.UUID) -> None:
+    """Serialize this user's creates and source-link changes (held until commit)."""
+    db.execute(select(User.id).where(User.id == user_id).with_for_update())
+
+
+def _parse_source(url: str | None) -> InstagramPost | None:
+    if url is None:
+        return None
+    try:
+        return parse_instagram_url(url)
+    except UnsupportedSourceUrl as e:
+        raise ApiError(
+            422,
+            "invalid_request",
+            "Some fields are invalid.",
+            field_errors=[FieldError(field="source_url", message=str(e))],
+        ) from None
+
+
+def _reject_duplicate(
+    db: Session, user_id: uuid.UUID, post_key: str, *, exclude: uuid.UUID | None = None
+) -> None:
+    stmt = (
+        select(Recipe.id, Recipe.title)
+        .where(Recipe.user_id == user_id, Recipe.source_post_key == post_key)
+        .order_by(Recipe.created_at)
+        .limit(1)
+    )
+    if exclude is not None:
+        stmt = stmt.where(Recipe.id != exclude)
+    existing = db.execute(stmt).first()
+    if existing:
+        raise ApiError(
+            409,
+            "duplicate_recipe",
+            "You already saved this post.",
+            details={"existing_recipe_id": str(existing.id), "existing_title": existing.title},
+        )
+
+
+def _request_hash(body: RecipeCreate) -> str:
+    canonical = json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def _like_pattern(term: str) -> str:
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
 
 
 def _owned_recipe(db: Session, user_id: uuid.UUID, recipe_id: uuid.UUID, *, lock: bool = False) -> Recipe:
@@ -129,8 +203,43 @@ def _owned_recipe(db: Session, user_id: uuid.UUID, recipe_id: uuid.UUID, *, lock
 # ---------- routes ----------
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=RecipeOut)
-def create_recipe(body: RecipeCreate, db: DbSession, user_id: UserId, response: Response) -> RecipeOut:
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=RecipeOut,
+    responses={409: {"description": "duplicate_recipe or idempotency_key_reused"}},
+)
+def create_recipe(
+    body: RecipeCreate,
+    db: DbSession,
+    user_id: UserId,
+    response: Response,
+    idempotency_key: IdempotencyKeyHeader = None,
+) -> RecipeOut | JSONResponse:
+    post = _parse_source(body.source_url)
+    _lock_owner(db, user_id)
+
+    if idempotency_key is not None:
+        request_hash = _request_hash(body)
+        prior = db.get(IdempotencyKey, (user_id, idempotency_key))
+        if prior is not None:
+            if prior.request_hash != request_hash:
+                raise ApiError(
+                    409,
+                    "idempotency_key_reused",
+                    "This Idempotency-Key was already used for a different request.",
+                )
+            # A retry of a save that already happened: return the original result.
+            headers = {"Idempotent-Replayed": "true"}
+            if prior.recipe_id is not None:
+                headers["Location"] = f"/v1/recipes/{prior.recipe_id}"
+            return JSONResponse(
+                status_code=prior.response_status, content=prior.response_body, headers=headers
+            )
+
+    if post is not None and not body.allow_duplicate:
+        _reject_duplicate(db, user_id, post.post_key)
+
     now = datetime.now(UTC)
     recipe = Recipe(
         user_id=user_id,
@@ -139,13 +248,28 @@ def create_recipe(body: RecipeCreate, db: DbSession, user_id: UserId, response: 
         title=body.title,
         notes=body.notes,
         source_kind="manual",
+        source_url=post.canonical_url if post else None,
+        source_post_key=post.post_key if post else None,
         ingredients=_ingredient_rows(body.ingredients),
         steps=_step_rows(body.steps),
     )
     db.add(recipe)
-    db.commit()  # recipe and all children commit together or not at all
+    db.flush()
+    out = _to_out(recipe)
+    if idempotency_key is not None:
+        db.add(
+            IdempotencyKey(
+                user_id=user_id,
+                key=idempotency_key,
+                request_hash=request_hash,
+                response_status=status.HTTP_201_CREATED,
+                response_body=out.model_dump(mode="json"),
+                recipe_id=recipe.id,
+            )
+        )
+    db.commit()  # recipe, children and idempotency record commit together or not at all
     response.headers["Location"] = f"/v1/recipes/{recipe.id}"
-    return _to_out(recipe)
+    return out
 
 
 @router.get("", response_model=RecipePage)
@@ -153,8 +277,10 @@ def list_recipes(
     db: DbSession,
     user_id: UserId,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
-    cursor: Annotated[str | None, Query(max_length=200)] = None,
+    cursor: Annotated[str | None, Query(max_length=300)] = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
 ) -> RecipePage:
+    term = (q or "").strip()
     # Newest first; (created_at, id) keyset pagination is stable under inserts.
     stmt = (
         select(Recipe)
@@ -162,8 +288,21 @@ def list_recipes(
         .order_by(Recipe.created_at.desc(), Recipe.id.desc())
         .limit(limit + 1)
     )
+    if term:
+        # Case-insensitive substring on title or any ingredient name. EXISTS (not a JOIN)
+        # so a recipe matching on several ingredients is still returned once.
+        pattern = _like_pattern(term)
+        stmt = stmt.where(
+            or_(
+                Recipe.title.ilike(pattern, escape="\\"),
+                exists().where(
+                    RecipeIngredient.recipe_id == Recipe.id,
+                    RecipeIngredient.name.ilike(pattern, escape="\\"),
+                ),
+            )
+        )
     if cursor:
-        c_created, c_id = _decode_cursor(cursor)
+        c_created, c_id = _decode_cursor(cursor, term)
         stmt = stmt.where(tuple_(Recipe.created_at, Recipe.id) < tuple_(c_created, c_id))
     rows = list(db.scalars(stmt))
     has_more = len(rows) > limit
@@ -173,6 +312,7 @@ def list_recipes(
             RecipeSummary(
                 id=r.id,
                 title=r.title,
+                source_url=r.source_url,
                 ingredient_count=len(r.ingredients),
                 step_count=len(r.steps),
                 missing=_missing(r),
@@ -181,7 +321,7 @@ def list_recipes(
             )
             for r in rows
         ],
-        next_cursor=_encode_cursor(rows[-1]) if has_more else None,
+        next_cursor=_encode_cursor(rows[-1], term) if has_more else None,
     )
 
 
@@ -192,6 +332,10 @@ def get_recipe(recipe_id: uuid.UUID, db: DbSession, user_id: UserId) -> RecipeOu
 
 @router.patch("/{recipe_id}", response_model=RecipeOut)
 def update_recipe(recipe_id: uuid.UUID, body: RecipePatch, db: DbSession, user_id: UserId) -> RecipeOut:
+    fields = body.model_fields_set
+    if "source_url" in fields:
+        post = _parse_source(body.source_url)
+        _lock_owner(db, user_id)  # owner before recipe, the same order as everywhere else
     # Row lock serializes concurrent edits so the version check can't race.
     recipe = _owned_recipe(db, user_id, recipe_id, lock=True)
     if body.version != recipe.version:
@@ -202,7 +346,12 @@ def update_recipe(recipe_id: uuid.UUID, body: RecipePatch, db: DbSession, user_i
             details={"current_version": recipe.version},
         )
 
-    fields = body.model_fields_set
+    if "source_url" in fields:
+        new_key = post.post_key if post else None
+        if new_key is not None and new_key != recipe.source_post_key and not body.allow_duplicate:
+            _reject_duplicate(db, user_id, new_key, exclude=recipe.id)
+        recipe.source_url = post.canonical_url if post else None
+        recipe.source_post_key = new_key
     if "title" in fields:
         recipe.title = body.title
     if "notes" in fields:

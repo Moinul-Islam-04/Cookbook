@@ -2,14 +2,17 @@ import SwiftUI
 
 struct RecipeListView: View {
     @State private var model = RecipeListModel()
+    @State private var path: [UUID] = []
+    @State private var searchText = ""
     @State private var showingCreate = false
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content
                 .navigationTitle("Cookbook")
+                .searchable(text: $searchText, prompt: "Title or ingredient")
                 .navigationDestination(for: UUID.self) { id in
                     RecipeDetailView(
                         recipeID: id,
@@ -26,11 +29,19 @@ struct RecipeListView: View {
                     }
                 }
                 .sheet(isPresented: $showingCreate) {
-                    RecipeEditorView(mode: .create) { _ in
-                        Task { await model.recipeSaved() }
-                    }
+                    RecipeEditorView(
+                        mode: .create,
+                        onSaved: { _ in Task { await model.recipeSaved() } },
+                        onOpenExisting: { id in path = [id] })
                 }
-                .task { await model.refresh() }
+                // Re-runs whenever the search text changes, cancelling the previous run (and
+                // its in-flight request). The sleep debounces typing; a cancelled sleep throws.
+                .task(id: searchText) {
+                    if searchText.trimmed != model.activeSearch {
+                        do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                    }
+                    await model.refresh(search: searchText)
+                }
         }
     }
 
@@ -41,6 +52,8 @@ struct RecipeListView: View {
             ProgressView("Loading recipes…")
         case .failed(let error):
             ErrorStateView(error: error) { await model.refresh() }
+        case .loaded where model.recipes.isEmpty && !model.activeSearch.isEmpty:
+            ContentUnavailableView.search(text: model.activeSearch)
         case .loaded where model.recipes.isEmpty:
             ContentUnavailableView {
                 Label("No Recipes Yet", systemImage: "book.closed")
@@ -132,6 +145,11 @@ private struct RecipeRow: View {
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
+            if recipe.sourceUrl != nil {
+                Label("Instagram", systemImage: "link")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             if !recipe.missing.isEmpty {
                 Label("Missing \(recipe.missing.joined(separator: " and "))", systemImage: "exclamationmark.circle")
                     .font(.caption)

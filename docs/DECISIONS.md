@@ -116,3 +116,53 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   alongside a throwaway harness and run against the live server (33 checks). Add a real
   test target from Xcode (File → New → Target → Unit Testing Bundle) and port the checks.
 - **Revisit:** Next iOS slice.
+
+## 2026-10-14: Source links are Instagram posts and reels only
+
+- **Context:** Milestone 2 needs a stable post identity for duplicate warnings.
+- **Decision:** `source_url` accepts only `instagram.com`, `www.` and `m.` hosts, with
+  `/p/`, `/reel/`, `/reels/` or `/tv/` paths, optionally after a username segment.
+  The link is normalized to `https://www.instagram.com/{p|reel}/{shortcode}/`, and
+  `source_post_key` is `instagram:{shortcode}`. Query strings, fragments, the username
+  and `p` vs `reel` are ignored for identity. Shortcode case is kept. Links are only
+  parsed, never fetched (`app/source_urls.py` makes no network calls). Anything else
+  gets a 422 on `source_url`.
+- **Alternatives:** Accepting any URL and only keying Instagram ones. Rejected for now
+  because the brief says not to guess identities for unsupported formats. Revisit when
+  another source (a website, TikTok) is actually supported.
+- **Revisit:** When a second source kind is added.
+
+## 2026-10-14: Duplicate posts warn with 409; creates lock the owner row
+
+- **Decision:** A create (or a PATCH that changes the link) for a post the user already
+  saved returns 409 `duplicate_recipe` with `existing_recipe_id` and `existing_title`,
+  unless `allow_duplicate` is true. Every create, and every link-changing PATCH, first
+  runs `SELECT … FROM users WHERE id = :me FOR UPDATE`. That makes the duplicate check and
+  the insert atomic per user. Lock order is always owner, then recipe.
+- **Consequence:** One user's creates are serialized. That's fine for a personal cookbook.
+- **Checked by:** the "simultaneous saves" and "concurrent same key" tests fail when the
+  lock is removed. Tested by hand on 2026-10-14.
+
+## 2026-10-14: Idempotency-Key on POST /v1/recipes, stored in PostgreSQL
+
+- **Decision:** The `idempotency_keys` table has primary key (user_id, key) and stores the
+  request's SHA-256 and the 201 response. The same key with the same validated body replays
+  the stored response (`Idempotent-Replayed: true`). A different body gets 409
+  `idempotency_key_reused`. Failed requests store nothing, so after a duplicate warning,
+  "Save Anyway" can reuse the key. Deleting the recipe keeps the key (`SET NULL`), so a
+  late retry can't resurrect it. The iOS editor reuses a key only while the body is
+  unchanged.
+- **Not done:** Expiry. Keys are kept forever. Add a cleanup command (e.g. older than 24
+  hours) alongside the draft cleanup in Milestone 3.
+
+## 2026-10-14: Search is ILIKE over title and ingredient names, no index yet
+
+- **Decision:** `q` does a case-insensitive substring match on the title, or (via EXISTS,
+  so each recipe appears once) on any ingredient name. `%`, `_` and `\` are escaped. The
+  pagination cursor includes a fingerprint of `q`, so it can't continue a different
+  search, and the client resets the cursor when the search changes. iOS debounces by
+  300 ms and cancels the previous request.
+- **Alternatives:** `pg_trgm` GIN indexes, or full-text search. Not needed at personal
+  scale. The brief says to improve PostgreSQL search before adding anything else.
+- **Revisit:** If searches slow down with a few thousand recipes, add `pg_trgm` indexes
+  on `recipes.title` and `recipe_ingredients.name`.

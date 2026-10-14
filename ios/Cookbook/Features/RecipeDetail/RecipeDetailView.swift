@@ -90,6 +90,14 @@ struct RecipeDetailView: View {
                 }
             }
 
+            if let link = recipe.sourceUrl.flatMap(URL.init(string:)) {
+                Section("Source") {
+                    Link(destination: link) {
+                        Label("View on Instagram", systemImage: "arrow.up.right.square")
+                    }
+                }
+            }
+
             if let notes = recipe.notes {
                 Section("Notes") {
                     Text(notes)

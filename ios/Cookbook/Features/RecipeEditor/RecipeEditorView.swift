@@ -10,6 +10,9 @@ struct RecipeEditorView: View {
 
     let mode: Mode
     var onSaved: (Recipe) -> Void
+    /// Called with the existing recipe's ID when the user picks "Open Existing" on a
+    /// duplicate-post warning. The editor dismisses itself first.
+    var onOpenExisting: ((UUID) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var form: RecipeForm
@@ -21,12 +24,22 @@ struct RecipeEditorView: View {
     @State private var fieldErrors: [String: String] = [:]
     @State private var showStaleVersion = false
     @State private var confirmDiscard = false
+    @State private var duplicate: Duplicate?
+    /// The last create attempt. A retry of the identical body reuses its Idempotency-Key, so
+    /// a save whose response was lost isn't stored twice; any edit gets a fresh key.
+    @State private var lastAttempt: (body: RecipeCreate, key: String)?
+
+    private struct Duplicate {
+        let id: UUID
+        let title: String
+    }
 
     private let api = APIClient()
 
-    init(mode: Mode, onSaved: @escaping (Recipe) -> Void) {
+    init(mode: Mode, onSaved: @escaping (Recipe) -> Void, onOpenExisting: ((UUID) -> Void)? = nil) {
         self.mode = mode
         self.onSaved = onSaved
+        self.onOpenExisting = onOpenExisting
         let initial: RecipeForm
         switch mode {
         case .create:
@@ -59,6 +72,20 @@ struct RecipeEditorView: View {
 
                 ingredientsSection
                 stepsSection
+
+                Section {
+                    TextField("instagram.com/reel/…", text: $form.sourceUrl)
+                        .keyboardType(.URL)
+                        .textContentType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityLabel("Instagram link")
+                    FieldErrorText(fieldErrors["source_url"])
+                } header: {
+                    Text("Source")
+                } footer: {
+                    Text("Optional. Paste the post or reel link so you can find the original and avoid saving it twice.")
+                }
 
                 Section("Notes") {
                     TextField("Optional", text: $form.notes, axis: .vertical)
@@ -95,6 +122,24 @@ struct RecipeEditorView: View {
                 Button("Keep Editing", role: .cancel) {}
             } message: {
                 Text("Your edits are still here. Save them over the newer version, or discard them and load the latest.")
+            }
+            .alert(
+                "Already in your cookbook",
+                isPresented: Binding(get: { duplicate != nil }, set: { if !$0 { duplicate = nil } }),
+                presenting: duplicate
+            ) { dup in
+                if let onOpenExisting {
+                    Button("Open Existing") {
+                        dismiss()
+                        onOpenExisting(dup.id)
+                    }
+                }
+                Button("Save Anyway") { Task { await save(allowDuplicate: true) } }
+                Button("Keep Editing", role: .cancel) {}
+            } message: { dup in
+                Text(dup.title.isEmpty
+                     ? "You've already saved a recipe from this post."
+                     : "You saved this post as \u{201C}\(dup.title)\u{201D}. Save another copy anyway?")
             }
         }
     }
@@ -183,7 +228,7 @@ struct RecipeEditorView: View {
 
     // MARK: Saving
 
-    private func save() async {
+    private func save(allowDuplicate: Bool = false) async {
         guard !isSaving else { return }
         saveError = nil
         fieldErrors = form.validationErrors
@@ -194,9 +239,14 @@ struct RecipeEditorView: View {
         do {
             let saved: Recipe
             if let recipeID, let version {
-                saved = try await api.updateRecipe(id: recipeID, form.patchBody(version: version, against: baseline))
+                saved = try await api.updateRecipe(
+                    id: recipeID,
+                    form.patchBody(version: version, against: baseline, allowDuplicate: allowDuplicate))
             } else {
-                saved = try await api.createRecipe(form.createBody())
+                let body = form.createBody(allowDuplicate: allowDuplicate)
+                let key = lastAttempt?.body == body ? lastAttempt!.key : UUID().uuidString
+                lastAttempt = (body, key)
+                saved = try await api.createRecipe(body, idempotencyKey: key)
             }
             onSaved(saved)
             dismiss()
@@ -210,6 +260,10 @@ struct RecipeEditorView: View {
     private func handle(_ error: APIError) {
         if error.isStaleVersion {
             showStaleVersion = true
+            return
+        }
+        if let dup = error.duplicateOf {
+            duplicate = Duplicate(id: dup.id, title: dup.title)
             return
         }
         fieldErrors = Dictionary(error.fieldErrors.map { ($0.field, $0.message) }, uniquingKeysWith: { a, _ in a })

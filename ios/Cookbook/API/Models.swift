@@ -41,6 +41,7 @@ nonisolated struct Step: Decodable, Identifiable, Equatable {
 nonisolated struct RecipeSummary: Decodable, Identifiable, Equatable {
     let id: UUID
     let title: String
+    let sourceUrl: String?
     let ingredientCount: Int
     let stepCount: Int
     let missing: [String]
@@ -65,11 +66,14 @@ nonisolated struct ErrorBody: Decodable, Equatable {
     let fieldErrors: [FieldError]
     let retryable: Bool
     let requestId: String?
-    /// Only `current_version` (on stale_version) is read today, so decode just that.
+    /// Extra context for specific codes: `current_version` on stale_version,
+    /// `existing_recipe_id`/`existing_title` on duplicate_recipe.
     let details: Details?
 
     struct Details: Decodable, Equatable {
         let currentVersion: Int?
+        let existingRecipeId: UUID?
+        let existingTitle: String?
     }
 }
 
@@ -87,9 +91,13 @@ nonisolated struct StepInput: Encodable, Equatable {
     var instruction: String
 }
 
-nonisolated struct RecipeCreate: Encodable {
+nonisolated struct RecipeCreate: Encodable, Equatable {
     var title: String
     var notes: String?
+    /// An Instagram post or reel link; the server normalizes it and rejects other hosts.
+    var sourceUrl: String?
+    /// True after the user chose "Save Anyway" on a duplicate-post warning.
+    var allowDuplicate = false
     var ingredients: [IngredientInput]
     var steps: [StepInput]
 }
@@ -100,13 +108,18 @@ nonisolated struct RecipePatch: Encodable {
     var title: String?
     /// Outer nil: don't touch notes. `.some(nil)`: clear them (sends JSON null).
     var notes: String??
+    /// Same convention as notes.
+    var sourceUrl: String??
+    var allowDuplicate = false
     var ingredients: [IngredientInput]?
     var steps: [StepInput]?
 
-    var isEmpty: Bool { title == nil && notes == nil && ingredients == nil && steps == nil }
+    var isEmpty: Bool {
+        title == nil && notes == nil && sourceUrl == nil && ingredients == nil && steps == nil
+    }
 
     private enum CodingKeys: String, CodingKey {
-        case version, title, notes, ingredients, steps
+        case version, title, notes, sourceUrl, allowDuplicate, ingredients, steps
     }
 
     // Hand-written because the synthesized encoder drops nil values, which would make
@@ -116,6 +129,8 @@ nonisolated struct RecipePatch: Encodable {
         try c.encode(version, forKey: .version)
         try c.encodeIfPresent(title, forKey: .title)
         if let notes { try c.encode(notes, forKey: .notes) }
+        if let sourceUrl { try c.encode(sourceUrl, forKey: .sourceUrl) }
+        if allowDuplicate { try c.encode(true, forKey: .allowDuplicate) }
         try c.encodeIfPresent(ingredients, forKey: .ingredients)
         try c.encodeIfPresent(steps, forKey: .steps)
     }
