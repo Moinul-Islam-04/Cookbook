@@ -150,7 +150,7 @@ Not yet checked by hand: typing a search, the duplicate alert, and Open Existing
 - Extraction runs through `app/extraction` and is configured with
   `COOKBOOK_EXTRACTION_PROVIDER`:
   - `ollama` uses a local `qwen2.5:7b`. Captions stay on the Mac, it's free, and it takes
-    about 15–40 s per caption.
+    about 15–60 s per caption (a real 1,000-character reel caption took about 60 s on an M2).
   - `fake` (the default when unset) is a rule-based reader for neat layouts, with no
     model at all.
   Results are in `backend/eval/RESULTS.md`; rerun them with `python -m eval.run_eval
@@ -160,6 +160,13 @@ Not yet checked by hand: typing a search, the duplicate alert, and Open Existing
   recipe found". See `docs/DECISIONS.md`.
 - `POST /v1/recipes` with `draft_id` saves the reviewed recipe and marks the draft saved,
   once. It requires at least one ingredient and one step.
+- **Instagram links:**
+  - Copy a reel or post link and open the app, then tap **Import** on the banner.
+    **+ → Import from Instagram Link** also works.
+  - The post opens in a logged-out in-app browser. Tap **Import Recipe** to read the
+    caption off the page and start a draft.
+  - The server never contacts Instagram. See `docs/DECISIONS.md` for the guardrails and
+    the terms-of-service gray area.
 - iOS: **+ → Import Caption**. Paste the caption and optional link, then tap Read Recipe.
   The review screen shows the original caption, warnings and orange flags on unmatched
   rows; edit and save. If reading fails, "Enter Manually Instead" keeps the caption in

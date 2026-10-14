@@ -100,9 +100,9 @@ nonisolated struct APIClient {
 
     // MARK: Import drafts
 
-    /// Runs extraction on the server; a local model can take up to the server's 60 s limit.
+    /// Runs extraction on the server; a local model can take up to the server's 120 s limit.
     func createDraft(_ body: ImportDraftCreate) async throws -> ImportDraft {
-        try await send("POST", "v1/import-drafts", body: body, timeout: 90)
+        try await send("POST", "v1/import-drafts", body: body, timeout: 150)
     }
 
     func draft(id: UUID) async throws -> ImportDraft {

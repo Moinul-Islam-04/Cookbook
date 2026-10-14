@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     # Which extraction provider turns captions into drafts: "fake" (rule-based, no model)
     # or "ollama" (a local model).
     extraction_provider: str = "fake"
-    # A local 7B model on a laptop needs ~5-30s per caption, more on a cold load.
-    extraction_timeout_s: float = 60.0
+    # A local 7B model on a 16 GB M2 took ~60 s on a real 1,000-character reel caption.
+    extraction_timeout_s: float = 120.0
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
     draft_ttl_hours: int = 24

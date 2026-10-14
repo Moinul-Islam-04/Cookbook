@@ -236,3 +236,53 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   are ready for it.
 - **Revisit:** If latency hurts real use, if accuracy drops on real captions, or when
   the backend is deployed.
+
+## 2026-10-14: Instagram import reads the caption in an in-app, logged-out browser
+
+- **Context:** The core feature is ReciMe-style "import from an Instagram link". The
+  access spike found no permitted API. Meta's oEmbed is for embedding only: its terms
+  prohibit "consuming, manipulating, extracting, or persisting" the content, it needs App
+  Review, and it documents no caption field. A server that fetches Instagram pages would
+  be a scraper, which the brief forbids.
+- **Decision:** The *user's device* shows the post in a `WKWebView`, the same way
+  ReciMe's flow appears to work:
+  - The session is non-persistent: no cookies, and never logged in.
+  - The user can start from the clipboard banner, from **+ → Import from Instagram Link**,
+    or by pasting a link.
+  - When the user taps **Import Recipe**, a script reads text the page already shows: the
+    longest `<h1>`, falling back to the quoted caption in `og:description`/`og:title`.
+    The script makes no requests of its own.
+  - The caption fills the Import Caption screen, the draft starts, and the user reviews
+    it before anything is saved.
+- **Guardrails:**
+  - It runs only when the user taps, on Instagram post and reel links only.
+  - The browser stays on Instagram hosts (other links open in Safari).
+  - Login walls aren't bypassed. A page with no readable caption falls back to paste or
+    screenshot.
+  - The backend never contacts Instagram. It only receives text the user then reviews.
+- **Risk (to raise with Andrew):** This deviates from the brief, which says "approved API
+  calls only". Instagram's terms broadly prohibit automated collection without permission.
+  This is user-initiated and one page at a time, but it's a gray area, not a permitted
+  API. Instagram can also change its logged-out page at any time. The selectors are
+  isolated in `InstagramPageText` and degrade to the paste fallback.
+- **Verified:** A real public reel (DF7v5Fxx5Ot) opened logged out behind Instagram's
+  "watch in the app" interstitial. The full caption was still read from the page, and the
+  draft came back with the correct title and 10 measured ingredients with correct amounts,
+  nothing invented. Weak spots, from the model rather than the browser:
+  - Steps came back as whole sections.
+  - A section heading was listed as an ingredient.
+  - Ingredients mentioned only inside sentences were missed.
+- **Revisit:** If Instagram blocks logged-out pages, or if Meta offers a permitted
+  caption API.
+
+## 2026-10-14: Qwen 2.5 7B is too slow on real captions; extraction timeout raised to 120 s
+
+- **Observed:** The real 1,055-character reel caption took about 61 s on a 16 GB M2 with
+  Xcode and the Simulator running (about 70 MB of RAM free), and hit the old 60 s limit.
+  Prompt-4 (section headings, ingredients inside sentences, one step per sentence) fixed
+  headings on a synthetic multi-section caption (`eval`: 0 headings as ingredients). It
+  didn't change Qwen's output on the real caption.
+- **Stopgap:** The server timeout is now 120 s and the iOS request timeout 150 s.
+- **Open decision:** Keep Qwen (free, private, slow), try a smaller local model, or switch
+  to Claude Haiku 5.5 (fast, costs per caption, sends captions to Anthropic) and run
+  `eval` on it.

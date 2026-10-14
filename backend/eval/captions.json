@@ -303,5 +303,60 @@
    ]
   ],
   "steps": 1
+ },
+ {
+  "id": "multi_section_prose",
+  "caption": "Crispy sesame tofu bowls 🥢\n\nHonestly the best thing I've made all month, you HAVE to try it.\n\nRecipe\n\nCrispy tofu\nToss your tofu cubes in cornstarch, salt and pepper. Air fry at 400F for 15min shaking halfway.\n\nSesame glaze\nIn a pan add\n2 tbsp sesame oil\n3 tbsp maple syrup\n1/4 cup of soy sauce\n2 garlic cloves minced\n1 tsp chili flakes\nSimmer until thick, then toss the tofu in it.\n\nQuick slaw\nShred cabbage and carrot, add 2 tbsp rice vinegar and a pinch of sugar. Serve everything over rice.",
+  "is_recipe": true,
+  "title": "Crispy sesame tofu bowls",
+  "ingredients": [
+   [
+    "tofu",
+    null
+   ],
+   [
+    "cornstarch",
+    null
+   ],
+   [
+    "2 tbsp sesame oil",
+    2
+   ],
+   [
+    "3 tbsp maple syrup",
+    3
+   ],
+   [
+    "1/4 cup of soy sauce",
+    0.25
+   ],
+   [
+    "2 garlic cloves minced",
+    2
+   ],
+   [
+    "1 tsp chili flakes",
+    1
+   ],
+   [
+    "cabbage",
+    null
+   ],
+   [
+    "carrot",
+    null
+   ],
+   [
+    "2 tbsp rice vinegar",
+    2
+   ]
+  ],
+  "steps": 7,
+  "not_ingredients": [
+   "Crispy tofu",
+   "Sesame glaze",
+   "Quick slaw",
+   "Recipe"
+  ]
  }
 ]

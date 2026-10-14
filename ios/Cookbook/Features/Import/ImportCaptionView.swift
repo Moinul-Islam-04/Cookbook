@@ -7,9 +7,14 @@ struct ImportCaptionView: View {
     var onSaved: (Recipe) -> Void
     var onOpenExisting: (UUID) -> Void
 
+    /// Read the caption as soon as the screen appears (it came from the Instagram browser).
+    var autoRead = false
+    /// Shown above the form, e.g. why the caption couldn't be read automatically.
+    var notice: String?
+
     @Environment(\.dismiss) private var dismiss
-    @State private var caption = ""
-    @State private var link = ""
+    @State private var caption: String
+    @State private var link: String
     @State private var isReading = false
     @State private var error: APIError?
     @State private var linkError: String?
@@ -17,6 +22,22 @@ struct ImportCaptionView: View {
     @State private var manual: RecipeForm?
 
     private let api = APIClient()
+
+    init(
+        onSaved: @escaping (Recipe) -> Void,
+        onOpenExisting: @escaping (UUID) -> Void,
+        caption: String = "",
+        link: String = "",
+        autoRead: Bool = false,
+        notice: String? = nil
+    ) {
+        self.onSaved = onSaved
+        self.onOpenExisting = onOpenExisting
+        self.autoRead = autoRead
+        self.notice = notice
+        _caption = State(initialValue: caption)
+        _link = State(initialValue: link)
+    }
 
     var body: some View {
         if let draft {
@@ -31,6 +52,13 @@ struct ImportCaptionView: View {
     private var entryForm: some View {
         NavigationStack {
             Form {
+                if let notice {
+                    Section {
+                        Label(notice, systemImage: "info.circle")
+                            .font(.callout)
+                    }
+                }
+
                 if let error {
                     Section {
                         ErrorBanner(error: error)
@@ -61,7 +89,7 @@ struct ImportCaptionView: View {
                 } header: {
                     Text("Caption")
                 } footer: {
-                    Text("Copy the caption from Instagram (••• → Copy) and paste it here. The app doesn't read Instagram for you.")
+                    Text("Paste the caption, or a comment that has the recipe. Tip: in a screenshot, long-press the text to copy it (Live Text).")
                 }
 
                 Section {
@@ -95,6 +123,9 @@ struct ImportCaptionView: View {
                 }
             }
             .interactiveDismissDisabled(!caption.trimmed.isEmpty || isReading)
+            .task {
+                if autoRead && draft == nil && !caption.trimmed.isEmpty { await read() }
+            }
         }
     }
 

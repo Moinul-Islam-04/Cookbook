@@ -63,6 +63,7 @@ def score(case: dict, draft) -> dict:
         qty_ok=qty_ok,
         steps_ok=len(draft.steps) == case["steps"],
         steps=len(draft.steps),
+        headings_as_ingredients=sum(norm(h) in by_raw for h in case.get("not_ingredients", [])),
         forbidden=sum(w in unflagged_text for w in case.get("forbidden", []) if w not in case["caption"].lower().split("ai assistant")[0]),
     )
     return r
@@ -85,7 +86,7 @@ def run(provider: str, model: str | None) -> list[dict]:
         print(f"  {provider:7} {case['id']:22} {row['seconds']:5.1f}s  "
               f"recipe={'✓' if row['recipe_ok'] else '✗'} ingr={row['found']}/{row['expected']} qty={row['qty_ok']} "
               f"steps={'✓' if row['steps_ok'] else '✗'} invented={row['invented']} unmatched={row['unmatched']} "
-              f"forbidden={row['forbidden']} {row['error'] or ''}", flush=True)
+              f"forbidden={row['forbidden']} headings={row.get('headings_as_ingredients', 0)} {row['error'] or ''}", flush=True)
     return rows
 
 
@@ -97,7 +98,7 @@ def summary(provider: str, rows: list[dict]) -> str:
         f"{provider:22} recipe {sum(r['recipe_ok'] for r in rows)}/{len(rows)} | "
         f"ingredients {found}/{exp} | qty exact {sum(r['qty_ok'] for r in rows)}/{found} | "
         f"steps {sum(r['steps_ok'] for r in rows)}/{len(rows)} | invented-stripped {sum(r['invented'] for r in rows)} | "
-        f"unmatched {sum(r['unmatched'] for r in rows)} | forbidden {sum(r['forbidden'] for r in rows)} | "
+        f"unmatched {sum(r['unmatched'] for r in rows)} | headings-as-ingredients {sum(r.get('headings_as_ingredients', 0) for r in rows)} | forbidden {sum(r['forbidden'] for r in rows)} | "
         f"errors {sum(bool(r['error']) for r in rows)} | median {times[len(times)//2]}s, max {times[-1]}s"
     )
 

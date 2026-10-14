@@ -6,6 +6,15 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var showingCreate = false
     @State private var showingImport = false
+    @State private var instagramImport: InstagramImportRequest?
+    @State private var showingLinkPrompt = false
+    @State private var typedLink = ""
+    @State private var clipboardHasLink = false
+    /// The clipboard contents already offered (UIPasteboard.changeCount), so dismissing
+    /// the banner sticks until something new is copied.
+    @State private var offeredChangeCount = -1
+    @State private var notInstagramLink = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
 
@@ -23,6 +32,12 @@ struct RecipeListView: View {
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
+                            Button {
+                                typedLink = ""
+                                showingLinkPrompt = true
+                            } label: {
+                                Label("Import from Instagram Link", systemImage: "link")
+                            }
                             Button {
                                 showingImport = true
                             } label: {
@@ -44,6 +59,36 @@ struct RecipeListView: View {
                         onSaved: { _ in Task { await model.recipeSaved() } },
                         onOpenExisting: { id in path = [id] })
                 }
+                .sheet(item: $instagramImport) { request in
+                    InstagramImportFlow(
+                        url: request.url,
+                        onSaved: { saved in
+                            Task { await model.recipeSaved() }
+                            path = [saved.id]
+                        },
+                        onOpenExisting: { id in path = [id] })
+                }
+                .alert("Import from Instagram", isPresented: $showingLinkPrompt) {
+                    TextField("instagram.com/reel/…", text: $typedLink)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Button("Open") { openInstagram(typedLink) }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Paste a link to an Instagram post or reel.")
+                }
+                .alert("Not an Instagram post", isPresented: $notInstagramLink) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Use a link to a single Instagram post or reel (…/p/… or …/reel/…).")
+                }
+                .safeAreaInset(edge: .top) {
+                    if clipboardHasLink { clipboardBanner }
+                }
+                .task { await checkClipboard() }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { Task { await checkClipboard() } }
+                }
                 .sheet(isPresented: $showingImport) {
                     ImportCaptionView(
                         onSaved: { saved in
@@ -60,6 +105,57 @@ struct RecipeListView: View {
                     }
                     await model.refresh(search: searchText)
                 }
+        }
+    }
+
+    // MARK: Instagram link import
+
+    private var clipboardBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "link")
+            Text("You copied a link. Import it?")
+                .font(.subheadline)
+            Spacer()
+            Button("Import") { importFromClipboard() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            Button {
+                offeredChangeCount = UIPasteboard.general.changeCount
+                clipboardHasLink = false
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel("Dismiss")
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal)
+    }
+
+    /// Asks iOS whether the clipboard holds a web link, without reading it (no paste prompt).
+    private func checkClipboard() async {
+        let pasteboard = UIPasteboard.general
+        guard pasteboard.changeCount != offeredChangeCount, pasteboard.hasURLs || pasteboard.hasStrings else {
+            clipboardHasLink = false
+            return
+        }
+        let patterns = try? await pasteboard.detectedPatterns(for: [\.probableWebURL])
+        clipboardHasLink = patterns?.contains(\.probableWebURL) ?? false
+    }
+
+    /// Reading the clipboard happens only on this tap (iOS may ask to allow pasting).
+    private func importFromClipboard() {
+        let pasteboard = UIPasteboard.general
+        offeredChangeCount = pasteboard.changeCount
+        clipboardHasLink = false
+        openInstagram(pasteboard.url?.absoluteString ?? pasteboard.string ?? "")
+    }
+
+    private func openInstagram(_ text: String) {
+        if let url = InstagramLink.postURL(from: text) {
+            instagramImport = InstagramImportRequest(url: url)
+        } else {
+            notInstagramLink = true
         }
     }
 

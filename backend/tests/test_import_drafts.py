@@ -489,7 +489,7 @@ def test_ollama_adapter_sends_schema_and_caption_as_data() -> None:
     ex = _ollama(handler)
     raw = ex.extract(BRIEF_CAPTION)
     assert json.loads(raw) == BRIEF_OUTPUT
-    assert ex.version == "ollama:qwen2.5:7b:prompt-3"
+    assert ex.version == "ollama:qwen2.5:7b:prompt-4"
     assert seen["model"] == "qwen2.5:7b" and seen["stream"] is False
     assert seen["options"]["temperature"] == 0
     assert seen["format"]["properties"].keys() >= {"is_recipe", "ingredients", "steps"}

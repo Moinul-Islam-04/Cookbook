@@ -12,7 +12,7 @@ import httpx
 
 from app.extraction.base import ExtractionError, ExtractionOutput, ExtractionTimeout
 
-PROMPT_VERSION = "prompt-3"
+PROMPT_VERSION = "prompt-4"
 
 # Per-field caps added to the JSON schema sent to Ollama. Its grammar enforces maxLength, which
 # stops the degenerate loops small models fall into (seen in eval: a "unit" that repeated
@@ -42,9 +42,13 @@ Rules:
   - unit: the unit word exactly as written in raw_text ("cups", "tbsp", "g"), or null.
   - name: always fill this in: the ingredient itself, without the amount and unit
     ("3 cloves garlic, minced" -> "garlic, minced").
-- steps: one entry per numbered or bulleted step, or per instruction sentence if the
-  caption has no list. instruction: copy the caption's wording; don't rephrase or add
-  details.
+  - Ingredients named only inside an instruction ("toss the tofu in cornstarch, salt and
+    pepper") are ingredients too: raw_text is just the ingredient words ("cornstarch").
+- Short lines that name a part of the dish ("Sesame glaze", "For the salad", "Crispy
+  chicken") are section headings. They are NOT ingredients and NOT steps.
+- steps: one entry per numbered or bulleted step. For instructions written as a paragraph,
+  one entry per sentence. A step never contains a list of ingredients. instruction: copy
+  the caption's wording; don't rephrase or add details.
 - title: only if the caption states the dish's name. Otherwise null.
 - is_recipe: false if the caption contains no recipe (chatter, ads, "recipe in bio").
   Then return empty ingredients and steps.
