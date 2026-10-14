@@ -12,7 +12,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
-| 4 Images and authentication | **In progress.** Device-token sign-in and photos done; iPhone over Tailscale next. |
+| 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
 | 5 | Not started. |
 
 ### What works (backend, verified)
@@ -225,8 +225,21 @@ PostgreSQL and Ollama are Homebrew services. Logs are in `~/Library/Logs/Cookboo
 `ops/uninstall-services.sh` removes the agents and keeps the data. After pulling new
 backend code, run `launchctl kickstart -k gui/$(id -u)/com.cookbook.api` to restart the API.
 
-The iPhone reaches the API through Tailscale (`tailscale serve`, HTTPS, tailnet only).
-See `docs/DECISIONS.md`.
+### Your iPhone
+
+1. Install Tailscale on the Mac and the iPhone with the same account. In the admin
+   console, turn on MagicDNS and HTTPS certificates.
+2. Publish the API to your tailnet only, over HTTPS:
+   `tailscale serve --bg --https=443 http://127.0.0.1:8000`
+   It's then at `https://<mac-name>.<tailnet>.ts.net`, and the setting survives restarts.
+3. Create a token for the phone and copy its pairing code:
+   `cd backend && .venv/bin/python -m app.tokens create --name "iPhone" --server https://<mac-name>.<tailnet>.ts.net`
+   Only a hash is stored, so a lost code means creating a new token (and revoking the old
+   one with `app.tokens revoke <id>`).
+4. In Xcode, under Signing & Capabilities, choose your Personal Team and a unique bundle
+   ID. Select the iPhone and press ⌘R. A free team's install lasts 7 days.
+5. In the app, tap the gear icon, then **Paste** the pairing code (Universal Clipboard).
+   Settings should show **Connected**.
 
 ## Local setup (macOS)
 

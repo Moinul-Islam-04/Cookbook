@@ -119,6 +119,17 @@ struct RecipeListView: View {
         }
     }
 
+    /// On a real device, an unpaired app's default 127.0.0.1 is the phone itself: ask for a
+    /// pairing code instead of reporting an unreachable server. (The Simulator shares the
+    /// Mac's network, so it can still reach a local dev-mode server unpaired.)
+    static var needsPairing: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        return !AppConfig.isPaired
+        #endif
+    }
+
     // MARK: Instagram link import
 
     private var clipboardBanner: some View {
@@ -175,7 +186,7 @@ struct RecipeListView: View {
         switch model.phase {
         case .loading:
             ProgressView("Loading recipes…")
-        case .failed(let error) where error.isUnauthenticated:
+        case .failed(let error) where error.isUnauthenticated || Self.needsPairing:
             ContentUnavailableView {
                 Label("Pair This Device", systemImage: "lock.iphone")
             } description: {
