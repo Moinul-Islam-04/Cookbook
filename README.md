@@ -211,6 +211,23 @@ cd backend && set -a && . ./.env && set +a && \
   minio server --address 127.0.0.1:9000 "$HOME/Library/Application Support/Cookbook/minio"
 ```
 
+## Running it on your Mac (self-hosted)
+
+`ops/install-services.sh` installs launchd agents, so the backend runs whenever you're
+logged in:
+- **minio**: photo storage on 127.0.0.1:9000.
+- **api**: runs migrations, then FastAPI on 127.0.0.1:8000.
+- **backup**: `pg_dump` nightly at 03:30 to `~/Library/Application Support/Cookbook/backups`,
+  keeping 14 days.
+- **cleanup**: hourly.
+
+PostgreSQL and Ollama are Homebrew services. Logs are in `~/Library/Logs/Cookbook/`.
+`ops/uninstall-services.sh` removes the agents and keeps the data. After pulling new
+backend code, run `launchctl kickstart -k gui/$(id -u)/com.cookbook.api` to restart the API.
+
+The iPhone reaches the API through Tailscale (`tailscale serve`, HTTPS, tailnet only).
+See `docs/DECISIONS.md`.
+
 ## Local setup (macOS)
 
 ```bash
