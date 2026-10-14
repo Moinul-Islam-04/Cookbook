@@ -13,7 +13,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
-| 5 | Not started. |
+| 5 Polish and demonstrate | **In progress.** Contract suites in the repo, demo script (`docs/DEMO.md`); accessibility pass and XCTest target remaining. |
 
 ### What works (backend, verified)
 
