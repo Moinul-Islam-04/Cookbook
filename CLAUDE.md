@@ -1,0 +1,34 @@
+# Instructions for Claude Code in this repo
+
+Read `docs/BRIEF.md` (the product brief and rules), `README.md` (current status and
+setup) and `docs/DECISIONS.md` before changing anything.
+
+## Ground rules (from the brief)
+
+- Work in small vertical slices. State the change and its acceptance check before
+  editing.
+- Don't claim success you haven't verified. Say exactly which checks ran and which
+  couldn't.
+- Backend changes: run `cd backend && pytest -q` against PostgreSQL (never SQLite). Any
+  schema change gets a hand-written Alembic migration, and `alembic check` must stay
+  clean (the test suite runs it).
+- iOS changes: build with `xcodebuild` and exercise the flow in the Simulator.
+- Never invent recipe quantities, steps or Instagram/API capabilities. Never scrape
+  Instagram.
+- No Redis, API gateway, Kafka, Elasticsearch, NoSQL or read replicas.
+- Ask the user before choices that change cost, privacy, external account access or
+  scope. Record routine choices in `docs/DECISIONS.md`.
+- Update the README's status section after each passing slice.
+
+## Current next task
+
+Milestone 1, iOS half: see "Next smallest task" in `README.md`.
+
+API contract: run the backend and open http://127.0.0.1:8000/docs, or read
+`backend/app/schemas.py`. Key points:
+
+- Ingredients and steps are ordered arrays.
+- `quantity`/`unit` may be null. `raw_text` is always present on responses.
+- PATCH needs `version`. A 409 `stale_version` must keep the user's unsaved edits.
+- Errors use one envelope: `code`, `message`, `field_errors[{field, message}]`,
+  `retryable`, `request_id`.
