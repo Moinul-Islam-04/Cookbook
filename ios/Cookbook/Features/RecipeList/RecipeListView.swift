@@ -281,11 +281,20 @@ struct RecipeListView: View {
 private struct RecipeRow: View {
     let recipe: RecipeSummary
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// At accessibility text sizes, side-by-side layouts squeeze words into hyphenated
+    /// columns ("in-gre-di-ents"); stack them instead.
+    private var stacked: Bool { typeSize.isAccessibilitySize }
+
     var body: some View {
-        HStack(spacing: 12) {
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 12))
+        layout {
             if recipe.thumbnailUrl != nil {
                 RemotePhoto(path: recipe.thumbnailUrl)
-                    .frame(width: 56, height: 56)
+                    .frame(width: stacked ? 120 : 56, height: stacked ? 120 : 56)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .accessibilityHidden(true)
             }
@@ -297,7 +306,7 @@ private struct RecipeRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(recipe.title)
                 .font(.headline)
-            HStack(spacing: 12) {
+            (stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout(spacing: 12))) {
                 Text("^[\(recipe.ingredientCount) ingredient](inflect: true)")
                 Text("^[\(recipe.stepCount) step](inflect: true)")
             }

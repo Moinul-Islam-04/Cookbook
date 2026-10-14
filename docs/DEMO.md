@@ -96,8 +96,10 @@ privately over Tailscale.
   was exercised by an XCUITest driver and by hand.
 - Captions only: no reel audio or video. Screenshot OCR (on-device Vision) is the next
   import source.
-- Not yet checked: Dynamic Type at every size, VoiceOver end to end, and the iOS 17
-  runtime.
+- Dynamic Type: at the largest accessibility size, list rows squeezed into hyphenated
+  columns ("in-gre-di-ents"). Rows now stack vertically at accessibility sizes. That
+  change builds but hasn't been seen rendered with data yet. Not yet checked: VoiceOver
+  end to end, and the iOS 17 runtime.
 - Grocery lists and meal planning are deliberately out of scope.
 
 ## Questions to practice
