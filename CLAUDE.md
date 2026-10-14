@@ -22,7 +22,8 @@ setup) and `docs/DECISIONS.md` before changing anything.
 
 ## Current next task
 
-Milestone 1, iOS half: see "Next smallest task" in `README.md`.
+See "Next smallest task" in `README.md`. The iOS app is in `ios/` (build with
+`xcodebuild -project ios/Cookbook.xcodeproj -scheme Cookbook`).
 
 API contract: run the backend and open http://127.0.0.1:8000/docs, or read
 `backend/app/schemas.py`. Key points:

@@ -85,3 +85,34 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Decision:** The connection option `timezone=UTC`, so timestamps always serialize as
   `…Z` regardless of the server's local timezone. This was found during manual testing:
   responses came back as `-04:00`.
+
+## 2026-10-14: iOS client decodes timestamps with an explicit two-format strategy
+
+- **Context:** The API sends `2026-10-14T19:39:17.693103Z` (microseconds, UTC). Newer
+  Foundation accepts that under `JSONDecoder`'s built-in `.iso8601`. Older releases, which
+  iOS 17 devices may still have, reject fractional seconds.
+- **Decision:** A custom strategy tries `ISO8601FormatStyle` with fractional seconds, then
+  without. A decode failure surfaces as `APIError.badResponse`, never as "server unreachable".
+- **Alternatives:** Built-in `.iso8601` (OS-dependent). Changing the server to drop
+  microseconds (hides the problem in the client).
+- **Revisit:** If the minimum iOS rises to a release whose Foundation behaviour is confirmed.
+
+## 2026-10-14: iOS sends only changed fields on PATCH
+
+- **Decision:** The editor diffs the form against what it loaded and sends only changed
+  fields. Untouched ingredient rows send back their original `raw_text`; edited rows omit
+  it so the server recomposes it ("2 tomatoes" doesn't survive a change to 3). Clearing
+  notes sends an explicit `null`.
+- **Consequence:** A stale-version 409 offers "save my version" (diff against the latest
+  copy and resend) or "discard mine and reload". Unsaved edits are kept either way until
+  the user chooses.
+- **Revisit:** Milestone 2+ if partial-row edits are needed (today a changed list replaces
+  all rows).
+
+## 2026-10-14: No iOS test target yet; contract checked with a compiled harness
+
+- **Context:** Adding an XCTest target means hand-editing `project.pbxproj`.
+- **Decision:** The API and form logic are UI-free files. They were compiled with `swiftc`
+  alongside a throwaway harness and run against the live server (33 checks). Add a real
+  test target from Xcode (File → New → Target → Unit Testing Bundle) and port the checks.
+- **Revisit:** Next iOS slice.

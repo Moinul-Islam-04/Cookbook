@@ -8,8 +8,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 | Milestone | State |
 | --- | --- |
-| 0 Runnable baseline | Backend done. iOS project not created yet. Instagram access spike not run. |
-| 1 Manual recipe persistence | **Backend done and tested.** SwiftUI screens not started. |
+| 0 Runnable baseline | Backend and iOS project done. Instagram access spike not run. |
+| 1 Manual recipe persistence | **Backend done and tested.** SwiftUI screens built; Simulator walkthrough of create/edit/delete still to do by hand. |
 | 2–5 | Not started. |
 
 ### What works (backend, verified)
@@ -54,16 +54,58 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ### Not verified / known limitations
 
-- **No iOS code yet.** Xcode wasn't available in the environment that built this slice.
+- **iOS create/edit/delete not yet exercised by hand in the Simulator.** See "iOS" below
+  for what has been checked.
 - No authentication. A fixed dev user owns everything, and the server refuses to start
   in any other auth mode. **Keep it on 127.0.0.1; do not deploy it.**
 - Not built yet, each in a later milestone:
   - search (`q`), duplicate-post warnings and idempotency keys (Milestone 2)
   - import drafts and AI extraction (Milestone 3)
   - images (Milestone 4)
-- Tested on Linux with Python 3.13. Python 3.11+ is required. Not yet run on macOS.
+- Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
+  Python 3.11+ is required.
 - Quantities allow up to 3 decimal places (e.g. 0.333). The client should round
   fractions like 1/3.
+
+### iOS (Milestone 1 screens)
+
+`ios/Cookbook.xcodeproj`, iOS 17+, SwiftUI, URLSession, no third-party packages.
+
+- Recipe list (newest first, loads more pages on scroll, pull to refresh), with
+  loading, empty and error-with-retry states.
+- Recipe detail: ingredients shown with their `raw_text`, numbered steps, notes.
+- Create/edit form: ingredient rows (quantity, unit, name) and steps, add, delete, reorder.
+  Quantities accept `2`, `1.5`, `1 1/2`, `1/3` (rounded to 3 places). Inline field errors
+  from local validation or the server's 422. Save is disabled while saving, and a failed
+  save keeps the form as typed. Cancel/swipe-down asks before discarding edits.
+- Edit sends only changed fields. A 409 `stale_version` keeps your edits and offers "Save
+  My Version" or "Discard Mine and Reload".
+- Delete asks for confirmation (from the list swipe or the detail screen). The row is
+  removed only after the server returns 204.
+- Errors show the server's message plus its request ID.
+
+Checks run:
+
+- `xcodebuild` for the iPhone 18 Pro Simulator (iOS 27): 0 errors, 0 warnings.
+- The API client, models and form logic were compiled with `swiftc` into a harness and
+  run against the live server: 33 checks passed. They cover:
+  - create, read, list, PATCH and delete
+  - dates with microseconds, and exact `Decimal` quantities
+  - blank rows dropped, and only changed fields sent
+  - `raw_text` kept on untouched rows and recomposed on edited ones
+  - clearing notes sends `null`
+  - 409 `stale_version` with `current_version`, and a 422 field path
+  - 404 after delete
+  - a closed port reports a transport error
+- Simulator launch: the list showed a recipe created through the API, and the error
+  state appeared when pointed at a closed port.
+
+Not yet checked: tapping through create, edit, stale-edit and delete in the Simulator.
+Also not checked: an iOS 17/18 runtime, Dynamic Type, VoiceOver, or a physical device.
+The project has no XCTest target yet.
+
+Run: start the backend (below), open `ios/Cookbook.xcodeproj`, pick an iPhone Simulator, ⌘R.
+Set `COOKBOOK_API_URL` in the scheme's environment to use a different server.
 
 ## Local setup (macOS)
 
@@ -115,12 +157,12 @@ backend/
   alembic/        migrations (hand-written, checked against models by the tests)
   tests/          PostgreSQL integration tests
 docs/             BRIEF.md, DECISIONS.md
-ios/              (next: SwiftUI app)
+ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbook/Features (list, detail, editor)
 ```
 
 ## Next smallest task
 
-Create the Xcode project in `ios/` (iOS 17, SwiftUI, URLSession). Build a recipe list,
-detail, manual create/edit form and a delete confirmation against this API, with
-loading, empty and error states. Exit check (brief, Milestone 1): on the Simulator, a
-manually entered recipe survives an app relaunch, and edits and deletes persist.
+Walk through Milestone 1's exit check on the Simulator by hand. Create a recipe with an
+unmeasured ingredient, relaunch the app, edit it, force a stale edit (PATCH from `curl`
+while the editor is open), and delete it. Then add an XCTest target and port the
+contract checks. Milestone 2 (search, duplicate safeguards) follows.

@@ -1,0 +1,167 @@
+import Foundation
+
+nonisolated enum AppConfig {
+    /// The Simulator shares the Mac's network stack, so 127.0.0.1 reaches a local uvicorn.
+    /// Override with the COOKBOOK_API_URL environment variable in the scheme.
+    static let apiBaseURL: URL = {
+        if let override = ProcessInfo.processInfo.environment["COOKBOOK_API_URL"],
+           let url = URL(string: override) {
+            return url
+        }
+        return URL(string: "http://127.0.0.1:8000")!
+    }()
+}
+
+/// Every way a request can fail, kept distinct so the UI never reports a decoding bug
+/// as "server unreachable".
+nonisolated enum APIError: Error, Equatable {
+    /// No HTTP response at all: server down, no network, timeout.
+    case transport(URLError.Code)
+    /// The server answered with its error envelope.
+    case server(status: Int, body: ErrorBody)
+    /// The server answered with something that isn't valid JSON for the expected type.
+    case badResponse(status: Int, detail: String)
+
+    var isStaleVersion: Bool {
+        if case .server(409, let body) = self, body.code == "stale_version" { return true }
+        return false
+    }
+
+    var fieldErrors: [ErrorBody.FieldError] {
+        if case .server(_, let body) = self { return body.fieldErrors }
+        return []
+    }
+
+    var userMessage: String {
+        switch self {
+        case .transport(.timedOut):
+            return "The server took too long to respond."
+        case .transport:
+            return "Can't reach the Cookbook server. Is it running on \(AppConfig.apiBaseURL.host() ?? "localhost")?"
+        case .server(_, let body):
+            return body.message
+        case .badResponse:
+            return "The server sent a response the app couldn't read."
+        }
+    }
+
+    /// Shown in small print so a failure can be matched to a server log line.
+    var debugDetail: String? {
+        switch self {
+        case .server(_, let body): return body.requestId.map { "Request ID \($0)" }
+        case .badResponse(let status, let detail): return "HTTP \(status): \(detail)"
+        case .transport(let code): return "URLError \(code.rawValue)"
+        }
+    }
+}
+
+nonisolated struct APIClient {
+    var baseURL = AppConfig.apiBaseURL
+    var session = URLSession.shared
+
+    // MARK: Recipes
+
+    func listRecipes(cursor: String? = nil, limit: Int = 20) async throws -> RecipePage {
+        var query = [URLQueryItem(name: "limit", value: String(limit))]
+        if let cursor { query.append(URLQueryItem(name: "cursor", value: cursor)) }
+        return try await send("GET", "v1/recipes", query: query)
+    }
+
+    func recipe(id: UUID) async throws -> Recipe {
+        try await send("GET", "v1/recipes/\(id.uuidString.lowercased())")
+    }
+
+    func createRecipe(_ body: RecipeCreate) async throws -> Recipe {
+        try await send("POST", "v1/recipes", body: body)
+    }
+
+    func updateRecipe(id: UUID, _ body: RecipePatch) async throws -> Recipe {
+        try await send("PATCH", "v1/recipes/\(id.uuidString.lowercased())", body: body)
+    }
+
+    func deleteRecipe(id: UUID) async throws {
+        let _: Empty = try await send("DELETE", "v1/recipes/\(id.uuidString.lowercased())")
+    }
+
+    // MARK: Transport
+
+    private struct Empty: Decodable {}
+    private struct NoBody: Encodable {}
+
+    private func send<Response: Decodable>(
+        _ method: String,
+        _ path: String,
+        query: [URLQueryItem] = [],
+        body: (some Encodable)? = NoBody?.none
+    ) async throws -> Response {
+        var url = baseURL.appending(path: path)
+        if !query.isEmpty { url.append(queryItems: query) }
+
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let body {
+            request.httpBody = try Self.encoder.encode(body)
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError {
+            throw APIError.transport(error.code)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.badResponse(status: 0, detail: "Not an HTTP response")
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            if let envelope = try? Self.decoder.decode(ErrorBody.self, from: data) {
+                throw APIError.server(status: http.statusCode, body: envelope)
+            }
+            throw APIError.badResponse(status: http.statusCode, detail: "No error envelope")
+        }
+
+        if http.statusCode == 204, Response.self == Empty.self {
+            return Empty() as! Response
+        }
+        do {
+            return try Self.decoder.decode(Response.self, from: data)
+        } catch {
+            throw APIError.badResponse(status: http.statusCode, detail: String(describing: error))
+        }
+    }
+
+    // MARK: Coding
+
+    static let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.keyDecodingStrategy = .convertFromSnakeCase
+        d.dateDecodingStrategy = .custom(decodeServerDate)
+        return d
+    }()
+
+    static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.keyEncodingStrategy = .convertToSnakeCase
+        return e
+    }()
+
+    /// The server sends UTC timestamps with microseconds, e.g. "2026-10-14T19:39:17.693103Z".
+    /// Older Foundation releases (the iOS 17 era) reject fractional seconds under the
+    /// built-in `.iso8601` strategy, so try both shapes explicitly instead of relying on
+    /// the OS version.
+    static func decodeServerDate(_ decoder: Decoder) throws -> Date {
+        let container = try decoder.singleValueContainer()
+        let text = try container.decode(String.self)
+        if let date = try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text) {
+            return date
+        }
+        if let date = try? Date.ISO8601FormatStyle().parse(text) {
+            return date
+        }
+        throw DecodingError.dataCorruptedError(
+            in: container, debugDescription: "Unrecognized timestamp: \(text)")
+    }
+}
