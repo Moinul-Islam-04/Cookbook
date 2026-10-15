@@ -448,8 +448,11 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
     `ExtractionTimeout`. Error bodies aren't passed to the client.
 - **Privacy and cost:** with `COOKBOOK_EXTRACTION_PROVIDER=anthropic`, the caption text
   (not photos, not the user's recipes) is sent to Anthropic. A caption costs about $0.0004.
-  **The app's provider stays `ollama`** until the owner decides to switch. The adapter is
-  only used by `eval.run_eval` so far.
+  After seeing the results, the owner switched the app to `anthropic` the same day ("considering
+  haiku is so beyond cheap"). Qwen stays installed, and switching back is one line in `.env`.
+  Checked on the running service: importing the reel through `POST /v1/import-drafts`
+  took 7 s and returned `extraction_version` `anthropic:claude-haiku-5-5:prompt-5`, 9
+  ingredients and 5 steps, including the two after the ad.
 - **Evidence:** `backend/eval/RESULTS.md` (2026-10-15, Haiku). On the 14 captions ×3 runs,
   Haiku found 67/69 ingredients vs Qwen's 60/69. It got the failing reel fully right in every
   run, with a median of 1.9 s vs 28 s. Step counts tied at 11/14. 7 new mocked adapter

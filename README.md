@@ -14,7 +14,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
 | 5 Polish and demonstrate | **Done.** XCTest target (42 tests, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
-| Haiku extraction (optional) | **Done** on `haiku-extraction`. A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. The app still uses Qwen. See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
+| Haiku extraction (optional) | **Done** on `haiku-extraction`. A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. **The app now uses Haiku** (switched 2026-10-15). See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
 | UI pass | **Done** (merged from `UI`, checked on the iPhone). Seven fixes from a screen-by-screen review (import progress, app icon, card grid, recipe layout, ingredient emphasis, Settings, review summary). `ios/screenshots.sh` takes before/after screenshots. See DECISIONS 2026-10-15. |
 
 ### What works (backend, verified)
@@ -313,8 +313,7 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Decide whether the app should use Haiku (faster and more accurate, but captions go to
-Anthropic and each import costs a fraction of a cent) or stay on local Qwen. If Haiku,
-set `COOKBOOK_EXTRACTION_PROVIDER=anthropic`, restart the API, and import a real reel on
-the iPhone. Then fix step splitting in paragraph captions, which both models still get
+Import a real reel on the iPhone now that the app uses Haiku. Then decide what an import
+should do when the API is unreachable or the key is out of credit (fall back to Qwen?),
+and fix step splitting in paragraph captions, which both models still get
 wrong (`inline_prose`, `paragraph_only`, `multi_section_prose` in `backend/eval/`).
