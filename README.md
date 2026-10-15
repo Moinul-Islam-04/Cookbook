@@ -14,6 +14,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
 | 5 Polish and demonstrate | **Done.** XCTest target (42 tests, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
+| UI pass | **Done** (merged from `UI`, checked on the iPhone). Seven fixes from a screen-by-screen review (import progress, app icon, card grid, recipe layout, ingredient emphasis, Settings, review summary). `ios/screenshots.sh` takes before/after screenshots. See DECISIONS 2026-10-15. |
 
 ### What works (backend, verified)
 

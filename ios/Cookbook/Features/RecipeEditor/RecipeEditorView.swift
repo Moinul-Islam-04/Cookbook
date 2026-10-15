@@ -32,7 +32,7 @@ struct RecipeEditorView: View {
     /// The last create attempt. A retry of the identical body reuses its Idempotency-Key, so
     /// a save whose response was lost isn't stored twice; any edit gets a fresh key.
     @State private var lastAttempt: (body: RecipeCreate, key: String)?
-    @State private var showCaption = true
+    @State private var showFullCaption = false
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private struct Duplicate {
@@ -185,20 +185,54 @@ struct RecipeEditorView: View {
     @ViewBuilder
     private func captionSection(_ draft: ImportDraft) -> some View {
         Section {
-            DisclosureGroup("Original caption", isExpanded: $showCaption) {
+            reviewSummary
+            ForEach(draft.warnings) { warning in
+                ReviewFlag(text: warning.message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Original caption")
+                    .font(.subheadline.weight(.semibold))
                 Text(draft.sourceText)
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .lineLimit(showFullCaption ? nil : 4)
                     .textSelection(.enabled)
-            }
-            ForEach(draft.warnings) { warning in
-                Label(warning.message, systemImage: "exclamationmark.triangle")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
+                Button(showFullCaption ? "Show Less" : "Show Full Caption") {
+                    withAnimation { showFullCaption.toggle() }
+                }
+                .font(.subheadline)
+                .buttonStyle(.borderless)
             }
         } footer: {
             Text("Check everything against the caption. Nothing is saved until you tap Save.")
         }
+    }
+
+    /// What was found, and how many rows still need a look. Counts update as rows are fixed.
+    private var reviewSummary: some View {
+        let ingredients = form.ingredients.filter { !$0.isBlank }.count
+        let steps = form.steps.filter { !$0.instruction.trimmed.isEmpty }.count
+        let flagged = form.ingredients.filter(\.needsReview).count + form.steps.filter(\.needsReview).count
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("Found \(ingredients == 1 ? "1 ingredient" : "\(ingredients) ingredients") and \(steps == 1 ? "1 step" : "\(steps) steps")")
+                .font(.headline)
+            if flagged > 0 {
+                ReviewFlag(text: flagged == 1 ? "1 row is marked to check" : "\(flagged) rows are marked to check",
+                           systemImage: "exclamationmark.circle.fill")
+                    .font(.subheadline)
+            } else {
+                Label {
+                    Text("Nothing flagged. Give it a quick look, then Save.")
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                }
+                .font(.subheadline)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 
     private static func reviewText(_ reasons: [String]) -> String {
@@ -224,7 +258,7 @@ struct RecipeEditorView: View {
                     // quantity/unit fields would clip their text.
                     (typeSize.isAccessibilitySize
                         ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-                        : AnyLayout(HStackLayout())) {
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline))) {
                         TextField("Qty", text: $row.quantity)
                             .keyboardType(.numbersAndPunctuation)
                             .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 64)
@@ -233,7 +267,9 @@ struct RecipeEditorView: View {
                             .textInputAutocapitalization(.never)
                             .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 84)
                             .accessibilityLabel("Unit")
-                        TextField("Ingredient", text: $row.name)
+                        // Wraps, so long names ("Tomato Paste/Marinara (Leggo's…)") aren't cut off.
+                        TextField("Ingredient", text: $row.name, axis: .vertical)
+                            .lineLimit(1...4)
                             .accessibilityLabel("Ingredient name")
                     }
                     if let index {
@@ -241,9 +277,8 @@ struct RecipeEditorView: View {
                         FieldErrorText(fieldErrors["ingredients.\(index).quantity"])
                     }
                     if row.needsReview {
-                        Label(Self.reviewText(row.reviewReasons), systemImage: "exclamationmark.circle")
+                        ReviewFlag(text: Self.reviewText(row.reviewReasons), systemImage: "exclamationmark.circle.fill")
                             .font(.footnote)
-                            .foregroundStyle(.orange)
                     }
                 }
             }
@@ -286,9 +321,8 @@ struct RecipeEditorView: View {
                             .accessibilityLabel("Step \(offset + 1)")
                     }
                     if step.needsReview {
-                        Label(Self.reviewText(step.reviewReasons), systemImage: "exclamationmark.circle")
+                        ReviewFlag(text: Self.reviewText(step.reviewReasons), systemImage: "exclamationmark.circle.fill")
                             .font(.footnote)
-                            .foregroundStyle(.orange)
                     }
                 }
             }
@@ -398,6 +432,20 @@ private struct FieldErrorText: View {
             Text(message)
                 .font(.footnote)
                 .foregroundStyle(.red)
+        }
+    }
+}
+
+/// Orange icon, readable text: orange text on white fails WCAG contrast.
+private struct ReviewFlag: View {
+    let text: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text(text).foregroundStyle(.secondary)
+        } icon: {
+            Image(systemName: systemImage).foregroundStyle(.orange)
         }
     }
 }

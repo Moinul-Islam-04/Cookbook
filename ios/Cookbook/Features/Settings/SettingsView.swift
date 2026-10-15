@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var pairError: String?
     @State private var status: Status = .unknown
     @State private var confirmUnpair = false
+    @State private var showPairing = false
 
     private enum Status: Equatable {
         case unknown, checking, ok, unreachable(String), unauthorized
@@ -17,29 +18,44 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    LabeledContent("Server", value: server)
-                    LabeledContent("Device", value: paired ? "Paired" : "Not paired")
                     statusRow
+                    LabeledContent("Server") {
+                        Text(server)
+                            .font(.callout.monospaced())
+                            .textSelection(.enabled)
+                    }
                     Button("Check Connection") { Task { await check() } }
                         .disabled(status == .checking)
+                } header: {
+                    Text("Connection")
                 }
 
                 Section {
-                    PasteButton(payloadType: String.self) { strings in
-                        Task { @MainActor in pair(strings.first ?? "") }
+                    if paired && !showPairing {
+                        Button("Pair with a New Code") { showPairing = true }
+                    } else {
+                        PasteButton(payloadType: String.self) { strings in
+                            Task { @MainActor in pair(strings.first ?? "") }
+                        }
+                        .buttonBorderShape(.capsule)
+                        if let pairError {
+                            Text(pairError).font(.footnote).foregroundStyle(.red)
+                        }
+                        DisclosureGroup("Show the command") {
+                            Text("python -m app.tokens create --name \"iPhone\" --server <your Mac's address>")
+                                .font(.footnote.monospaced())
+                                .textSelection(.enabled)
+                        }
+                        .font(.subheadline)
                     }
-                    if let pairError {
-                        Text(pairError).font(.footnote).foregroundStyle(.red)
+                    if paired {
+                        Button("Unpair This Device", role: .destructive) { confirmUnpair = true }
                     }
                 } header: {
-                    Text(paired ? "Pair Again" : "Pair This Device")
+                    Text(paired ? "Pairing" : "Pair This Device")
                 } footer: {
-                    Text("On your Mac, run `python -m app.tokens create --name \"iPhone\" --server <your Mac's address>` in the backend folder, copy the pairing code, then tap Paste here.")
-                }
-
-                if paired {
-                    Section {
-                        Button("Unpair This Device", role: .destructive) { confirmUnpair = true }
+                    if !paired || showPairing {
+                        Text("Create a pairing code on your Mac (in the backend folder), copy it, then tap Paste. Paste turns on once there's text to paste.")
                     }
                 }
             }
@@ -60,19 +76,31 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
+    /// Always one row, sized to its content. As LabeledContent (iOS 27), the trailing
+    /// status grew to a few hundred points tall and left a large blank gap in the section.
     private var statusRow: some View {
-        switch status {
-        case .unknown: EmptyView()
-        case .checking: LabeledContent("Status") { ProgressView() }
-        case .ok: LabeledContent("Status") { Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
-        case .unauthorized: LabeledContent("Status") { Label("Not signed in", systemImage: "lock.fill").foregroundStyle(.orange) }
-        case .unreachable(let message):
-            VStack(alignment: .leading) {
-                Label("Can't reach server", systemImage: "wifi.exclamationmark").foregroundStyle(.red)
-                Text(message).font(.caption).foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline) {
+            Text("Status")
+            Spacer(minLength: 12)
+            Group {
+                switch status {
+                case .unknown, .checking:
+                    ProgressView()
+                case .ok:
+                    StatusLabel("Connected", systemImage: "checkmark.circle.fill", color: .green)
+                case .unauthorized:
+                    StatusLabel("Not signed in", systemImage: "lock.fill", color: .orange)
+                case .unreachable(let message):
+                    VStack(alignment: .trailing, spacing: 2) {
+                        StatusLabel("Can't reach server", systemImage: "wifi.exclamationmark", color: .red)
+                        Text(message).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                    }
+                }
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        .accessibilityElement(children: .combine)
     }
 
     private func pair(_ text: String) {
@@ -81,6 +109,7 @@ struct SettingsView: View {
             return
         }
         pairError = nil
+        showPairing = false
         AppConfig.pair(code)
         refresh()
         Task { await check() }
@@ -103,6 +132,27 @@ struct SettingsView: View {
         } catch {
             let apiError = error.asAPIError
             status = apiError.isUnauthenticated ? .unauthorized : .unreachable(apiError.userMessage)
+        }
+    }
+}
+
+/// Coloured icon, standard text: green, orange or red text on white fails WCAG contrast.
+private struct StatusLabel: View {
+    let title: String
+    let systemImage: String
+    let color: Color
+
+    init(_ title: String, systemImage: String, color: Color) {
+        self.title = title
+        self.systemImage = systemImage
+        self.color = color
+    }
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage).foregroundStyle(color)
         }
     }
 }
