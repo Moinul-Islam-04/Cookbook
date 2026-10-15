@@ -489,7 +489,7 @@ def test_ollama_adapter_sends_schema_and_caption_as_data() -> None:
     ex = _ollama(handler)
     raw = ex.extract(BRIEF_CAPTION)
     assert json.loads(raw) == BRIEF_OUTPUT
-    assert ex.version == "ollama:qwen2.5:7b:prompt-4"
+    assert ex.version == "ollama:qwen2.5:7b:prompt-5"
     assert seen["model"] == "qwen2.5:7b" and seen["stream"] is False
     assert seen["options"]["temperature"] == 0
     assert seen["format"]["properties"].keys() >= {"is_recipe", "ingredients", "steps"}
@@ -498,6 +498,12 @@ def test_ollama_adapter_sends_schema_and_caption_as_data() -> None:
     unit = seen["format"]["$defs"]["RawIngredient"]["properties"]["unit"]["anyOf"][0]
     assert unit == {"type": "string", "maxLength": 20}
     assert seen["options"]["num_predict"] == 2048
+    # Every key is required (nullable ones may be null): with optional keys the grammar let
+    # Qwen skip `name`, and a real three-section caption came back with one section.
+    ingredient = seen["format"]["$defs"]["RawIngredient"]
+    assert set(ingredient["required"]) == {"raw_text", "name", "quantity", "unit"}
+    assert set(seen["format"]["$defs"]["RawStep"]["required"]) == {"instruction"}
+    assert set(seen["format"]["required"]) == {"is_recipe", "title", "ingredients", "steps"}
 
 
 @pytest.mark.parametrize(
