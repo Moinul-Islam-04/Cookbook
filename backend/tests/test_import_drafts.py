@@ -531,6 +531,83 @@ def test_ollama_down_is_a_503_and_timeout_a_504(app, client: TestClient) -> None
     assert_error(client.post("/v1/import-drafts", json={"source_text": "x"}), 504, "extraction_timeout")
 
 
+# ---------- Anthropic adapter (HTTP mocked; no API key or network needed) ----------
+
+
+def _claude_message(text: str | None, stop_reason: str = "end_turn") -> dict:
+    content = [{"type": "thinking", "thinking": "", "signature": "sig"}]
+    if text is not None:
+        content.append({"type": "text", "text": text})
+    return {"id": "msg_1", "type": "message", "role": "assistant", "model": "claude-haiku-5-5",
+            "content": content, "stop_reason": stop_reason, "stop_sequence": None,
+            "usage": {"input_tokens": 900, "output_tokens": 300}}
+
+
+def _claude(handler):
+    import anthropic
+    import httpx2
+
+    from app.extraction.anthropic import AnthropicExtractor
+
+    http = anthropic.DefaultHttpxClient(transport=httpx2.MockTransport(handler))
+    return AnthropicExtractor("sk-ant-test", "claude-haiku-5-5", 5, http_client=http)
+
+
+def test_anthropic_adapter_sends_strict_schema_and_caption_as_data() -> None:
+    import httpx2
+
+    seen = {}
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.update(json.loads(request.content), key=request.headers["x-api-key"])
+        return httpx2.Response(200, json=_claude_message(json.dumps(BRIEF_OUTPUT)))
+
+    ex = _claude(handler)
+    raw = ex.extract(BRIEF_CAPTION)
+    # The text block is returned even when a thinking block comes first.
+    assert json.loads(raw) == BRIEF_OUTPUT
+    assert ex.version == "anthropic:claude-haiku-5-5:prompt-5"
+    assert ex.last_usage == (900, 300)
+    assert seen["key"] == "sk-ant-test" and seen["model"] == "claude-haiku-5-5"
+    # Haiku 5.5 rejects non-default sampling parameters.
+    assert "temperature" not in seen
+    assert seen["messages"] == [{"role": "user", "content": f"<caption>\n{BRIEF_CAPTION}\n</caption>"}]
+    schema = seen["output_config"]["format"]["schema"]
+    assert seen["output_config"]["format"]["type"] == "json_schema"
+    ingredient = schema["$defs"]["RawIngredient"]
+    assert set(ingredient["required"]) == {"raw_text", "name", "quantity", "unit"}
+    assert ingredient["additionalProperties"] is False and schema["additionalProperties"] is False
+    assert set(schema["required"]) == {"is_recipe", "title", "ingredients", "steps"}
+    # The "title" property survives; pydantic's title annotations don't.
+    assert "title" in schema["properties"] and "title" not in ingredient
+
+
+@pytest.mark.parametrize(
+    "response, error",
+    [
+        (lambda r: (_ for _ in ()).throw(__import__("httpx2").ConnectError("refused")), "ExtractionError"),
+        (lambda r: (_ for _ in ()).throw(__import__("httpx2").ReadTimeout("slow")), "ExtractionTimeout"),
+        (lambda r: __import__("httpx2").Response(401, json={"type": "error", "error": {
+            "type": "authentication_error", "message": "invalid x-api-key"}}), "ExtractionError"),
+        (lambda r: __import__("httpx2").Response(200, json=_claude_message(None, "refusal")), "ExtractionError"),
+        (lambda r: __import__("httpx2").Response(200, json=_claude_message(None, "max_tokens")), "ExtractionError"),
+    ],
+)
+def test_anthropic_adapter_failures_map_to_extraction_errors(response, error) -> None:
+    from app.extraction import base
+
+    with pytest.raises(getattr(base, error)):
+        _claude(response).extract("caption")
+
+
+def test_anthropic_provider_needs_a_key() -> None:
+    from app.config import Settings
+    from app.extraction import make_extractor
+
+    with pytest.raises(RuntimeError, match="COOKBOOK_ANTHROPIC_API_KEY"):
+        make_extractor(Settings(_env_file=None, extraction_provider="anthropic", anthropic_api_key=""))
+
+
 # ---------- validator leniency found by the Qwen evaluation (eval/) ----------
 
 

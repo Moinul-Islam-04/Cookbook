@@ -14,6 +14,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
 | 5 Polish and demonstrate | **Done.** XCTest target (42 tests, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
+| Haiku extraction (optional) | **Done** on `haiku-extraction`. A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. The app still uses Qwen. See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
 | UI pass | **Done** (merged from `UI`, checked on the iPhone). Seven fixes from a screen-by-screen review (import progress, app icon, card grid, recipe layout, ingredient emphasis, Settings, review summary). `ios/screenshots.sh` takes before/after screenshots. See DECISIONS 2026-10-15. |
 
 ### What works (backend, verified)
@@ -163,6 +164,9 @@ Not yet checked by hand: typing a search, the duplicate alert, and Open Existing
   `COOKBOOK_EXTRACTION_PROVIDER`:
   - `ollama` uses a local `qwen2.5:7b`. Captions stay on the Mac, it's free, and it takes
     about 15–60 s per caption (a real 1,000-character reel caption took about 60 s on an M2).
+  - `anthropic` uses Claude Haiku 5.5 over the API (`COOKBOOK_ANTHROPIC_API_KEY`).
+    It takes about 2 s per caption and costs about $0.0004 each, but captions are sent
+    to Anthropic.
   - `fake` (the default when unset) is a rule-based reader for neat layouts, with no
     model at all.
   Results are in `backend/eval/RESULTS.md`; rerun them with `python -m eval.run_eval
@@ -309,7 +313,8 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Import a few real Instagram captions in the Simulator (**+ → Import Caption**), and add
-any that go wrong to `backend/eval/captions.json`. If Qwen's speed or accuracy isn't good
-enough, add a Claude Haiku adapter and run the same evaluation. Then Milestone 4:
-images and authentication.
+Decide whether the app should use Haiku (faster and more accurate, but captions go to
+Anthropic and each import costs a fraction of a cent) or stay on local Qwen. If Haiku,
+set `COOKBOOK_EXTRACTION_PROVIDER=anthropic`, restart the API, and import a real reel on
+the iPhone. Then fix step splitting in paragraph captions, which both models still get
+wrong (`inline_prose`, `paragraph_only`, `multi_section_prose` in `backend/eval/`).

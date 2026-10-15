@@ -84,3 +84,38 @@ latency to 81 s, under the 120 s timeout.
 `--case ID` and `--repeat N` run single cases, e.g.
 `python -m eval.run_eval ollama --case sections_with_own_steps --repeat 3`.
 
+
+## 2026-10-15: Claude Haiku 5.5 (`claude-haiku-5-5`), same prompt-5
+
+The same prompt and schema as Qwen (shared in `app/extraction/prompt.py`), sent through the
+Anthropic API with structured outputs and `effort: low`. Every key is required, as for
+Ollama. The same validator checks the output.
+
+`python -m eval.run_eval anthropic --repeat 3`: 14 captions × 3 runs. The Haiku column is
+per run (the totals divided by 3). The Qwen column is prompt-5 from the table above.
+
+| | Qwen 2.5 7B (local) | Haiku 5.5 (API) |
+|---|---|---|
+| Recipe vs non-recipe correct | 14/14 | **14/14** (42/42) |
+| Expected ingredients found | 60/69 | **67/69** (201/207) |
+| Quantity exact (of found) | 60/60 | 66/67 (198/201) |
+| Step count matches | 11/14 | 11/14 (33/42) |
+| Rows not matching the caption | 0 | 0.7 (2 in 42 runs) |
+| Amounts/units the validator stripped | 1 | **0** |
+| Injected words in an unflagged row | 0 | 0 |
+| The failing reel (`sections_with_own_steps`) | 7/9, steps wrong | **9/9, steps right, 3 of 3 runs** |
+| Errors | 0 | 0 |
+| Median / max latency | 28.1 s / 81 s | **1.9 s / 9.4 s** |
+| Cost | free | ≈ $0.0004 per caption ($0.0156 for all 42 calls) |
+
+Haiku recovers the text after the reel's cookbook ad (the chives and the last two steps)
+that Qwen dropped. The results were stable across the three runs. Remaining misses:
+- Step splitting in paragraph captions: `inline_prose`, `paragraph_only`,
+  `multi_section_prose` (the same cases as Qwen).
+- One ingredient in each of `paragraph_only` and `multi_section_prose`.
+- One quantity in `emoji_bullets_unicode`.
+- `multi_section_prose` had one row flagged as not matching the caption in 2 of 3 runs.
+  The review screen shows it in orange.
+
+The three slowest calls (5–9 s) were each the first run of a long caption, and repeats
+took 2–3 s. I haven't verified why.

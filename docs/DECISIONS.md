@@ -430,3 +430,29 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   no metric worse. A prompt-only fix was tried first and did nothing.
 - **Revisit:** text after an ad in the caption is still sometimes dropped. That's the
   next eval target, and a good test for a paid model.
+
+## 2026-10-15: Claude Haiku 5.5 as an optional extraction provider
+
+- **Context:** Qwen takes 20–80 s per caption and still drops text after an ad in a real
+  reel (prompt-5 entry above). The README already listed "add a Claude Haiku adapter and
+  run the same evaluation" as the next step. The owner approved trying it on 2026-10-15
+  and put $5 of credit on an API key.
+- **Decision:**
+  - `app/extraction/anthropic.py` uses the official `anthropic` SDK (pinned 1.15.0).
+  - Model `claude-haiku-5-5`, structured outputs (`output_config.format`) with every key
+    required, `effort: low`, no sampling parameters (Haiku 5.5 rejects them), one SDK retry.
+  - The prompt moved to `app/extraction/prompt.py` so both models get the same text.
+  - The key is `COOKBOOK_ANTHROPIC_API_KEY` in `backend/.env`. That file is gitignored and
+    the tests never read it.
+  - Refusals, API errors and empty replies map to `ExtractionError`; timeouts map to
+    `ExtractionTimeout`. Error bodies aren't passed to the client.
+- **Privacy and cost:** with `COOKBOOK_EXTRACTION_PROVIDER=anthropic`, the caption text
+  (not photos, not the user's recipes) is sent to Anthropic. A caption costs about $0.0004.
+  **The app's provider stays `ollama`** until the owner decides to switch. The adapter is
+  only used by `eval.run_eval` so far.
+- **Evidence:** `backend/eval/RESULTS.md` (2026-10-15, Haiku). On the 14 captions ×3 runs,
+  Haiku found 67/69 ingredients vs Qwen's 60/69. It got the failing reel fully right in every
+  run, with a median of 1.9 s vs 28 s. Step counts tied at 11/14. 7 new mocked adapter
+  tests; `pytest` 180 passed.
+- **Revisit:** if Haiku becomes the default, decide what happens when the Mac is offline
+  or the key runs out. Falling back to Qwen is the obvious option.

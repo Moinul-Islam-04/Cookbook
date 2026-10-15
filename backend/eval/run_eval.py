@@ -3,6 +3,7 @@
     .venv/bin/python -m eval.run_eval fake ollama        # from backend/
     .venv/bin/python -m eval.run_eval ollama --model qwen2.5:7b
     .venv/bin/python -m eval.run_eval ollama --case sections_with_own_steps --repeat 3
+    .venv/bin/python -m eval.run_eval anthropic          # needs COOKBOOK_ANTHROPIC_API_KEY; costs money
 
 Expectations are hand-written. Metrics per provider:
 - recipe: is_recipe detected correctly (a draft with no_recipe_found counts as "not a recipe")
@@ -12,6 +13,7 @@ Expectations are hand-written. Metrics per provider:
 - unmatched: ingredient/step rows flagged not_in_source (paraphrased or invented)
 - steps: draft step count equals the expected count
 - forbidden: injected words that made it into an unflagged row (must be 0)
+- cost: API tokens and dollars, for hosted providers that report usage
 """
 
 import argparse
@@ -23,6 +25,9 @@ from pathlib import Path
 
 from app.config import Settings
 from app.extraction import ExtractionError, ExtractionTimeout, MalformedOutput, make_extractor, run_extraction
+
+# USD per million (input, output) tokens, for the cost line. Prompts here are far under 100K tokens.
+PRICES = {"claude-haiku-5-5": (0.10, 0.50)}
 
 CASES = json.loads((Path(__file__).parent / "captions.json").read_text())
 
@@ -71,18 +76,20 @@ def score(case: dict, draft) -> dict:
 
 
 def run(provider: str, model: str | None) -> list[dict]:
-    settings = Settings(extraction_provider=provider, **({"ollama_model": model} if model else {}))
+    settings = Settings(extraction_provider=provider, **({f"{provider}_model": model} if model else {}))
     extractor = make_extractor(settings)
     rows = []
     for case in CASES:
         start = time.perf_counter()
+        extractor.last_usage = None
         try:
             draft = run_extraction(extractor, case["caption"], settings.extraction_timeout_s)
             row = score(case, draft) | {"error": None}
         except (ExtractionError, ExtractionTimeout, MalformedOutput) as e:
             row = {"error": type(e).__name__, "recipe_ok": False, "found": 0, "expected": len(case.get("ingredients", [])),
                    "qty_ok": 0, "invented": 0, "unmatched": 0, "steps_ok": False, "forbidden": 0}
-        row |= {"id": case["id"], "seconds": round(time.perf_counter() - start, 1)}
+        row |= {"id": case["id"], "seconds": round(time.perf_counter() - start, 1),
+                "usage": extractor.last_usage, "model": getattr(extractor, "model", None)}
         rows.append(row)
         print(f"  {provider:7} {case['id']:22} {row['seconds']:5.1f}s  "
               f"recipe={'✓' if row['recipe_ok'] else '✗'} ingr={row['found']}/{row['expected']} qty={row['qty_ok']} "
@@ -101,7 +108,19 @@ def summary(provider: str, rows: list[dict]) -> str:
         f"steps {sum(r['steps_ok'] for r in rows)}/{len(rows)} | invented-stripped {sum(r['invented'] for r in rows)} | "
         f"unmatched {sum(r['unmatched'] for r in rows)} | headings-as-ingredients {sum(r.get('headings_as_ingredients', 0) for r in rows)} | forbidden {sum(r['forbidden'] for r in rows)} | "
         f"errors {sum(bool(r['error']) for r in rows)} | median {times[len(times)//2]}s, max {times[-1]}s"
+        + cost(rows)
     )
+
+
+def cost(rows: list[dict]) -> str:
+    used = [r for r in rows if r.get("usage")]
+    if not used:
+        return ""
+    tin = sum(r["usage"][0] for r in used)
+    tout = sum(r["usage"][1] for r in used)
+    price = PRICES.get(used[0]["model"])
+    dollars = f", ${(tin * price[0] + tout * price[1]) / 1e6:.4f}" if price else ""
+    return f" | tokens {tin} in / {tout} out{dollars}"
 
 
 if __name__ == "__main__":
@@ -120,4 +139,4 @@ if __name__ == "__main__":
     results = {p: run(p, args.model) for p in args.providers}
     print()
     for p, rows in results.items():
-        print(summary(p + (f":{args.model}" if args.model and p == "ollama" else ""), rows))
+        print(summary(p + (f":{args.model}" if args.model and p != "fake" else ""), rows))
