@@ -224,7 +224,7 @@ struct RecipeEditorView: View {
                     // quantity/unit fields would clip their text.
                     (typeSize.isAccessibilitySize
                         ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-                        : AnyLayout(HStackLayout())) {
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline))) {
                         TextField("Qty", text: $row.quantity)
                             .keyboardType(.numbersAndPunctuation)
                             .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 64)
@@ -233,7 +233,9 @@ struct RecipeEditorView: View {
                             .textInputAutocapitalization(.never)
                             .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 84)
                             .accessibilityLabel("Unit")
-                        TextField("Ingredient", text: $row.name)
+                        // Wraps, so long names ("Tomato Paste/Marinara (Leggo's…)") aren't cut off.
+                        TextField("Ingredient", text: $row.name, axis: .vertical)
+                            .lineLimit(1...4)
                             .accessibilityLabel("Ingredient name")
                     }
                     if let index {

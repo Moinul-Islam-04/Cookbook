@@ -198,7 +198,9 @@ struct RecipeDetailView: View {
                     if offset > 0 { Divider() }
                     // raw_text is the recipe's own wording, so "salt to taste" reads naturally
                     // and nothing is shown that wasn't written.
-                    Text(ingredient.rawText)
+                    Text(IngredientText.emphasized(
+                        rawText: ingredient.rawText, name: ingredient.name,
+                        quantity: ingredient.quantity, unit: ingredient.unit))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 10)
                 }
