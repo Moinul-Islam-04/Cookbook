@@ -13,7 +13,7 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
 | 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
-| 5 Polish and demonstrate | **In progress.** Contract suites in the repo, demo script, accessibility pass (Dynamic Type and audit) done; XCTest target and a hands-on VoiceOver session remaining. |
+| 5 Polish and demonstrate | **Done.** XCTest target (42 tests, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
 
 ### What works (backend, verified)
 
@@ -103,7 +103,15 @@ Checks run:
 
 Not yet checked: tapping through create, edit, stale-edit and delete in the Simulator.
 Also not checked: an iOS 17/18 runtime, Dynamic Type, VoiceOver, or a physical device.
-The project has no XCTest target yet.
+
+**Tests:** the `CookbookTests` XCTest target (⌘U in Xcode, or `ios/run-tests.sh`):
+- 32 offline unit tests: quantity parsing, form → request rules, Instagram link and
+  caption parsing, pairing codes, and `APIClient` headers, decoding and error mapping
+  against a stubbed `URLSession`.
+- 10 live contract tests (`LiveContractTests`) that run the real client against the real
+  server, ported from the earlier `swiftc` harness. They skip unless a token is set:
+  `TOKEN=ckb_... ios/run-tests.sh` (in Xcode: Edit Scheme → Test → Arguments →
+  `COOKBOOK_TEST_TOKEN`).
 
 Run: start the backend (below), open `ios/Cookbook.xcodeproj`, pick an iPhone Simulator, ⌘R.
 Set `COOKBOOK_API_URL` in the scheme's environment to use a different server.

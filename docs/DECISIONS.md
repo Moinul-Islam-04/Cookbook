@@ -115,7 +115,26 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Decision:** The API and form logic are UI-free files. They were compiled with `swiftc`
   alongside a throwaway harness and run against the live server (33 checks). Add a real
   test target from Xcode (File → New → Target → Unit Testing Bundle) and port the checks.
-- **Revisit:** Next iOS slice.
+- **Revisit:** Next iOS slice. **Superseded** by the XCTest target below.
+
+## 2026-10-14: XCTest target with offline unit tests and opt-in live contract tests
+
+- **Decision:** `CookbookTests` is a unit-test bundle hosted by the app
+  (`@testable import Cookbook`), with a file-system-synchronized folder and a shared
+  scheme. Two layers:
+  - **Offline unit tests** run everywhere: pure logic, plus `APIClient` against a stub
+    `URLProtocol`, so header, decoding and error-mapping rules need no server.
+  - **Live contract tests** run the real client against the real backend, ported from the
+    `ios/ContractTests` `swiftc` suites (now removed). They `XCTSkip` without
+    `COOKBOOK_TEST_TOKEN`, so ⌘U never fails just because the Mac's server is off.
+- **Why both:** stubs prove the client does what *I think* the server does; only the live
+  tests prove the server agrees. The import test asserts only provider-neutral behavior,
+  so it passes on the rule-based fake or on Qwen.
+- **Verified:** 42 tests pass on the iPhone 18 Pro Simulator against the launchd API
+  (live run about 41 s, mostly Qwen). Re-introducing the old "1/3 cup → 0.333" bug fails
+  `testTypedFractionKeepsItsWording`.
+- **Gave up:** UI tests. The UI was exercised by the scratch XCUITest driver and by hand;
+  a checked-in UI test target is the next step if the UI starts changing often.
 
 ## 2026-10-14: Source links are Instagram posts and reels only
 

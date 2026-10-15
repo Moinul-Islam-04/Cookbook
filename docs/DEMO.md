@@ -82,8 +82,9 @@ privately over Tailscale.
 
 - Backend: 173 pytest tests against real PostgreSQL (migrations, constraints, auth,
   ownership, concurrency, extraction fixtures, photos).
-- iOS: 5 contract suites (`ios/ContractTests/run.sh`) run the real Swift client against
-  the live server.
+- iOS: 42 XCTest tests (`ios/run-tests.sh` or ⌘U): 32 offline unit tests (form rules,
+  parsing, `APIClient` against a stubbed `URLSession`) and 10 live contract tests that run
+  the real Swift client against the live server.
 - Qwen evaluation on 13 captions: 13/13 recipe detection, 52/60 ingredients, 51/52 exact
   quantities, 0 injected words, median about 20 s.
 
@@ -92,8 +93,7 @@ privately over Tailscale.
 - Slow imports on Qwen. A Claude Haiku adapter plus the same evaluation is about 20
   minutes of work.
 - No offline cache. The app needs the Mac awake.
-- There's no XCTest target yet; the contract suites cover the client logic, and the UI
-  was exercised by an XCUITest driver and by hand.
+- No checked-in UI tests: the UI was exercised by a scratch XCUITest driver and by hand.
 - Captions only: no reel audio or video. Screenshot OCR (on-device Vision) is the next
   import source.
 - Accessibility (checked 2026-10-14):
@@ -112,7 +112,8 @@ privately over Tailscale.
   - **VoiceOver labels**, read from the accessibility tree: list rows read as one element
     ("Tomato pasta, 3 ingredients, 1 step"), steps as "Step 1: Cook pasta.", and
     thumbnails are hidden.
-  - Not yet: a full hands-on VoiceOver session on the phone, and the iOS 17 runtime.
+  - **Hands-on VoiceOver on the iPhone**: worked well.
+  - Not yet: the iOS 17 runtime.
 - Grocery lists and meal planning are deliberately out of scope.
 
 ## Questions to practice
