@@ -388,3 +388,31 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Also fixed:** tests read `backend/.env`, so the first run uploaded about 30 objects to
   the real MinIO, since cleaned. Tests now use `make_settings()`, which never reads
   `.env`.
+
+## 2026-10-15: UI pass on the `UI` branch, reviewed against principles and Apple's HIG
+
+- **Context:** The core features worked, but the UI was default SwiftUI lists. A review of
+  all 17 screens with real data (`ios/screenshots.sh`) against general UI principles
+  (feedback, consistency, clarity, findability, credibility) and Apple's Human Interface
+  Guidelines produced a ranked list, fixed in this order:
+  1. **Feedback:** import shows what's happening, elapsed time, and the usual 20–60 s,
+     with a working Stop (the local model reports no progress, so nothing fake is shown).
+  2. **Credibility:** app icon (SF Symbol `fork.knife`, light and dark) and an accent
+     colour checked for contrast: #C2410C on white 5.2:1, #FB923C on black 9.3:1.
+  3. **Desirability:** list became a photo-card grid; photo-less recipes get a placeholder.
+  4. **Hierarchy:** recipe screen leads with a full-width photo, shows the title once,
+     and moves photo/delete actions to a ··· menu.
+  5. **Clarity:** ingredient amounts are bold; the characters are always raw_text
+     (`IngredientText`, unit-tested).
+  6. **Credibility:** Settings had a large blank gap (an iOS 27 LabeledContent sizing
+     issue); fixed, and pairing simplified.
+  7. **Visibility:** the review screen leads with "Found N ingredients and M steps" and
+     a live count of rows to check; the caption is a 4-line preview.
+- **Rules kept:** coloured status text (green/orange/red) became a coloured icon with
+  standard text, since those colours fail WCAG contrast on white. Every screen was checked
+  in light mode, dark mode, and the largest accessibility text size.
+- **Not done (features, not polish):** cooking mode, serving scaling, ingredient check-off.
+- **Tooling:** `CookbookUITests/ScreenshotTour` walks every screen and round-trips a real
+  photo upload on the test recipe. Xcode 27's xcodebuild sometimes doesn't exit after UI
+  tests, so the script stops it once results are written. At the largest text size the
+  system photo picker's banner hides the photos, so that one step can't run there.

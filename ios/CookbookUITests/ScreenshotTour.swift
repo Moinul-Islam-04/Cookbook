@@ -27,7 +27,10 @@ final class ScreenshotTour: XCTestCase {
     }
 
     private func waitFor(_ element: XCUIElement, _ what: String, timeout: TimeInterval = 15) {
-        XCTAssertTrue(element.waitForExistence(timeout: timeout), "\(what) didn't appear")
+        if !element.waitForExistence(timeout: timeout) {
+            snap("FAILED-\(what.replacingOccurrences(of: " ", with: "-"))")
+            XCTFail("\(what) didn't appear")
+        }
     }
 
     /// iOS 27 draws some Cancel buttons as an ✕ labelled "Close".
@@ -109,6 +112,8 @@ final class ScreenshotTour: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // Photo round trip on the test recipe: add from the library, then delete it again.
+        // At large text sizes the grid is one column and the card may be off-screen.
+        for _ in 0..<6 where !recipe("QA Lemon Chicken").isHittable { app.swipeUp() }
         waitFor(recipe("QA Lemon Chicken"), "QA recipe")
         recipe("QA Lemon Chicken").tap()
         waitFor(app.buttons["Add Photo"], "add-photo placeholder")
