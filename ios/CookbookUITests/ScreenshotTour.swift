@@ -43,6 +43,11 @@ final class ScreenshotTour: XCTestCase {
         XCTFail("no \(what) button (\(labels)); buttons: \(onScreen)")
     }
 
+    /// A recipe card (or any element) whose accessibility label starts with `title`.
+    private func recipe(_ title: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+    }
+
     private func openAddMenu() {
         app.navigationBars.buttons["Add Recipe"].tap()
     }
@@ -56,7 +61,7 @@ final class ScreenshotTour: XCTestCase {
 
     func testTour() throws {
         // List
-        waitFor(app.staticTexts["Honey buffalo crispy chicken"], "recipe list")
+        waitFor(recipe("Honey buffalo crispy chicken"), "recipe list")
         snap("01-list")
 
         // Search
@@ -76,7 +81,7 @@ final class ScreenshotTour: XCTestCase {
         app.alerts.buttons["Cancel"].tap()
 
         // Recipe with a photo and many ingredients
-        app.staticTexts["High Protein Grilled Cheese Breakfast Burritos"].tap()
+        recipe("High Protein Grilled Cheese Breakfast Burritos").tap()
         waitFor(app.staticTexts["Ingredients"], "recipe detail")
         snap("06-detail-top")
         app.swipeUp()
@@ -94,8 +99,8 @@ final class ScreenshotTour: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()  // back
 
         // Imported recipe without a photo
-        waitFor(app.staticTexts["Honey buffalo crispy chicken"], "list again")
-        app.staticTexts["Honey buffalo crispy chicken"].tap()
+        waitFor(recipe("Honey buffalo crispy chicken"), "list again")
+        recipe("Honey buffalo crispy chicken").tap()
         waitFor(app.staticTexts["Ingredients"], "second recipe")
         snap("11-detail-no-photo")
         app.navigationBars.buttons.element(boundBy: 0).tap()

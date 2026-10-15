@@ -128,3 +128,23 @@ struct RecipePhotosSection: View {
         }
     }
 }
+
+/// Stands in for a recipe photo: a warm gradient with a utensil glyph. The hue varies with
+/// the title, so photo-less recipes stay distinguishable in the grid.
+struct RecipePlaceholder: View {
+    let title: String
+
+    var body: some View {
+        let hue = Double(title.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) % 997 }) / 997
+        LinearGradient(
+            colors: [Color(hue: 0.02 + hue * 0.1, saturation: 0.55, brightness: 0.95),
+                     Color(hue: 0.0 + hue * 0.08, saturation: 0.7, brightness: 0.8)],
+            startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .accessibilityHidden(true)
+    }
+}

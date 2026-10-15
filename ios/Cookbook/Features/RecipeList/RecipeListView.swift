@@ -216,25 +216,30 @@ struct RecipeListView: View {
     }
 
     private var list: some View {
-        List {
+        ScrollView {
             if let deleteError {
                 ErrorBanner(error: deleteError)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
             }
 
-            ForEach(model.recipes) { recipe in
-                NavigationLink(value: recipe.id) {
-                    RecipeRow(recipe: recipe)
-                }
-                .swipeActions {
-                    // Not role: .destructive — that removes the row immediately, before the
-                    // user confirms and before the server agrees.
-                    Button("Delete", systemImage: "trash") { pendingDelete = recipe }
-                        .tint(.red)
+            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 20) {
+                ForEach(model.recipes) { recipe in
+                    NavigationLink(value: recipe.id) {
+                        RecipeCard(recipe: recipe)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        // Not deleted here: the dialog below confirms first.
+                        Button("Delete", systemImage: "trash", role: .destructive) { pendingDelete = recipe }
+                    }
                 }
             }
+            .padding(.horizontal)
 
             if model.hasMore || model.loadMoreError != nil {
                 loadMoreRow
+                    .padding()
             }
         }
         .refreshable { await model.refresh() }
@@ -255,8 +260,15 @@ struct RecipeListView: View {
                 }
             }
         } message: { _ in
-            Text("This also deletes its ingredients and steps. It can't be undone.")
+            Text("This also deletes its ingredients, steps and photos. It can't be undone.")
         }
+    }
+
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// Two columns on a phone; one at accessibility text sizes, where two would squeeze titles.
+    private var gridColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 320 : 150), spacing: 16, alignment: .top)]
     }
 
     @ViewBuilder
@@ -278,56 +290,53 @@ struct RecipeListView: View {
     }
 }
 
-private struct RecipeRow: View {
+/// A recipe in the grid: photo (or a placeholder), title, and what's in it.
+private struct RecipeCard: View {
     let recipe: RecipeSummary
 
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    /// At accessibility text sizes, side-by-side layouts squeeze words into hyphenated
-    /// columns ("in-gre-di-ents"); stack them instead.
-    private var stacked: Bool { typeSize.isAccessibilitySize }
-
     var body: some View {
-        let layout = stacked
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-            : AnyLayout(HStackLayout(spacing: 12))
-        layout {
-            if recipe.thumbnailUrl != nil {
-                RemotePhoto(path: recipe.thumbnailUrl)
-                    .frame(width: stacked ? 120 : 56, height: stacked ? 120 : 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .accessibilityHidden(true)
-            }
-            details
-        }
-    }
+        VStack(alignment: .leading, spacing: 8) {
+            Color.clear
+                .aspectRatio(4 / 3, contentMode: .fit)
+                .overlay {
+                    if recipe.thumbnailUrl != nil {
+                        RemotePhoto(path: recipe.thumbnailUrl)
+                    } else {
+                        RecipePlaceholder(title: recipe.title)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(alignment: .topTrailing) {
+                    if recipe.sourceUrl != nil {
+                        Image(systemName: "link")
+                            .font(.caption.weight(.semibold))
+                            .padding(7)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(8)
+                    }
+                }
 
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 4) {
             Text(recipe.title)
                 .font(.headline)
-            (stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout(spacing: 12))) {
-                Text("^[\(recipe.ingredientCount) ingredient](inflect: true)")
-                Text("^[\(recipe.stepCount) step](inflect: true)")
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            if recipe.sourceUrl != nil {
-                Label("Instagram", systemImage: "link")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if !recipe.missing.isEmpty {
-                // Orange icon, secondary text: orange text on white fails WCAG contrast.
-                Label {
-                    Text("Missing \(recipe.missing.joined(separator: " and "))")
-                        .foregroundStyle(.secondary)
-                } icon: {
-                    Image(systemName: "exclamationmark.circle").foregroundStyle(.orange)
-                }
-                .font(.caption)
-            }
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+            Text(summary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([recipe.title, summary, recipe.sourceUrl != nil ? "From Instagram" : nil]
+            .compactMap { $0 }.joined(separator: ", "))
+    }
+
+    /// "16 ingredients · 3 steps", or what's still missing.
+    private var summary: String {
+        if recipe.missing.count == 2 { return "No ingredients or steps yet" }
+        if recipe.missing.contains("ingredients") { return "No ingredients yet" }
+        if recipe.missing.contains("steps") { return "No steps yet" }
+        let ingredients = recipe.ingredientCount == 1 ? "1 ingredient" : "\(recipe.ingredientCount) ingredients"
+        let steps = recipe.stepCount == 1 ? "1 step" : "\(recipe.stepCount) steps"
+        return "\(ingredients) · \(steps)"
     }
 }
