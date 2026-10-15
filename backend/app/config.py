@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     # "dev": no authentication, every request is the owner (127.0.0.1 only).
     # "token": every request needs `Authorization: Bearer <device token>`.
     auth_mode: str = "dev"
-    # Which extraction provider turns captions into drafts: "fake" (rule-based, no model)
-    # or "ollama" (a local model).
+    # Which extraction provider turns captions into drafts: "fake" (rule-based, no model),
+    # "ollama" (a local model) or "anthropic" (Claude over the API: captions leave the Mac).
     extraction_provider: str = "fake"
     # A local 7B model on a 16 GB M2 took ~60 s on a real 1,000-character reel caption.
     extraction_timeout_s: float = 120.0
@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     max_images_per_recipe: int = 10
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-haiku-5-5"
     draft_ttl_hours: int = 24
 
 
