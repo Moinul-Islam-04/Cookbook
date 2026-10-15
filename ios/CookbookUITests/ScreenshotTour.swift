@@ -103,6 +103,25 @@ final class ScreenshotTour: XCTestCase {
         recipe("Honey buffalo crispy chicken").tap()
         waitFor(app.staticTexts["Ingredients"], "second recipe")
         snap("11-detail-no-photo")
+        app.navigationBars.buttons["More"].tap()
+        snap("11b-more-menu")
+        app.tap()  // dismiss the menu
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        // Photo round trip on the test recipe: add from the library, then delete it again.
+        waitFor(recipe("QA Lemon Chicken"), "QA recipe")
+        recipe("QA Lemon Chicken").tap()
+        waitFor(app.buttons["Add Photo"], "add-photo placeholder")
+        app.buttons["Add Photo"].tap()
+        let libraryPhoto = app.images.matching(NSPredicate(format: "label CONTAINS[c] 'photo'")).firstMatch
+        waitFor(libraryPhoto, "photo picker")
+        libraryPhoto.tap()
+        waitFor(app.images["Recipe photo"], "uploaded photo", timeout: 30)
+        snap("11c-detail-photo-added")
+        app.navigationBars.buttons["More"].tap()
+        app.buttons["Delete This Photo"].tap()
+        app.buttons["Delete Photo"].firstMatch.tap()
+        waitFor(app.buttons["Add Photo"], "placeholder after delete", timeout: 20)
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // New recipe (empty editor)
