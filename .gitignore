@@ -14,3 +14,6 @@ xcuserdata/
 
 # macOS
 .DS_Store
+
+# UI screenshot runs
+ios/screenshots/
