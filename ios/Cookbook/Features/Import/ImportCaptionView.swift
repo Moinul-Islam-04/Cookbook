@@ -16,6 +16,8 @@ struct ImportCaptionView: View {
     @State private var caption: String
     @State private var link: String
     @State private var isReading = false
+    @State private var readStarted: Date?
+    @State private var readTask: Task<Void, Never>?
     @State private var error: APIError?
     @State private var linkError: String?
     @State private var draft: ImportDraft?
@@ -52,6 +54,12 @@ struct ImportCaptionView: View {
     private var entryForm: some View {
         NavigationStack {
             Form {
+                if isReading, let readStarted {
+                    Section {
+                        ReadingProgress(started: readStarted)
+                    }
+                }
+
                 if let notice {
                     Section {
                         Label(notice, systemImage: "info.circle")
@@ -111,33 +119,41 @@ struct ImportCaptionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.disabled(isReading)
+                    // While reading, this stops the read and keeps the caption for another try.
+                    if isReading {
+                        Button("Stop") { readTask?.cancel() }
+                    } else {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if isReading {
-                        ProgressView()
-                    } else {
-                        Button("Read Recipe") { Task { await read() } }
-                            .disabled(caption.trimmed.isEmpty)
-                    }
+                    Button("Read Recipe") { startReading() }
+                        .disabled(caption.trimmed.isEmpty || isReading)
                 }
             }
             .interactiveDismissDisabled(!caption.trimmed.isEmpty || isReading)
-            .task {
-                if autoRead && draft == nil && !caption.trimmed.isEmpty { await read() }
+            .onAppear {
+                if autoRead && draft == nil && readTask == nil && !caption.trimmed.isEmpty { startReading() }
             }
         }
     }
 
-    private func read() async {
+    private func startReading() {
         guard !isReading else { return }
+        readTask = Task { await read() }
+    }
+
+    private func read() async {
         isReading = true
-        defer { isReading = false }
+        readStarted = .now
+        defer { isReading = false; readStarted = nil; readTask = nil }
         error = nil
         linkError = nil
         do {
             draft = try await api.createDraft(
                 ImportDraftCreate(sourceText: caption.trimmed, sourceUrl: link.trimmed.nilIfEmpty))
+        } catch is CancellationError {
+            // Stopped by the user. The server may still finish; that draft just expires.
         } catch {
             let apiError = error.asAPIError
             if let field = apiError.fieldErrors.first(where: { $0.field == "source_url" }) {
@@ -154,5 +170,35 @@ struct ImportCaptionView: View {
         form.notes = caption.trimmed
         form.sourceUrl = link.trimmed
         manual = form
+    }
+}
+
+/// What the user sees while the server turns a caption into a draft. The local model gives
+/// no progress signal, so this shows honest facts instead: what is happening, how long it
+/// has taken, and how long it usually takes.
+private struct ReadingProgress: View {
+    let started: Date
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ProgressView()
+                .controlSize(.large)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Reading the recipe…")
+                    .font(.headline)
+                Text("Finding the ingredients and steps in the caption. This usually takes 20–60 seconds.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                TimelineView(.periodic(from: started, by: 1)) { context in
+                    Text("\(Int(context.date.timeIntervalSince(started))) s")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
     }
 }

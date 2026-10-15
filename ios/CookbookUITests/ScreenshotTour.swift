@@ -126,7 +126,16 @@ final class ScreenshotTour: XCTestCase {
         3. Stir in garlic and lemon zest.
         #dinner
         """)
+        // Stop keeps the caption and lets the user try again.
         app.navigationBars.buttons["Read Recipe"].tap()
+        waitFor(app.navigationBars.buttons["Stop"], "Stop button")
+        app.navigationBars.buttons["Stop"].tap()
+        waitFor(app.navigationBars.buttons["Cancel"], "Cancel after Stop")
+        XCTAssertTrue(app.navigationBars.buttons["Read Recipe"].isEnabled, "can read again after Stop")
+        XCTAssertTrue((app.textViews.firstMatch.value as? String)?.contains("Lemon garlic orzo") == true, "caption kept")
+
+        app.navigationBars.buttons["Read Recipe"].tap()
+        Thread.sleep(forTimeInterval: 3)
         snap("14-import-reading")
         waitFor(app.navigationBars["Review Recipe"], "review screen", timeout: 150)
         snap("15-review")
