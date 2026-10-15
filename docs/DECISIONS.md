@@ -416,3 +416,17 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   photo upload on the test recipe. Xcode 27's xcodebuild sometimes doesn't exit after UI
   tests, so the script stops it once results are written. At the largest text size the
   system photo picker's banner hides the photos, so that one step can't run there.
+
+## 2026-10-15: Require every field in the schema sent to Ollama (prompt-5)
+
+- **Context:** a real three-section reel imported as one section (2 of 9 ingredients).
+  The schema required only `raw_text`, and Ollama's grammar lets the model skip anything
+  optional; Qwen skipped `name`, pushed a description into the 20-character `unit`, was
+  cut off mid-word and ended the JSON early.
+- **Decision:** the Ollama adapter marks every property required (nullable ones may be
+  null). The shared pydantic model stays lenient; the validator still checks all output.
+- **Evidence:** `backend/eval/RESULTS.md` (2026-10-15), same 14 captions back to back:
+  ingredients 54→60 of 69, exact amounts 53/54→60/60, steps 9→11 of 14, the reel 2→7 of 9,
+  no metric worse. A prompt-only fix was tried first and did nothing.
+- **Revisit:** text after an ad in the caption is still sometimes dropped. That's the
+  next eval target, and a good test for a paid model.

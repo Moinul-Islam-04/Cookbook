@@ -2,6 +2,7 @@
 
     .venv/bin/python -m eval.run_eval fake ollama        # from backend/
     .venv/bin/python -m eval.run_eval ollama --model qwen2.5:7b
+    .venv/bin/python -m eval.run_eval ollama --case sections_with_own_steps --repeat 3
 
 Expectations are hand-written. Metrics per provider:
 - recipe: is_recipe detected correctly (a draft with no_recipe_found counts as "not a recipe")
@@ -107,7 +108,15 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("providers", nargs="+")
     ap.add_argument("--model")
+    ap.add_argument("--case", action="append", help="only these case ids (repeatable)")
+    ap.add_argument("--repeat", type=int, default=1, help="run each case this many times")
     args = ap.parse_args()
+    if args.case:
+        unknown = set(args.case) - {c["id"] for c in CASES}
+        if unknown:
+            ap.error(f"unknown case id(s): {', '.join(sorted(unknown))}")
+        CASES[:] = [c for c in CASES if c["id"] in args.case]
+    CASES[:] = [c for c in CASES for _ in range(args.repeat)]
     results = {p: run(p, args.model) for p in args.providers}
     print()
     for p, rows in results.items():

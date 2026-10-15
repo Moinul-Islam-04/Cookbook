@@ -12,7 +12,7 @@ import httpx
 
 from app.extraction.base import ExtractionError, ExtractionOutput, ExtractionTimeout
 
-PROMPT_VERSION = "prompt-4"
+PROMPT_VERSION = "prompt-5"
 
 # Per-field caps added to the JSON schema sent to Ollama. Its grammar enforces maxLength, which
 # stops the degenerate loops small models fall into (seen in eval: a "unit" that repeated
@@ -66,7 +66,7 @@ class OllamaExtractor:
         self.model = model
         self.version = f"ollama:{model}:{PROMPT_VERSION}"
         self._client = httpx.Client(base_url=base_url, timeout=timeout_s, transport=transport)
-        self._schema = _capped_schema(ExtractionOutput.model_json_schema())
+        self._schema = _ollama_schema(ExtractionOutput.model_json_schema())
 
     def extract(self, source_text: str) -> str:
         body = {
@@ -101,11 +101,21 @@ class OllamaExtractor:
             raise ExtractionError("ollama response missing message content") from None
 
 
-def _capped_schema(schema: dict) -> dict:
-    """Copy of a pydantic JSON schema with maxLength on the string fields in _FIELD_CAPS."""
+def _ollama_schema(schema: dict) -> dict:
+    """Copy of a pydantic JSON schema prepared for Ollama's grammar-constrained output.
+
+    - Every property is required (nullable ones may still be null). Ollama generates exactly
+      what the schema allows, so optional keys get skipped: on a real caption Qwen omitted
+      every ingredient `name`, tried to put "medium russet potatoes, cut into thin fries"
+      in `unit`, and stopped after the first of three sections. Requiring `name`, which
+      comes before `unit`, gives the description a place to go.
+    - maxLength on the string fields in _FIELD_CAPS.
+    """
 
     def walk(node):
         if isinstance(node, dict):
+            if node.get("type") == "object" and "properties" in node:
+                node["required"] = list(node["properties"])
             for name, prop in node.get("properties", {}).items():
                 if name in _FIELD_CAPS:
                     for variant in prop.get("anyOf", [prop]):
