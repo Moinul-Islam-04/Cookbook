@@ -494,3 +494,12 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Ollama/Qwen:** the owner stopped evaluating and tuning it. The adapter and the
   service stay in place as a one-line switch back. Qwen also gets prompt-6 but hasn't
   been measured on it.
+
+## 2026-10-15: Simulator walkthrough found no pull to refresh on the empty list
+
+- **Found:** `CookbookUITests/Walkthrough` on the iPhone Air Simulator. With no recipes, a
+  recipe created through the API (as if from another device) never appeared. Two pull
+  gestures on "No Recipes Yet" sent no request (server log), and only a relaunch showed it.
+  The likely cause is that the empty state's `.refreshable` has no scroll view to pull.
+- **Not fixed** (the walkthrough doesn't change app code). Create, edit, stale edit,
+  delete, search, duplicates and caption import all passed. See the README.

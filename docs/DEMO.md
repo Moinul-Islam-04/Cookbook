@@ -6,11 +6,11 @@ repo: numbers come from `backend/eval/RESULTS.md`, test runs, and `docs/DECISION
 ## 30-second pitch
 
 A personal cookbook for recipes I find on Instagram. I copy a reel's link and the app
-reads the caption. A local model turns it into a draft, and the server checks every
-ingredient and amount against the caption, so nothing is invented. I review the draft,
-save it once, and can search it by ingredient later. It's a native SwiftUI app with a
-FastAPI and PostgreSQL backend that I self-host on my Mac for $0. My iPhone reaches it
-privately over Tailscale.
+reads the caption. Claude Haiku turns it into a draft in a few seconds, and the server
+checks every ingredient and amount against the caption, so nothing is invented. I review
+the draft, save it once, and can search it by ingredient later. It's a native SwiftUI app
+with a FastAPI and PostgreSQL backend that I self-host on my Mac; the only cost is about
+$0.0006 per import. My iPhone reaches it privately over Tailscale.
 
 ## 5-minute live demo (on the iPhone)
 
@@ -22,8 +22,8 @@ privately over Tailscale.
      says "You copied a link. Import it?".
    - The reel opens in a **logged-out** in-app browser. Tap Import Recipe, and the caption
      is read from the page.
-   - The draft starts with local Qwen, taking about 30–60 s. *Talk while it runs: why
-     local, and why it's slow.*
+   - Claude Haiku 5.5 reads it in about 3 s. *Mention that a local Qwen 7B took 20–80 s
+     and missed text after an ad, which is why the app switched.*
 3. **Review.** The original caption is shown above the draft. Orange flags mark rows that
    didn't match the caption. "1/2 cup" keeps its wording, "salt to taste" has no amount,
    and there's no invented title. Fix a row and Save.
@@ -43,8 +43,9 @@ privately over Tailscale.
 - **Data:** PostgreSQL with hand-written Alembic migrations, and `alembic check` in the
   tests. Recipes have ordered ingredient and step rows, plus import drafts, idempotency
   keys, photo metadata and device tokens.
-- **AI:** a provider adapter: the rule-based fake for tests, Qwen 2.5 7B via Ollama in
-  use. Every provider's output goes through the same **source-fidelity validator**.
+- **AI:** a provider adapter: the rule-based fake for tests, Claude Haiku 5.5 in use
+  (prompt-6, structured outputs), Qwen 2.5 7B via Ollama kept as a one-line switch back.
+  Every provider's output goes through the same **source-fidelity validator**.
 - **Hosting:** launchd services on my Mac, with MinIO for photos, Tailscale `serve` for
   HTTPS reachable only from my devices, nightly `pg_dump`, and hourly cleanup.
 
@@ -52,8 +53,8 @@ privately over Tailscale.
 
 | Decision | Why | Gave up | Switch when |
 |---|---|---|---|
-| Self-host on my Mac + Tailscale | $0, private, one user | Availability when the laptop sleeps | Needs to work with the laptop off, more users, or a paid model |
-| Qwen 2.5 7B local | Free; captions never leave the Mac | Speed (about 60 s on a real caption) and structure (steps by section) | Latency hurts; Haiku is a config change behind the adapter |
+| Self-host on my Mac + Tailscale | $0 hosting, private, one user | Availability when the laptop sleeps | Needs to work with the laptop off, or more users |
+| Claude Haiku 5.5 over the API (switched from local Qwen) | 67/69 vs 60/69 ingredients, about 3 s vs 28 s median, about $0.0006 a caption | Captions leave the Mac; no import without internet or credit (a clear error, then manual entry) | Privacy matters more than speed: Qwen is one line in `.env` |
 | Validator after the model | Works for *any* model, and the brief forbids invented amounts | Can't judge text quoted verbatim from the caption (a known, tested limit) | Never; it's the safety net |
 | Device tokens, not managed auth | One owner, no third-party account | JWT/OIDC features, multiple users | Before a second user or public deploy |
 | In-app logged-out browser for Instagram | The only way to match ReciMe; oEmbed's terms forbid extraction | It's a ToS gray area, and Instagram can change the page | Meta offers a permitted caption API |
@@ -80,20 +81,23 @@ privately over Tailscale.
 
 ## Numbers
 
-- Backend: 173 pytest tests against real PostgreSQL (migrations, constraints, auth,
+- Backend: 184 pytest tests against real PostgreSQL (migrations, constraints, auth,
   ownership, concurrency, extraction fixtures, photos).
-- iOS: 42 XCTest tests (`ios/run-tests.sh` or ⌘U): 32 offline unit tests (form rules,
+- iOS: 47 XCTest tests (`ios/run-tests.sh` or ⌘U): 37 offline unit tests (form rules,
   parsing, `APIClient` against a stubbed `URLSession`) and 10 live contract tests that run
-  the real Swift client against the live server.
-- Qwen evaluation on 13 captions: 13/13 recipe detection, 52/60 ingredients, 51/52 exact
-  quantities, 0 injected words, median about 20 s.
+  the real Swift client against the live server. Plus two UI tests: a screenshot tour and
+  a walkthrough of create, edit, stale edit, delete, search, duplicates and import.
+- Haiku evaluation (prompt-6) on 14 captions × 3 runs: 42/42 recipe detection, 202/207
+  ingredients, 0 rows not matching the caption, 0 injected words, median 3.3 s. Qwen on
+  the same captions (prompt-5): 60/69 ingredients, median 28 s.
 
 ## Honest limits and what's next
 
-- Slow imports on Qwen. A Claude Haiku adapter plus the same evaluation is about 20
-  minutes of work.
+- Imports need the internet and API credit (Haiku). With neither, the app says so and
+  offers manual entry; there's no automatic fallback to the local model.
 - No offline cache. The app needs the Mac awake.
-- No checked-in UI tests: the UI was exercised by a scratch XCUITest driver and by hand.
+- UI tests are a screenshot tour and one walkthrough (`ios/CookbookUITests`), run by hand
+  on the Simulator, not in CI.
 - Captions only: no reel audio or video. Screenshot OCR (on-device Vision) is the next
   import source.
 - Accessibility (checked 2026-10-14):
