@@ -15,6 +15,9 @@ struct RecipeListView: View {
     /// the banner sticks until something new is copied.
     @State private var offeredChangeCount = -1
     @State private var notInstagramLink = false
+    /// A post link handed over by the share extension (cookbook://import?url=…), waiting
+    /// for the user to confirm before the browser loads anything.
+    @State private var sharedLink: URL?
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
@@ -90,6 +93,13 @@ struct RecipeListView: View {
                 } message: {
                     Text("Use a link to a single Instagram post or reel (…/p/… or …/reel/…).")
                 }
+                .alert("Import from Instagram?", isPresented: sharedLinkPresented, presenting: sharedLink) { link in
+                    Button("Open") { instagramImport = InstagramImportRequest(url: link) }
+                    Button("Cancel", role: .cancel) {}
+                } message: { link in
+                    Text(link.absoluteString)
+                }
+                .onOpenURL { url in handleDeepLink(url) }
                 .safeAreaInset(edge: .top) {
                     if clipboardHasLink { clipboardBanner }
                 }
@@ -176,6 +186,21 @@ struct RecipeListView: View {
     private func openInstagram(_ text: String) {
         if let url = InstagramLink.postURL(from: text) {
             instagramImport = InstagramImportRequest(url: url)
+        } else {
+            notInstagramLink = true
+        }
+    }
+
+    private var sharedLinkPresented: Binding<Bool> {
+        Binding(get: { sharedLink != nil }, set: { if !$0 { sharedLink = nil } })
+    }
+
+    /// Share → Cookbook opens cookbook://import?url=…. Any app can open that scheme, so the
+    /// link is re-validated and the user confirms before the in-app browser loads it.
+    private func handleDeepLink(_ url: URL) {
+        guard ImportHandoff.isImportLink(url) else { return }
+        if let post = ImportHandoff.postURL(fromDeepLink: url) {
+            sharedLink = post
         } else {
             notInstagramLink = true
         }
