@@ -494,3 +494,73 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Ollama/Qwen:** the owner stopped evaluating and tuning it. The adapter and the
   service stay in place as a one-line switch back. Qwen also gets prompt-6 but hasn't
   been measured on it.
+
+## 2026-10-15: Simulator walkthrough found no pull to refresh on the empty list
+
+- **Found:** `CookbookUITests/Walkthrough` on the iPhone Air Simulator. With no recipes, a
+  recipe created through the API (as if from another device) never appeared. Two pull
+  gestures on "No Recipes Yet" sent no request (server log), and only a relaunch showed it.
+  The likely cause is that the empty state's `.refreshable` has no scroll view to pull.
+- **Not fixed** (the walkthrough doesn't change app code). Create, edit, stale edit,
+  delete, search, duplicates and caption import all passed. See the README.
+
+## 2026-10-15: The share extension hands the link to the app with a custom URL scheme
+
+- **Context:** Share → Cookbook from Instagram or Safari should start the existing link
+  import. Share extensions can't use `UIApplication.shared`, and `NSExtensionContext.open`
+  is documented for Today and iMessage extensions only. The brief says a share extension
+  may receive a URL only. The owner signs with a free Personal Team, where App Groups may
+  not be available.
+- **Decision:**
+  - The extension (`CookbookShare`, no entitlements) checks the shared URL or text with
+    `InstagramLink`. That code is now in `ios/Shared` and compiled into both targets.
+  - It opens `cookbook://import?url=<canonical post URL>`. It tries
+    `NSExtensionContext.open` first, then the `UIApplication` found on its responder chain.
+    If opening fails, it copies the link and points the user to the app's clipboard banner.
+  - The app re-validates the link (any app can open the scheme) and asks "Import from
+    Instagram?" before the in-app browser loads anything. The extension never fetches
+    Instagram or calls the backend.
+- **Alternatives:**
+  - App Group shared storage: needs a capability, and still doesn't open the app.
+  - Clipboard only: leaves the user to switch apps. Kept as the fallback.
+  - Universal links: need a hosted domain and Associated Domains.
+- **Verified:** iOS 27 Simulator only.
+  - `NSExtensionContext.open` returned false; the responder-chain open returned true.
+  - XCUITest: Safari → Share → Cookbook reached the app's confirmation with the
+    canonical reel link, and an example.com link stayed in the extension.
+  - 6 offline unit tests.
+  - Not verified: a real iPhone, free-team signing (the extension is a second App ID),
+    sharing from the Instagram app, and the clipboard fallback.
+- **Risk:** the responder-chain open is an undocumented workaround. App Review could
+  reject it, and a future iOS could break it; the clipboard fallback remains. Revisit if
+  it stops working on the device, or before any App Store submission.
+
+## 2026-10-15: Screenshot import reads text on the device; the user checks it before extraction
+
+- **Context:** long captions are hard to copy from Instagram. The brief allows screenshot
+  OCR as an optional MVP convenience, as long as OCR output stays a reviewable draft and
+  is treated as untrusted.
+- **Decision:**
+  - Vision (`VNRecognizeTextRequest`, accurate, language correction on) reads the text on
+    the phone, from `PhotosPicker` (no photo library permission needed).
+  - The text goes into the Import Caption field after anything already there. The user
+    edits it and taps Read Recipe, and it is sent as `source_text` like a pasted caption.
+    No backend change, no image upload.
+  - Lines are ordered by position and never rewritten. Screenshots join in picked order,
+    and an exact overlap (2+ lines, or one line of 20+ characters) is dropped once.
+  - Instagram labels are left in for the extractor and the review screen.
+  - Amounts like "11/2" are pointed out to the user, never changed.
+- **Alternatives:**
+  - Server-side OCR: rejected. It uploads images and adds cost.
+  - Stripping Instagram labels: rejected as not simple or safe.
+  - Auto-submitting after OCR: rejected, the user should check the text first.
+  - Rewriting "11/2" as "1 1/2": rejected, it could invent a quantity.
+- **Finding:** in the iOS 27 Simulator, Vision read "1 1/2 cups flour" as "11/2 cups
+  flour" with every setting (macOS Vision didn't). Because the misread is in the caption
+  itself, the server can't catch it, and it then saved 5.5 cups with nothing flagged.
+  Hence the warning. Whether a real iPhone does this is unknown.
+- **Verified:**
+  - 13 unit tests, one running Vision in the Simulator on a generated image.
+  - A UI test on a dev-mode server with the fake extractor: cancel, two ordered
+    screenshots, no text found, and one screenshot through to Review Recipe.
+  - Not tested on a device or on real Instagram screenshots.

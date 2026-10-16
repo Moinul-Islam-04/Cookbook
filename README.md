@@ -9,12 +9,14 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | Milestone | State |
 | --- | --- |
 | 0 Runnable baseline | Backend and iOS project done. Instagram access spike not run. |
-| 1 Manual recipe persistence | **Done.** Backend tested; iOS walked through by hand on the Simulator. |
-| 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; Simulator walkthrough of search/duplicate alert still to do by hand. |
-| 3 Extraction and review | **Done.** Local Qwen 2.5 7B via Ollama, behind the adapter; evaluated on 12 captions. Simulator walkthrough of the import screens still to do by hand. |
+| 1 Manual recipe persistence | **Done.** Backend tested; create, edit, stale edit and delete walked through on the Simulator (2026-10-15). One gap: no pull to refresh on the empty list. |
+| 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; search and the duplicate alert walked through on the Simulator (2026-10-15). |
+| 3 Extraction and review | **Done.** Built and first evaluated with local Qwen 2.5 7B via Ollama, behind the adapter; the app now uses Claude Haiku 5.5 (see below). Import Caption, review and the failure path walked through on the Simulator (2026-10-15). |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
-| 5 Polish and demonstrate | **Done.** XCTest target (42 tests, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
-| Haiku extraction (optional) | **Done** on `haiku-extraction`. A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. **The app now uses Haiku** (switched 2026-10-15, and the owner checked imports on the iPhone). See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
+| 5 Polish and demonstrate | **Done.** XCTest target (66 tests now, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
+| Haiku extraction (optional) | **Done** (merged from `haiku-extraction`). A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. **The app now uses Haiku** (switched 2026-10-15, and the owner checked imports on the iPhone). Since then: clear errors when Claude can't be reached or the key is out of credit, and prompt-6 (a paragraph step is one whole sentence) at effort `medium`, about 3.3 s and $0.0006 per caption. Ollama/Qwen is no longer tuned or evaluated. See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
+| Share extension | **Done** (Simulator only). In Instagram or Safari, tap Share → **Cookbook** on a post or reel. The extension only checks the link; it never loads Instagram or calls the server. It opens the app with `cookbook://import?url=…`, the app checks the link again and asks "Import from Instagram?", then runs the usual in-app browser import. Other links show "Not an Instagram post". Verified in the iOS 27 Simulator (XCUITest `ShareExtensionFlow`); not yet on a real iPhone with free signing. See DECISIONS 2026-10-15. |
+| Import from a screenshot | **Done** (Simulator only). **+ → Import from Screenshot**, or "Read Text from Screenshots" on Import Caption. Pick up to 5 screenshots in order. The text is read on the phone with Apple's Vision and added to the caption field, where you check it before tapping Read Recipe; images are never uploaded. Overlapping lines between screenshots appear once, and amounts like "11/2" (often "1 1/2" misread) are pointed out but never changed. Verified with 13 unit tests and a Simulator UI test (`ScreenshotImportFlow`); not yet on a real iPhone or real Instagram screenshots. See DECISIONS 2026-10-15. |
 | UI pass | **Done** (merged from `UI`, checked on the iPhone). Seven fixes from a screen-by-screen review (import progress, app icon, card grid, recipe layout, ingredient emphasis, Settings, review summary). `ios/screenshots.sh` takes before/after screenshots. See DECISIONS 2026-10-15. |
 
 ### What works (backend, verified)
@@ -39,8 +41,9 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ### Checks run
 
-- `pytest`: **48 passed** against PostgreSQL 16.15, five consecutive runs. The suite
-  covers:
+- `pytest`: **48 passed** at the end of Milestone 1, against PostgreSQL 16.15, five
+  consecutive runs (the whole suite is 184 tests as of 2026-10-15). The Milestone 1 tests
+  cover:
   - migration down to base and back up, plus `alembic check` (models match migrations)
   - every DB constraint: foreign keys, unique positions, blank text, quantity > 0,
     cascade delete
@@ -64,9 +67,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
   pairing code in the app's **Settings** (the gear icon). `dev` mode has no
   authentication and is for local tests only. Single user, self-hosted: see
   `docs/DECISIONS.md`.
-- Not built yet, each in a later milestone:
-- Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed).
-  Python 3.11+ is required.
+- Tested on Linux with Python 3.13 and macOS with Python 3.12 / PostgreSQL 14 (48 passed,
+  at Milestone 1). Python 3.11+ is required.
 - Quantities allow up to 3 decimal places (e.g. 0.333). The client should round
   fractions like 1/3.
 
@@ -74,8 +76,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 `ios/Cookbook.xcodeproj`, iOS 17+, SwiftUI, URLSession, no third-party packages.
 
-- Recipe list (newest first, loads more pages on scroll, pull to refresh), with
-  loading, empty and error-with-retry states.
+- Recipe list: a grid of photo cards (newest first, loads more pages on scroll, pull to
+  refresh), with loading, empty and error-with-retry states.
 - Recipe detail: ingredients shown with their `raw_text`, numbered steps, notes.
 - Create/edit form: ingredient rows (quantity, unit, name) and steps, add, delete, reorder.
   Quantities accept `2`, `1.5`, `1 1/2`, `1/3` (rounded to 3 places). Inline field errors
@@ -83,8 +85,8 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
   save keeps the form as typed. Cancel/swipe-down asks before discarding edits.
 - Edit sends only changed fields. A 409 `stale_version` keeps your edits and offers "Save
   My Version" or "Discard Mine and Reload".
-- Delete asks for confirmation (from the list swipe or the detail screen). The row is
-  removed only after the server returns 204.
+- Delete asks for confirmation (long-press a card in the list, or ··· → Delete Recipe on
+  the recipe screen). The card is removed only after the server returns 204.
 - Errors show the server's message plus its request ID.
 
 Checks run:
@@ -103,17 +105,40 @@ Checks run:
 - Simulator launch: the list showed a recipe created through the API, and the error
   state appeared when pointed at a closed port.
 
-Not yet checked: tapping through create, edit, stale-edit and delete in the Simulator.
-Also not checked: an iOS 17/18 runtime, Dynamic Type, VoiceOver, or a physical device.
+Simulator walkthrough (2026-10-15, `CookbookUITests/Walkthrough` on the iPhone Air
+Simulator, iOS 27, against a throwaway dev-mode server, with screenshots of each step):
+create (a "1 1/2 cups" row keeps its wording, "salt to taste" keeps a null amount), edit,
+a stale edit made by a `PATCH` from "another device" (the 409 alert keeps the edits; Save
+My Version saves them; Discard Mine and Reload shows the newer copy), and delete from the
+recipe screen and from a card's long-press menu. All passed.
+Found: pull to refresh does nothing on the empty "No Recipes Yet" screen, so a recipe
+added elsewhere doesn't appear until the app is relaunched (likely because the empty
+state isn't in a scroll view, so `.refreshable` has nothing to pull). Pull to refresh on
+a non-empty grid wasn't part of this walkthrough.
+Dynamic Type, VoiceOver and a physical device were checked later (Milestone 5). Not
+checked: an iOS 17/18 runtime.
 
 **Tests:** the `CookbookTests` XCTest target (⌘U in Xcode, or `ios/run-tests.sh`):
-- 32 offline unit tests: quantity parsing, form → request rules, Instagram link and
-  caption parsing, pairing codes, and `APIClient` headers, decoding and error mapping
-  against a stubbed `URLSession`.
+- 56 offline unit tests: quantity parsing, form → request rules, ingredient emphasis,
+  Instagram link and caption parsing, share-extension link hand-off, screenshot text
+  ordering and joining (one runs Vision on a generated image), pairing codes, and `APIClient` headers, decoding
+  and error mapping against a stubbed `URLSession`.
 - 10 live contract tests (`LiveContractTests`) that run the real client against the real
   server, ported from the earlier `swiftc` harness. They skip unless a token is set:
   `TOKEN=ckb_... ios/run-tests.sh` (in Xcode: Edit Scheme → Test → Arguments →
   `COOKBOOK_TEST_TOKEN`).
+
+**UI tests:** the `CookbookUITests` target, run with the `Screenshots` scheme:
+- `ScreenshotTour` screenshots every main screen against the live server
+  (`ios/screenshots.sh`).
+- `Walkthrough` taps through the Milestone 1–3 flows and asserts what it sees. It deletes
+  every recipe on its server, so point it only at a throwaway dev-mode backend (the file's
+  header has the command).
+- `ShareExtensionFlow` shares a reel link from Safari to the extension and checks the app
+  opens on the import confirmation; a non-Instagram link stays in the extension.
+- `ScreenshotImportFlow` picks generated screenshots and follows one through to Review
+  Recipe. It needs its four test images added to the Simulator in a set order (see the
+  file's header) and a dev-mode backend.
 
 Run: start the backend (below), open `ios/Cookbook.xcodeproj`, pick an iPhone Simulator, ⌘R.
 Set `COOKBOOK_API_URL` in the scheme's environment to use a different server.
@@ -152,9 +177,13 @@ Checks run:
   all passed.
 - Simulator: the app launches and shows the search bar and list.
 
-Not yet checked by hand: typing a search, the duplicate alert, and Open Existing navigation.
+Simulator walkthrough (2026-10-15, same test): a title search ("tart"), an ingredient-only
+search in capitals ("OLIVE" finds Tomato pasta), the empty-results state, and the
+"Already in your cookbook" alert, which names the existing recipe. Keep Editing keeps the
+form, Save Anyway saves a copy, and Open Existing closes the editor and opens the saved
+recipe without saving anything. All passed.
 
-### Milestone 3 (so far): paste a caption → draft → review → save
+### Milestone 3: paste a caption → draft → review → save
 
 - `POST /v1/import-drafts` takes `{source_text, source_url?}` and returns a draft: title,
   ingredients and steps, each row with `needs_review` and reasons, plus warnings.
@@ -162,15 +191,18 @@ Not yet checked by hand: typing a search, the duplicate alert, and Open Existing
   24 hours and don't appear in the cookbook or search.
 - Extraction runs through `app/extraction` and is configured with
   `COOKBOOK_EXTRACTION_PROVIDER`:
-  - `ollama` uses a local `qwen2.5:7b`. Captions stay on the Mac, it's free, and it takes
-    about 15–60 s per caption (a real 1,000-character reel caption took about 60 s on an M2).
-  - `anthropic` uses Claude Haiku 5.5 over the API (`COOKBOOK_ANTHROPIC_API_KEY`).
-    It takes about 2 s per caption and costs about $0.0004 each, but captions are sent
-    to Anthropic.
-  - `fake` (the default when unset) is a rule-based reader for neat layouts, with no
-    model at all.
+  - `anthropic` (**what the app uses**) is Claude Haiku 5.5 over the API
+    (`COOKBOOK_ANTHROPIC_API_KEY`), prompt-6 at effort `medium`. It takes about 3 s per
+    caption and costs about $0.0006 each, but captions are sent to Anthropic. If the API
+    can't be reached or the key is out of credit, the import shows a clear error and
+    "Enter Manually Instead" (no fallback model).
+  - `ollama` uses a local `qwen2.5:7b`. Captions stay on the Mac and it's free, but it
+    takes about 20–80 s per caption. The owner has stopped tuning and evaluating it; it's
+    kept as a one-line switch back.
+  - `fake` (the code default when unset, and what the tests use) is a rule-based reader
+    for neat layouts, with no model at all.
   Results are in `backend/eval/RESULTS.md`; rerun them with `python -m eval.run_eval
-  fake ollama`.
+  anthropic --repeat 3` (or `fake`, `ollama`).
 - The server checks every draft against the caption. Invented amounts and units are
   removed, text that isn't in the caption is flagged, and a non-recipe gets "No usable
   recipe found". See `docs/DECISIONS.md`.
@@ -205,10 +237,22 @@ Checks run:
   25 Milestone 3 checks passed (draft, persisted corrections, save, replay, save-once,
   duplicate warning, non-recipe, bad link), and the Milestone 1 and 2 checks still pass.
 
-- Qwen evaluation: 12/12 recipe detection, 47/50 ingredients, 46/47 exact quantities, 0
-  injected words, 0 errors (`backend/eval/RESULTS.md`).
+- Qwen evaluation at the time: 12/12 recipe detection, 47/50 ingredients, 46/47 exact
+  quantities, 0 injected words, 0 errors. The latest (Haiku, prompt-6, 14 captions × 3
+  runs): 42/42 recipe detection, 202/207 ingredients, 0 rows not matching the caption,
+  median 3.3 s (`backend/eval/RESULTS.md`).
 
-Not yet checked by hand: the Import Caption and review screens in the Simulator.
+Simulator walkthrough (2026-10-15, same test, `fake` extractor; no Claude calls): + →
+Import Caption, Read Recipe, then the review screen showed "Found 4 ingredients and 2
+steps", the title and needs-review warnings, and an orange "Shortened to fit" flag on a
+long row. Editing the row cleared the flag ("Nothing flagged"). After adding a title, Save
+opened the saved recipe: "½ cup parmesan" kept its wording and "salt to taste" had no
+amount. Failure path, against a server whose extractor was down: the error and request ID
+appear, the caption and link stay, and Enter Manually Instead opens a new recipe with the
+caption in Notes and the link kept. It saves. All passed.
+Noticed: after the flagged row is fixed and a title typed, the server's "Give this recipe
+a title" and "1 item(s) didn't match" warnings stay on screen next to "Nothing flagged".
+The "not found in the caption" flag (which needs a real model) wasn't produced here.
 
 ### Photos
 
@@ -234,7 +278,7 @@ logged in:
   keeping 14 days.
 - **cleanup**: hourly.
 
-PostgreSQL and Ollama are Homebrew services. Logs are in `~/Library/Logs/Cookbook/`.
+PostgreSQL is a Homebrew service (so is Ollama, if you switch back to it). Logs are in `~/Library/Logs/Cookbook/`.
 `ops/uninstall-services.sh` removes the agents and keeps the data. After pulling new
 backend code, run `launchctl kickstart -k gui/$(id -u)/com.cookbook.api` to restart the API.
 
@@ -267,17 +311,20 @@ pip install -r requirements-dev.txt
 cp .env.example .env            # defaults use your macOS user over localhost
 
 alembic upgrade head            # apply migrations
-pytest -q                       # expect 48 passed
+pytest -q                       # expect 184 passed
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
-To use the local model, run `brew install ollama && brew services start ollama && ollama pull
-qwen2.5:7b`, then set `COOKBOOK_EXTRACTION_PROVIDER=ollama` in `.env`. That's about 4.7 GB and
-needs about 8 GB of free RAM while running.
+`.env.example` starts with the rule-based `fake` extractor. To import with Claude Haiku as
+the app does, set `COOKBOOK_EXTRACTION_PROVIDER=anthropic` and `COOKBOOK_ANTHROPIC_API_KEY`
+in `.env` (captions are sent to Anthropic; about $0.0006 each). To use the local model
+instead, run `brew install ollama && brew services start ollama && ollama pull qwen2.5:7b`
+and set `COOKBOOK_EXTRACTION_PROVIDER=ollama`. That's about 4.7 GB and needs about 8 GB of
+free RAM while running.
 
 Open http://127.0.0.1:8000/docs for the interactive API. The iOS Simulator reaches the
-Mac's `127.0.0.1` directly. A physical device would need the Mac's LAN IP, which is a
-deliberate later step because the API has no auth yet.
+Mac's `127.0.0.1` directly, unpaired, when the server runs in `dev` mode. A physical
+device pairs with a token and reaches the Mac over Tailscale (see "Your iPhone" above).
 
 If your PostgreSQL role isn't your macOS username, set `COOKBOOK_DATABASE_URL` and
 `COOKBOOK_TEST_DATABASE_URL` in `.env`, e.g.
@@ -286,6 +333,9 @@ recreates** the test database's schema, and refuses to run unless the database n
 contains `test`.
 
 ## Walkthrough: one recipe through the API
+
+These calls assume `dev` mode. In `token` mode, add
+`-H 'authorization: Bearer ckb_...'` to each.
 
 ```bash
 # Create (no amount for pasta or oil: they stay null)
@@ -304,15 +354,30 @@ curl -s -X DELETE localhost:8000/v1/recipes/<id> -i     # 204
 
 ```
 backend/
-  app/            config, models, schemas, errors, deps, routers/recipes.py, main.py
+  app/            config, models, schemas, errors, auth/deps, tokens (pairing CLI), drafts,
+                  images/storage, cleanup, main.py; routers/ (recipes, import_drafts, images)
+  app/extraction/ provider adapter (fake, ollama, anthropic), shared prompt, validator
   alembic/        migrations (hand-written, checked against models by the tests)
+  eval/           extraction evaluation: captions.json, run_eval.py, RESULTS.md
   tests/          PostgreSQL integration tests
-docs/             BRIEF.md, DECISIONS.md
-ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbook/Features (list, detail, editor)
+docs/             BRIEF.md, DECISIONS.md, DEMO.md
+ops/              launchd services (API, MinIO, backup, cleanup) and their scripts
+ios/              Cookbook.xcodeproj
+  Shared/         code compiled into both the app and the share extension (Instagram links, hand-off)
+  CookbookShare/  the share extension
+  Cookbook/API/   client, wire models, pairing
+  Cookbook/Features/  list, detail, editor, import, Instagram import, photos, settings
+  CookbookTests/  unit and live contract tests (run-tests.sh)
+  CookbookUITests/    ScreenshotTour (screenshots.sh), Walkthrough, ShareExtensionFlow, ScreenshotImportFlow
 ```
 
 ## Next smallest task
 
+Try the share extension and screenshot import on the iPhone: whether the extension
+installs with free signing and opens the app, sharing from the Instagram app itself, and
+whether on-device text recognition misreads "1 1/2" the way the Simulator did. Then:
+
 The remaining Haiku misses in `backend/eval/RESULTS.md` (prompt-6): one ingredient each in
 `paragraph_only` and `multi_section_prose`, and one quantity in `emoji_bullets_unicode`.
-Or add real captions that go wrong on the phone to `backend/eval/captions.json`.
+Or add real captions that go wrong on the phone to `backend/eval/captions.json`. Or make
+pull to refresh work on the empty recipe list (found in the 2026-10-15 walkthrough).

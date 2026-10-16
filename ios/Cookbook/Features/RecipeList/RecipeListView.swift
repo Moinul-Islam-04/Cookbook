@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 struct RecipeListView: View {
@@ -6,6 +7,11 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var showingCreate = false
     @State private var showingImport = false
+    /// + → Import from Screenshot: the picker opens here, and Import Caption opens with the
+    /// picked screenshots (cancelling the picker opens nothing).
+    @State private var showingScreenshotPicker = false
+    @State private var pickedScreenshots: [PhotosPickerItem] = []
+    @State private var screenshotImport: ScreenshotImportRequest?
     @State private var showingSettings = false
     @State private var instagramImport: InstagramImportRequest?
     @State private var showingLinkPrompt = false
@@ -15,6 +21,9 @@ struct RecipeListView: View {
     /// the banner sticks until something new is copied.
     @State private var offeredChangeCount = -1
     @State private var notInstagramLink = false
+    /// A post link handed over by the share extension (cookbook://import?url=…), waiting
+    /// for the user to confirm before the browser loads anything.
+    @State private var sharedLink: URL?
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
@@ -49,7 +58,13 @@ struct RecipeListView: View {
                             Button {
                                 showingImport = true
                             } label: {
-                                Label("Import Caption", systemImage: "text.viewfinder")
+                                Label("Import Caption", systemImage: "text.quote")
+                            }
+                            Button {
+                                pickedScreenshots = []
+                                showingScreenshotPicker = true
+                            } label: {
+                                Label("Import from Screenshot", systemImage: "text.viewfinder")
                             }
                             Button {
                                 showingCreate = true
@@ -90,6 +105,13 @@ struct RecipeListView: View {
                 } message: {
                     Text("Use a link to a single Instagram post or reel (…/p/… or …/reel/…).")
                 }
+                .alert("Import from Instagram?", isPresented: sharedLinkPresented, presenting: sharedLink) { link in
+                    Button("Open") { instagramImport = InstagramImportRequest(url: link) }
+                    Button("Cancel", role: .cancel) {}
+                } message: { link in
+                    Text(link.absoluteString)
+                }
+                .onOpenURL { url in handleDeepLink(url) }
                 .safeAreaInset(edge: .top) {
                     if clipboardHasLink { clipboardBanner }
                 }
@@ -107,6 +129,24 @@ struct RecipeListView: View {
                             path = [saved.id]
                         },
                         onOpenExisting: { id in path = [id] })
+                }
+                .photosPicker(
+                    isPresented: $showingScreenshotPicker,
+                    selection: $pickedScreenshots,
+                    maxSelectionCount: 5,
+                    selectionBehavior: .ordered,
+                    matching: .images)
+                .onChange(of: pickedScreenshots) { _, items in
+                    if !items.isEmpty { screenshotImport = ScreenshotImportRequest(items: items) }
+                }
+                .sheet(item: $screenshotImport) { request in
+                    ImportCaptionView(
+                        onSaved: { saved in
+                            Task { await model.recipeSaved() }
+                            path = [saved.id]
+                        },
+                        onOpenExisting: { id in path = [id] },
+                        initialScreenshots: request.items)
                 }
                 // Re-runs whenever the search text changes, cancelling the previous run (and
                 // its in-flight request). The sleep debounces typing; a cancelled sleep throws.
@@ -176,6 +216,21 @@ struct RecipeListView: View {
     private func openInstagram(_ text: String) {
         if let url = InstagramLink.postURL(from: text) {
             instagramImport = InstagramImportRequest(url: url)
+        } else {
+            notInstagramLink = true
+        }
+    }
+
+    private var sharedLinkPresented: Binding<Bool> {
+        Binding(get: { sharedLink != nil }, set: { if !$0 { sharedLink = nil } })
+    }
+
+    /// Share → Cookbook opens cookbook://import?url=…. Any app can open that scheme, so the
+    /// link is re-validated and the user confirms before the in-app browser loads it.
+    private func handleDeepLink(_ url: URL) {
+        guard ImportHandoff.isImportLink(url) else { return }
+        if let post = ImportHandoff.postURL(fromDeepLink: url) {
+            sharedLink = post
         } else {
             notInstagramLink = true
         }
@@ -339,4 +394,10 @@ private struct RecipeCard: View {
         let steps = recipe.stepCount == 1 ? "1 step" : "\(recipe.stepCount) steps"
         return "\(ingredients) · \(steps)"
     }
+}
+
+/// Screenshots picked from + → Import from Screenshot, waiting to be read.
+private struct ScreenshotImportRequest: Identifiable {
+    let id = UUID()
+    let items: [PhotosPickerItem]
 }
