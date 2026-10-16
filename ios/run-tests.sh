@@ -7,7 +7,7 @@
 #   DEVICE="iPhone 16" ios/run-tests.sh       # another Simulator (xcrun simctl list devices)
 #
 # The live tests create and delete their own data. The import-draft test runs whatever
-# extractor the server uses (about 20-60 s on local Qwen).
+# extractor the server uses (a few seconds on Claude Haiku).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 export TEST_RUNNER_COOKBOOK_TEST_TOKEN="${TOKEN:-}"
