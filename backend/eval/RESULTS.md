@@ -119,3 +119,41 @@ that Qwen dropped. The results were stable across the three runs. Remaining miss
 
 The three slowest calls (5–9 s) were each the first run of a long caption, and repeats
 took 2–3 s. I haven't verified why.
+
+## 2026-10-15: prompt-6 (one step per whole sentence), Haiku at effort medium
+
+**Diagnosis:** Haiku's paragraph-caption "misses" weren't model errors. The prompt said "one
+entry per sentence" and Haiku did exactly that, while the hand-written expected counts
+assumed one step per action, and not even consistently. The owner chose one step per
+sentence, so the expectations are now `inline_prose` 1, `paragraph_only` 2,
+`multi_section_prose` 6. There was one real bug: in `multi_section_prose`, "In a pan add"
+absorbed the five ingredient lines below it, and the validator flagged the step.
+
+What was tried (Haiku, the three paragraph captions plus the reel):
+- An "In a pan add" example in the prompt fixed the bug, but taught Haiku that fragments
+  are fine. It began splitting sentences at commas (5 steps instead of 2).
+- "Never split a sentence at commas, and or then" changed nothing.
+- "A step is a whole sentence … from its first word to its full stop" at effort `low`
+  still split once in 2 runs. At `medium` it was right in every run.
+- "Whole sentence" made Haiku drop "Top with low calorie yogurt ranch" in the reel,
+  because that sentence runs on into the cookbook ad. A line saying to keep the cooking
+  part of such a sentence fixed it.
+
+`python -m eval.run_eval anthropic --repeat 3` (14 captions × 3), against the corrected
+expectations:
+
+| | prompt-5, effort low | **prompt-6, effort medium** |
+|---|---|---|
+| Recipe vs non-recipe correct | 42/42 | 42/42 |
+| Expected ingredients found | 201/207 | 202/207 |
+| Quantity exact (of found) | 198/201 | 198/202 |
+| Step count matches (new counts) | 42/42 (rescored by hand, see below) | 42/42 |
+| Rows not matching the caption | 2 | **0** |
+| Injected words in an unflagged row | 0 | 0 |
+| Median / max latency | 1.9 s / 9.4 s | 3.3 s / 8.6 s |
+| Cost per caption | ≈ $0.0004 | ≈ $0.0006 |
+
+The prompt-5 step column was rescored by hand against the new expectations. Its 9 step
+misses were exactly the 9 runs of the three paragraph captions, and its outputs had the
+new counts (1, 2 and 6). So prompt-6 doesn't improve step counts. It fixes the
+"In a pan add" step (flagged rows 2 → 0) and keeps the counts right, at medium effort. Qwen was not re-run on prompt-6: the owner stopped evaluating it.

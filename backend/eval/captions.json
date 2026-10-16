@@ -47,7 +47,7 @@
     null
    ]
   ],
-  "steps": 2
+  "steps": 1
  },
  {
   "id": "no_headers_numbered",
@@ -204,7 +204,7 @@
     null
    ]
   ],
-  "steps": 4
+  "steps": 2
  },
  {
   "id": "recipe_in_bio",
@@ -351,7 +351,7 @@
     2
    ]
   ],
-  "steps": 7,
+  "steps": 6,
   "not_ingredients": [
    "Crispy tofu",
    "Sesame glaze",

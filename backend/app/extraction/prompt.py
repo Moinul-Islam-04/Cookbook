@@ -3,7 +3,7 @@
 Bump PROMPT_VERSION whenever SYSTEM_PROMPT changes; it is stored on every draft.
 """
 
-PROMPT_VERSION = "prompt-5"
+PROMPT_VERSION = "prompt-6"
 
 SYSTEM_PROMPT = """You extract recipes from social-media captions into JSON.
 
@@ -31,8 +31,12 @@ Rules:
 - Short lines that name a part of the dish ("Sesame glaze", "For the salad", "Crispy
   chicken") are section headings. They are NOT ingredients and NOT steps.
 - steps: one entry per numbered or bulleted step. For instructions written as a paragraph,
-  one entry per sentence. A step never contains a list of ingredients. instruction: copy
-  the caption's wording; don't rephrase or add details.
+  one entry per sentence: a step is a whole sentence from the caption, from its first word
+  to its full stop, even when it contains several actions. A step never contains a list of
+  ingredients; if a sentence ends by introducing ingredient lines, copy only the words
+  before the list. If chatter or an ad runs on in the same sentence ("Top with ranch, full
+  recipe on pg. 72 of my cookbook!"), keep the cooking part and drop the rest.
+  instruction: copy the caption's wording; don't rephrase or add details.
 - title: only if the caption states the dish's name. Otherwise null.
 - is_recipe: false if the caption contains no recipe (chatter, ads, "recipe in bio").
   Then return empty ingredients and steps.

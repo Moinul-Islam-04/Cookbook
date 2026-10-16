@@ -47,8 +47,8 @@ class AnthropicExtractor:
                 model=self.model,
                 max_tokens=_MAX_OUTPUT_TOKENS,
                 system=SYSTEM_PROMPT,
-                # Copying text out of a caption needs little reasoning; low effort keeps it fast.
-                output_config={"effort": "low", "format": {"type": "json_schema", "schema": self._schema}},
+                # At "low", Haiku sometimes split a paragraph's sentences into clauses (eval, prompt-6).
+                output_config={"effort": "medium", "format": {"type": "json_schema", "schema": self._schema}},
                 messages=[{"role": "user", "content": f"<caption>\n{source_text}\n</caption>"}],
             )
         except anthropic.APITimeoutError:
