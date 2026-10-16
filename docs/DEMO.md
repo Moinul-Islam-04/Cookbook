@@ -83,7 +83,7 @@ $0.0006 per import. My iPhone reaches it privately over Tailscale.
 
 - Backend: 184 pytest tests against real PostgreSQL (migrations, constraints, auth,
   ownership, concurrency, extraction fixtures, photos).
-- iOS: 47 XCTest tests (`ios/run-tests.sh` or ⌘U): 37 offline unit tests (form rules,
+- iOS: 66 XCTest tests (`ios/run-tests.sh` or ⌘U): 56 offline unit tests (form rules,
   parsing, `APIClient` against a stubbed `URLSession`) and 10 live contract tests that run
   the real Swift client against the live server. Plus two UI tests: a screenshot tour and
   a walkthrough of create, edit, stale edit, delete, search, duplicates and import.

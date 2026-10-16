@@ -13,8 +13,10 @@ Engineering decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 | 2 Search and duplicate safeguards | **Done.** Backend tested (94 tests); iOS built and contract-checked; search and the duplicate alert walked through on the Simulator (2026-10-15). |
 | 3 Extraction and review | **Done.** Built and first evaluated with local Qwen 2.5 7B via Ollama, behind the adapter; the app now uses Claude Haiku 5.5 (see below). Import Caption, review and the failure path walked through on the Simulator (2026-10-15). |
 | 4 Images and authentication | **Done.** Device tokens, photos, and the app running on a real iPhone over Tailscale. |
-| 5 Polish and demonstrate | **Done.** XCTest target (47 tests now, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
+| 5 Polish and demonstrate | **Done.** XCTest target (66 tests now, live contract tests included), demo script, accessibility pass (Dynamic Type, audit, hands-on VoiceOver on the iPhone). |
 | Haiku extraction (optional) | **Done** (merged from `haiku-extraction`). A Claude Haiku 5.5 provider behind the same adapter and validator, evaluated against Qwen: 67/69 vs 60/69 ingredients, median 1.9 s vs 28 s, about $0.0004 per caption. **The app now uses Haiku** (switched 2026-10-15, and the owner checked imports on the iPhone). Since then: clear errors when Claude can't be reached or the key is out of credit, and prompt-6 (a paragraph step is one whole sentence) at effort `medium`, about 3.3 s and $0.0006 per caption. Ollama/Qwen is no longer tuned or evaluated. See `backend/eval/RESULTS.md` and DECISIONS 2026-10-15. |
+| Share extension | **Done** (Simulator only). In Instagram or Safari, tap Share → **Cookbook** on a post or reel. The extension only checks the link; it never loads Instagram or calls the server. It opens the app with `cookbook://import?url=…`, the app checks the link again and asks "Import from Instagram?", then runs the usual in-app browser import. Other links show "Not an Instagram post". Verified in the iOS 27 Simulator (XCUITest `ShareExtensionFlow`); not yet on a real iPhone with free signing. See DECISIONS 2026-10-15. |
+| Import from a screenshot | **Done** (Simulator only). **+ → Import from Screenshot**, or "Read Text from Screenshots" on Import Caption. Pick up to 5 screenshots in order. The text is read on the phone with Apple's Vision and added to the caption field, where you check it before tapping Read Recipe; images are never uploaded. Overlapping lines between screenshots appear once, and amounts like "11/2" (often "1 1/2" misread) are pointed out but never changed. Verified with 13 unit tests and a Simulator UI test (`ScreenshotImportFlow`); not yet on a real iPhone or real Instagram screenshots. See DECISIONS 2026-10-15. |
 | UI pass | **Done** (merged from `UI`, checked on the iPhone). Seven fixes from a screen-by-screen review (import progress, app icon, card grid, recipe layout, ingredient emphasis, Settings, review summary). `ios/screenshots.sh` takes before/after screenshots. See DECISIONS 2026-10-15. |
 
 ### What works (backend, verified)
@@ -117,8 +119,9 @@ Dynamic Type, VoiceOver and a physical device were checked later (Milestone 5). 
 checked: an iOS 17/18 runtime.
 
 **Tests:** the `CookbookTests` XCTest target (⌘U in Xcode, or `ios/run-tests.sh`):
-- 37 offline unit tests: quantity parsing, form → request rules, ingredient emphasis,
-  Instagram link and caption parsing, pairing codes, and `APIClient` headers, decoding
+- 56 offline unit tests: quantity parsing, form → request rules, ingredient emphasis,
+  Instagram link and caption parsing, share-extension link hand-off, screenshot text
+  ordering and joining (one runs Vision on a generated image), pairing codes, and `APIClient` headers, decoding
   and error mapping against a stubbed `URLSession`.
 - 10 live contract tests (`LiveContractTests`) that run the real client against the real
   server, ported from the earlier `swiftc` harness. They skip unless a token is set:
@@ -131,6 +134,11 @@ checked: an iOS 17/18 runtime.
 - `Walkthrough` taps through the Milestone 1–3 flows and asserts what it sees. It deletes
   every recipe on its server, so point it only at a throwaway dev-mode backend (the file's
   header has the command).
+- `ShareExtensionFlow` shares a reel link from Safari to the extension and checks the app
+  opens on the import confirmation; a non-Instagram link stays in the extension.
+- `ScreenshotImportFlow` picks generated screenshots and follows one through to Review
+  Recipe. It needs its four test images added to the Simulator in a set order (see the
+  file's header) and a dev-mode backend.
 
 Run: start the backend (below), open `ios/Cookbook.xcodeproj`, pick an iPhone Simulator, ⌘R.
 Set `COOKBOOK_API_URL` in the scheme's environment to use a different server.
@@ -355,13 +363,19 @@ backend/
 docs/             BRIEF.md, DECISIONS.md, DEMO.md
 ops/              launchd services (API, MinIO, backup, cleanup) and their scripts
 ios/              Cookbook.xcodeproj
+  Shared/         code compiled into both the app and the share extension (Instagram links, hand-off)
+  CookbookShare/  the share extension
   Cookbook/API/   client, wire models, pairing
   Cookbook/Features/  list, detail, editor, import, Instagram import, photos, settings
   CookbookTests/  unit and live contract tests (run-tests.sh)
-  CookbookUITests/    ScreenshotTour (screenshots.sh) and Walkthrough
+  CookbookUITests/    ScreenshotTour (screenshots.sh), Walkthrough, ShareExtensionFlow, ScreenshotImportFlow
 ```
 
 ## Next smallest task
+
+Try the share extension and screenshot import on the iPhone: whether the extension
+installs with free signing and opens the app, sharing from the Instagram app itself, and
+whether on-device text recognition misreads "1 1/2" the way the Simulator did. Then:
 
 The remaining Haiku misses in `backend/eval/RESULTS.md` (prompt-6): one ingredient each in
 `paragraph_only` and `multi_section_prose`, and one quantity in `emoji_bullets_unicode`.

@@ -17,3 +17,6 @@ xcuserdata/
 
 # UI screenshot runs
 ios/screenshots/
+
+# Claude Code agent worktrees
+.claude/worktrees/
