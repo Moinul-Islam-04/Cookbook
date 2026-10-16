@@ -4,7 +4,13 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
 from typing import TYPE_CHECKING
 
-from app.extraction.base import ExtractionError, ExtractionTimeout, Extractor
+from app.extraction.base import (
+    ExtractionError,
+    ExtractionTimeout,
+    Extractor,
+    ProviderAccountProblem,
+    ProviderUnreachable,
+)
 from app.extraction.fake import FakeExtractor, RuleBasedExtractor
 from app.extraction.validate import MalformedOutput, validate_extraction
 from app.schemas import DraftContent
@@ -61,6 +67,8 @@ __all__ = [
     "Extractor",
     "FakeExtractor",
     "MalformedOutput",
+    "ProviderAccountProblem",
+    "ProviderUnreachable",
     "RuleBasedExtractor",
     "make_extractor",
     "run_extraction",

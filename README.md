@@ -313,6 +313,5 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Decide what an import should do when the API is unreachable or the key is out of credit (fall back to Qwen?),
-and fix step splitting in paragraph captions, which both models still get
+Fix step splitting in paragraph captions, which both models still get
 wrong (`inline_prose`, `paragraph_only`, `multi_section_prose` in `backend/eval/`).

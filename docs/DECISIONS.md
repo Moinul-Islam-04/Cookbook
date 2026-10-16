@@ -459,3 +459,20 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   tests; `pytest` 180 passed.
 - **Revisit:** if Haiku becomes the default, decide what happens when the Mac is offline
   or the key runs out. Falling back to Qwen is the obvious option.
+
+## 2026-10-15: No offline fallback; clear errors when Claude can't be used
+
+- **Context:** with Haiku as the provider, imports fail when the Mac has no internet or the
+  API key is out of credit. Before this change every failure said "unavailable right now"
+  and was marked retryable, even though retrying doesn't help when credit has run out.
+- **Decision (owner):** no automatic fallback to Qwen. The long-term plan is to move the
+  backend off the Mac to the cloud, where a local model wouldn't exist. Show a clear error
+  instead. "Enter Manually Instead" was already offered on every import error.
+  - No connection to the API: 503 `extraction_unreachable`, retryable, "Check that the
+    server has internet".
+  - 401/402/403 (bad key, out of credit, key not allowed): 503 `extraction_account`, **not
+    retryable**. The server log says to check credit and the API key. The provider's own
+    error text isn't shown to the phone.
+  - Anything else (429, 5xx, overloaded): unchanged, `extraction_unavailable`, retryable.
+- **Verified:** 4 new tests with a mocked API, including 402 `billing_error`; `pytest` 184
+  passed. Not tested against a real empty balance or a real loss of internet.

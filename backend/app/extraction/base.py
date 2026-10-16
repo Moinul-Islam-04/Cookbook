@@ -14,6 +14,14 @@ class ExtractionError(Exception):
     """The provider failed or is unreachable (maps to 502/503, retryable)."""
 
 
+class ProviderUnreachable(ExtractionError):
+    """A hosted provider couldn't be reached, e.g. the server has no internet (503, retryable)."""
+
+
+class ProviderAccountProblem(ExtractionError):
+    """The hosted provider rejected our account: out of credit or a bad key (503, not retryable)."""
+
+
 class ExtractionTimeout(Exception):
     """The provider didn't answer within the configured bound (maps to 504)."""
 

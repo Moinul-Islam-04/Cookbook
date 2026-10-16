@@ -10,7 +10,13 @@ import copy
 
 import anthropic
 
-from app.extraction.base import ExtractionError, ExtractionOutput, ExtractionTimeout
+from app.extraction.base import (
+    ExtractionError,
+    ExtractionOutput,
+    ExtractionTimeout,
+    ProviderAccountProblem,
+    ProviderUnreachable,
+)
 from app.extraction.prompt import PROMPT_VERSION, SYSTEM_PROMPT
 
 # Room for adaptive thinking plus the JSON; a long reel's JSON is about 1,500 tokens.
@@ -49,9 +55,12 @@ class AnthropicExtractor:
             raise ExtractionTimeout() from None
         except anthropic.APIStatusError as e:
             # Logged server-side, never returned; the body may echo request details.
+            # 401 bad key, 402 billing (out of credit), 403 key not allowed: retrying won't help.
+            if e.status_code in (401, 402, 403):
+                raise ProviderAccountProblem(f"anthropic status {e.status_code}") from None
             raise ExtractionError(f"anthropic status {e.status_code}") from None
         except anthropic.APIConnectionError as e:
-            raise ExtractionError(f"anthropic unreachable: {type(e).__name__}") from None
+            raise ProviderUnreachable(f"anthropic unreachable: {type(e).__name__}") from None
         self.last_usage = (msg.usage.input_tokens, msg.usage.output_tokens)
         if msg.stop_reason == "refusal":
             raise ExtractionError("anthropic refused")
