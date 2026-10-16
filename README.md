@@ -360,7 +360,7 @@ backend/
   alembic/        migrations (hand-written, checked against models by the tests)
   eval/           extraction evaluation: captions.json, run_eval.py, RESULTS.md
   tests/          PostgreSQL integration tests
-docs/             BRIEF.md, DECISIONS.md, DEMO.md
+docs/             BRIEF.md, DECISIONS.md
 ops/              launchd services (API, MinIO, backup, cleanup) and their scripts
 ios/              Cookbook.xcodeproj
   Shared/         code compiled into both the app and the share extension (Instagram links, hand-off)

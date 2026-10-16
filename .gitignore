@@ -20,3 +20,6 @@ ios/screenshots/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Personal notes (demo prep etc.), kept on this Mac only
+private/
