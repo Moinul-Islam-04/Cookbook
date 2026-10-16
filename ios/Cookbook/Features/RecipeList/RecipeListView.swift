@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 struct RecipeListView: View {
@@ -6,6 +7,11 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var showingCreate = false
     @State private var showingImport = false
+    /// + → Import from Screenshot: the picker opens here, and Import Caption opens with the
+    /// picked screenshots (cancelling the picker opens nothing).
+    @State private var showingScreenshotPicker = false
+    @State private var pickedScreenshots: [PhotosPickerItem] = []
+    @State private var screenshotImport: ScreenshotImportRequest?
     @State private var showingSettings = false
     @State private var instagramImport: InstagramImportRequest?
     @State private var showingLinkPrompt = false
@@ -49,7 +55,13 @@ struct RecipeListView: View {
                             Button {
                                 showingImport = true
                             } label: {
-                                Label("Import Caption", systemImage: "text.viewfinder")
+                                Label("Import Caption", systemImage: "text.quote")
+                            }
+                            Button {
+                                pickedScreenshots = []
+                                showingScreenshotPicker = true
+                            } label: {
+                                Label("Import from Screenshot", systemImage: "text.viewfinder")
                             }
                             Button {
                                 showingCreate = true
@@ -107,6 +119,24 @@ struct RecipeListView: View {
                             path = [saved.id]
                         },
                         onOpenExisting: { id in path = [id] })
+                }
+                .photosPicker(
+                    isPresented: $showingScreenshotPicker,
+                    selection: $pickedScreenshots,
+                    maxSelectionCount: 5,
+                    selectionBehavior: .ordered,
+                    matching: .images)
+                .onChange(of: pickedScreenshots) { _, items in
+                    if !items.isEmpty { screenshotImport = ScreenshotImportRequest(items: items) }
+                }
+                .sheet(item: $screenshotImport) { request in
+                    ImportCaptionView(
+                        onSaved: { saved in
+                            Task { await model.recipeSaved() }
+                            path = [saved.id]
+                        },
+                        onOpenExisting: { id in path = [id] },
+                        initialScreenshots: request.items)
                 }
                 // Re-runs whenever the search text changes, cancelling the previous run (and
                 // its in-flight request). The sleep debounces typing; a cancelled sleep throws.
@@ -339,4 +369,10 @@ private struct RecipeCard: View {
         let steps = recipe.stepCount == 1 ? "1 step" : "\(recipe.stepCount) steps"
         return "\(ingredients) · \(steps)"
     }
+}
+
+/// Screenshots picked from + → Import from Screenshot, waiting to be read.
+private struct ScreenshotImportRequest: Identifiable {
+    let id = UUID()
+    let items: [PhotosPickerItem]
 }
