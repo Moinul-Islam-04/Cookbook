@@ -5,6 +5,7 @@ validates its output against the caption (app/extraction/validate.py). Drafts ar
 ever turned into recipes by an explicit POST /v1/recipes with draft_id.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
@@ -16,7 +17,14 @@ from sqlalchemy.orm import Session
 from app.deps import get_current_user_id, get_db
 from app.drafts import owned_draft, reject_if_saved
 from app.errors import ApiError
-from app.extraction import ExtractionError, ExtractionTimeout, MalformedOutput, run_extraction
+from app.extraction import (
+    ExtractionError,
+    ExtractionTimeout,
+    MalformedOutput,
+    ProviderAccountProblem,
+    ProviderUnreachable,
+    run_extraction,
+)
 from app.models import ImportDraft, Recipe
 from app.routers.recipes import _parse_source
 from app.schemas import (
@@ -28,6 +36,8 @@ from app.schemas import (
     IngredientDraft,
     StepDraft,
 )
+
+log = logging.getLogger("cookbook")
 
 router = APIRouter(prefix="/v1/import-drafts", tags=["import drafts"])
 
@@ -69,6 +79,12 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
         raise ApiError(504, "extraction_timeout", "Reading the caption took too long. Try again, or enter it manually.", retryable=True) from None
     except MalformedOutput:
         raise ApiError(502, "extraction_failed", "Couldn't read a recipe from the extractor's response. Try again, or enter it manually.", retryable=True) from None
+    except ProviderUnreachable:
+        raise ApiError(503, "extraction_unreachable", "Couldn't reach the recipe reader. Check that the server has internet, then try again, or enter the recipe manually.", retryable=True) from None
+    except ProviderAccountProblem as e:
+        # The owner has to act (top up credit or fix COOKBOOK_ANTHROPIC_API_KEY); say so in the log.
+        log.warning("extraction provider rejected the account (%s): check credit and API key", e)
+        raise ApiError(503, "extraction_account", "Recipe reading is paused because the recipe reader's account needs attention, for example it's out of credit. You can still enter the recipe manually.", retryable=False) from None
     except ExtractionError:
         raise ApiError(503, "extraction_unavailable", "Recipe extraction is unavailable right now. You can still enter the recipe manually.", retryable=True) from None
 

@@ -608,6 +608,33 @@ def test_anthropic_provider_needs_a_key() -> None:
         make_extractor(Settings(_env_file=None, extraction_provider="anthropic", anthropic_api_key=""))
 
 
+@pytest.mark.parametrize(
+    "status, error_type",
+    [(401, "authentication_error"), (402, "billing_error"), (403, "permission_error")],
+)
+def test_claude_account_problems_are_not_retryable(app, client: TestClient, status, error_type, caplog) -> None:
+    import httpx2
+
+    app.state.extractor = _claude(lambda r: httpx2.Response(status, json={
+        "type": "error", "error": {"type": error_type, "message": "Your credit balance is too low"}}))
+    body = assert_error(client.post("/v1/import-drafts", json={"source_text": "x"}), 503, "extraction_account")
+    assert body["retryable"] is False and "manually" in body["message"]
+    assert "credit balance" not in body["message"]  # the provider's text stays in the log
+    assert "check credit and API key" in caplog.text
+
+
+def test_claude_unreachable_and_overloaded_are_retryable(app, client: TestClient) -> None:
+    import httpx2
+
+    app.state.extractor = _claude(lambda r: (_ for _ in ()).throw(httpx2.ConnectError("no internet")))
+    body = assert_error(client.post("/v1/import-drafts", json={"source_text": "x"}), 503, "extraction_unreachable")
+    assert body["retryable"] is True and "internet" in body["message"]
+    app.state.extractor = _claude(lambda r: httpx2.Response(529, json={
+        "type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}))
+    body = assert_error(client.post("/v1/import-drafts", json={"source_text": "x"}), 503, "extraction_unavailable")
+    assert body["retryable"] is True
+
+
 # ---------- validator leniency found by the Qwen evaluation (eval/) ----------
 
 
