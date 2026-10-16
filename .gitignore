@@ -23,3 +23,6 @@ ios/screenshots/
 
 # Personal notes (demo prep etc.), kept on this Mac only
 private/
+
+# Local demo-recording UI test (kept on this Mac only)
+ios/CookbookUITests/DemoTour.swift
