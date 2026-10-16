@@ -489,7 +489,7 @@ def test_ollama_adapter_sends_schema_and_caption_as_data() -> None:
     ex = _ollama(handler)
     raw = ex.extract(BRIEF_CAPTION)
     assert json.loads(raw) == BRIEF_OUTPUT
-    assert ex.version == "ollama:qwen2.5:7b:prompt-5"
+    assert ex.version == "ollama:qwen2.5:7b:prompt-6"
     assert seen["model"] == "qwen2.5:7b" and seen["stream"] is False
     assert seen["options"]["temperature"] == 0
     assert seen["format"]["properties"].keys() >= {"is_recipe", "ingredients", "steps"}
@@ -566,7 +566,7 @@ def test_anthropic_adapter_sends_strict_schema_and_caption_as_data() -> None:
     raw = ex.extract(BRIEF_CAPTION)
     # The text block is returned even when a thinking block comes first.
     assert json.loads(raw) == BRIEF_OUTPUT
-    assert ex.version == "anthropic:claude-haiku-5-5:prompt-5"
+    assert ex.version == "anthropic:claude-haiku-5-5:prompt-6"
     assert ex.last_usage == (900, 300)
     assert seen["key"] == "sk-ant-test" and seen["model"] == "claude-haiku-5-5"
     # Haiku 5.5 rejects non-default sampling parameters.

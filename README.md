@@ -313,5 +313,6 @@ ios/              Cookbook.xcodeproj; Cookbook/API (client, wire models), Cookbo
 
 ## Next smallest task
 
-Fix step splitting in paragraph captions, which both models still get
-wrong (`inline_prose`, `paragraph_only`, `multi_section_prose` in `backend/eval/`).
+The remaining Haiku misses in `backend/eval/RESULTS.md` (prompt-6): one ingredient each in
+`paragraph_only` and `multi_section_prose`, and one quantity in `emoji_bullets_unicode`.
+Or add real captions that go wrong on the phone to `backend/eval/captions.json`.

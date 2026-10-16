@@ -476,3 +476,21 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   - Anything else (429, 5xx, overloaded): unchanged, `extraction_unavailable`, retryable.
 - **Verified:** 4 new tests with a mocked API, including 402 `billing_error`; `pytest` 184
   passed. Not tested against a real empty balance or a real loss of internet.
+
+## 2026-10-15: A paragraph step is one whole sentence (prompt-6, Haiku effort medium)
+
+- **Decision (owner):** in a paragraph caption, one step is one sentence as written, not
+  one action. It keeps steps word for word, so the review screen has nothing to flag.
+  Per-action splitting can come back with a cooking mode if one is built.
+- **Changes:**
+  - The eval's expected counts were corrected (they had assumed per-action steps).
+  - The prompt (prompt-6) says a step is a whole sentence. It copies only the lead-in when
+    a sentence introduces ingredient lines, and keeps only the cooking part when an ad runs
+    on in the same sentence.
+  - Haiku runs at `effort: medium`; at `low` it still split sentences.
+- **Cost:** median 1.9 s → 3.3 s, about $0.0004 → $0.0006 per caption. Against the corrected
+  counts both prompts get 42/42 steps. prompt-6 removes the flagged "In a pan add" step
+  (rows flagged as not matching: 2 → 0) without splitting sentences (`eval/RESULTS.md`).
+- **Ollama/Qwen:** the owner stopped evaluating and tuning it. The adapter and the
+  service stay in place as a one-line switch back. Qwen also gets prompt-6 but hasn't
+  been measured on it.
