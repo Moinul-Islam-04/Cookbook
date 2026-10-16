@@ -257,7 +257,7 @@ struct ImportCaptionView: View {
     }
 }
 
-/// What the user sees while the server turns a caption into a draft. The local model gives
+/// What the user sees while the server turns a caption into a draft. The extractor gives
 /// no progress signal, so this shows honest facts instead: what is happening, how long it
 /// has taken, and how long it usually takes.
 private struct ReadingProgress: View {
@@ -270,7 +270,7 @@ private struct ReadingProgress: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Reading the recipe…")
                     .font(.headline)
-                Text("Finding the ingredients and steps in the caption. This usually takes 20–60 seconds.")
+                Text("Finding the ingredients and steps in the caption. This takes a few seconds for a short caption, and up to about 20 for a long one.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
