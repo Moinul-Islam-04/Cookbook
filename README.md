@@ -97,7 +97,7 @@ Instagram access spike was never run.
 | Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. |
 | Share extension | Share → **Cookbook** from Safari or Instagram. **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
-| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. **`deployment` branch:** the backend can also sign people in with Google (`POST /v1/auth/google`, turned on by `COOKBOOK_GOOGLE_CLIENT_IDS`). The app's signed-out screen and Settings have **Sign in with Google**; a real Google account signed in end to end in the Simulator (against a local token-mode server). The server is deployed (see above); Google sign-in on a phone against it hasn't been tried yet. |
+| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. **`deployment` branch:** the backend can also sign people in with Google (`POST /v1/auth/google`, turned on by `COOKBOOK_GOOGLE_CLIENT_IDS`). The app's signed-out screen and Settings have **Sign in with Google**; a real Google account signed in end to end in the Simulator (against a local token-mode server). On the server (see above), the owner signs in with Google on their iPhone and sees their recipes and photos, moved from the Mac and linked with `app.accounts link-owner`. |
 
 **Verified:**
 - Backend: 203 tests against PostgreSQL.
@@ -116,8 +116,9 @@ estimates and video/audio import.
 
 ## Next smallest task
 
-On the `deployment` branch: move the Mac's recipes to the server (`deploy/migrate-from-mac.sh`),
-sign in with Google on the phone, run `app.accounts link-owner`, then install on Andrew's phone.
+On the `deployment` branch: add Andrew as a Google test user and install the app on his phone.
+Then decide whether to merge `deployment` into `main`. The Mac's server and its old pairing tokens
+still work, but the phone now uses the cloud server, so new recipes go there.
 
 On `main`:
 

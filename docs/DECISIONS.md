@@ -642,8 +642,11 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   gets 401, not 404); ports 8000 and 5432 closed from outside; a manual backup run
   reached S3; the API started with S3 photo storage. 5 `link-owner` tests. 203 backend
   tests, 74 iOS tests, and a device build with the server address.
-- **Not yet done:** moving the Mac's data (`deploy/migrate-from-mac.sh`, run by the
-  owner), and Google sign-in on a phone against the server.
+- **Then (same day):** the owner ran `deploy/migrate-from-mac.sh` (3 recipes, 1 photo),
+  signed in with Google on their iPhone against the server (201, then 200 for the list),
+  `link-owner` moved that sign-in onto the owner account, and after signing in again the
+  phone showed the recipes and loaded the photo from S3. The 5 Mac pairing tokens came
+  across with the database and still work on the server.
 - **Cost alert:** AWS Budget `cookbook-20-total`: $20 of total spend from 2026-10-18 to
   2027-09-30, emailing the owner at 70% ($14) and 90% ($18) of actual spend.
 - **Revisit:** When the budget runs out (around early January), or if memory runs short.
