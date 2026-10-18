@@ -53,7 +53,7 @@ def clean_tables(engine: Engine) -> None:
 
 
 def test_settings(**overrides) -> Settings:
-    """Settings for tests: never read backend/.env (a developer's local MinIO, Ollama or
+    """Settings for tests: never read backend/.env (a developer's local S3, Anthropic or
     auth mode must not leak in), in-memory photo storage, the deterministic extractor."""
     values = dict(
         database_url=TEST_DATABASE_URL,

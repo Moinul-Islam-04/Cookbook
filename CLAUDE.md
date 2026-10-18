@@ -34,7 +34,7 @@ API contract: run the backend and open http://127.0.0.1:8000/docs, or read
 - Errors use one envelope: `code`, `message`, `field_errors[{field, message}]`,
   `retryable`, `request_id`.
 
-## AWS (deployment branch)
+## AWS
 
 - AWS CLI profile `cookbook`. The project uses the new AWS experience: say "project",
   not "account". Create every regional resource in `us-east-2`; the project can't use

@@ -116,7 +116,7 @@ final class APIClientTests: XCTestCase {
         StubURLProtocol.handler = { _ in throw URLError(.cannotConnectToHost) }
         let error = await apiError { try await self.api.listRecipes() }
         XCTAssertEqual(error, .transport(.cannotConnectToHost))
-        XCTAssertTrue(error?.userMessage.contains("Is your Mac awake") == true)
+        XCTAssertTrue(error?.userMessage.contains("Check your internet connection") == true)
     }
 
     func testDeleteAccepts204() async throws {

@@ -1,6 +1,6 @@
 """Hosted-model provider: Claude (default Haiku 5.5) through the Anthropic API.
 
-Unlike the Ollama provider, the caption leaves the Mac and each call costs money (about
+The caption is sent to Anthropic and each call costs money (about
 $0.10 per million input tokens and $0.50 per million output tokens). Structured outputs
 constrain the reply to the ExtractionOutput JSON schema; the output still goes through
 validate.py like any other provider's.
@@ -75,7 +75,7 @@ def _strict_schema(schema: dict) -> dict:
     """Copy of a pydantic JSON schema in the form structured outputs accept.
 
     Every object gets additionalProperties: false and every property is required (nullable
-    ones may still be null), as for Ollama. Pydantic's "title" and "default" annotations are
+    ones may still be null). Pydantic's "title" and "default" annotations are
     dropped; property names are left alone.
     """
 

@@ -1,5 +1,5 @@
-"""Object storage behind a small interface: S3-compatible (MinIO now, R2/S3 later) or
-in-memory (tests). The database stores stable object keys, never URLs."""
+"""Object storage behind a small interface: S3 (the server) or in-memory (tests and local
+development). The database stores stable object keys, never URLs."""
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime

@@ -659,8 +659,9 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 ## 2026-10-18: After the move: old tokens, Simulator settings, Andrew's access
 
 - **Old tokens:** the Mac's database brought its device tokens to the server: 2 working
-  (a phone pairing and the contract tests) and 3 expired. They're to be revoked on the
-  server with `python -m app.tokens revoke`, keeping the phone's Google sign-in token.
+  (a phone pairing and the contract tests) and 3 expired. The owner revoked all 5 on the
+  server with `python -m app.tokens revoke`; the phone's Google sign-in token is the only
+  active one left.
   The Mac's own server keeps its copies.
 - **Simulator settings:** a server address saved by pairing (UserDefaults `serverURL`)
   wins over the scheme's `COOKBOOK_API_URL`. A Simulator that was paired with the Mac
@@ -679,3 +680,26 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   owner ran those steps (`deploy/migrate-from-mac.sh`, the token revocation) instead.
 - **Revisit:** If more people join (publish the Google client or add test users), add a
   per-user import limit before Claude costs can be run up.
+
+## 2026-10-18: Cleanup after the move to AWS: no Mac services, no Ollama, no MinIO
+
+- **Context:** Phones now use the AWS server, so the Mac only serves local development.
+- **Decision:**
+  - Removed `ops/`, the launchd services that kept the API, MinIO, backups and cleanup
+    running on the Mac for the phone. They were stopped with `ops/uninstall-services.sh`
+    first. The Mac's database and MinIO files are still on disk, untouched.
+  - Removed `deploy/migrate-from-mac.sh`; the move is done (it's in git history).
+  - Removed the Ollama provider (`app/extraction/ollama.py`, its settings and 6 tests).
+    Claude Haiku replaced it, and a 7B model can't run on the 1 GB server. The Qwen
+    numbers stay in `eval/RESULTS.md` as history.
+  - Local development keeps photos in memory (`COOKBOOK_STORAGE_BACKEND=memory`, now in
+    `.env.example`), so MinIO isn't needed. The S3 endpoint default is AWS us-east-2.
+  - App text no longer assumes a Mac on Tailscale: the "can't reach the server" message
+    and the Settings pairing text. Pairing codes stay, for development and the live
+    contract tests.
+  - The README's Tailscale and always-on-services instructions are gone. Its "20–60
+    seconds" known issue was already fixed by #8.
+- **Supersedes:** "Self-hosted on the owner's Mac" and "Local Qwen 2.5 7B via Ollama" above.
+- **Verified:** 197 backend tests (203 minus the 6 Ollama tests), 74 iOS tests, a device
+  build, and the 10 live contract tests against a local server with in-memory photos and
+  Claude extraction.
