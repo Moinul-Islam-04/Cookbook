@@ -88,7 +88,7 @@ nonisolated enum APIError: Error, Equatable {
         case .transport(.timedOut):
             return "The server took too long to respond."
         case .transport:
-            return "Can't reach the Cookbook server at \(AppConfig.apiBaseURL.host() ?? "localhost"). Is your Mac awake and on Tailscale?"
+            return "Can't reach the Cookbook server at \(AppConfig.apiBaseURL.host() ?? "localhost"). Check your internet connection and try again."
         case .server(_, let body):
             return body.message
         case .badResponse:

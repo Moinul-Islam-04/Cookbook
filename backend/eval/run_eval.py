@@ -1,9 +1,8 @@
 """Score extraction providers on eval/captions.json through the real validator.
 
-    .venv/bin/python -m eval.run_eval fake ollama        # from backend/
-    .venv/bin/python -m eval.run_eval ollama --model qwen2.5:7b
-    .venv/bin/python -m eval.run_eval ollama --case sections_with_own_steps --repeat 3
-    .venv/bin/python -m eval.run_eval anthropic          # needs COOKBOOK_ANTHROPIC_API_KEY; costs money
+    .venv/bin/python -m eval.run_eval fake                # from backend/
+    .venv/bin/python -m eval.run_eval anthropic           # needs COOKBOOK_ANTHROPIC_API_KEY; costs money
+    .venv/bin/python -m eval.run_eval anthropic --case sections_with_own_steps --repeat 3
 
 Expectations are hand-written. Metrics per provider:
 - recipe: is_recipe detected correctly (a draft with no_recipe_found counts as "not a recipe")

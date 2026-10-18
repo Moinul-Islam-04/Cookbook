@@ -1,6 +1,6 @@
 """Manage device tokens (auth_mode=token).
 
-    python -m app.tokens create --name "Mo's iPhone" --server https://my-mac.tailnet.ts.net
+    python -m app.tokens create --name "contract tests" --server https://77-112-189-191.sslip.io
     python -m app.tokens list
     python -m app.tokens revoke <token-id>
 

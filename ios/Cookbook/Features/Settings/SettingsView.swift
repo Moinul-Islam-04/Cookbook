@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sign in (Google or a pairing code from your Mac), check the connection, or sign out.
+/// Sign in (Google, or a pairing code for development), check the connection, or sign out.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var server = AppConfig.apiBaseURL.absoluteString
@@ -45,7 +45,7 @@ struct SettingsView: View {
                             Text(pairError).font(.footnote).foregroundStyle(.red)
                         }
                         DisclosureGroup("Show the command") {
-                            Text("python -m app.tokens create --name \"iPhone\" --server <your Mac's address>")
+                            Text("python -m app.tokens create --name \"iPhone\" --server <server address>")
                                 .font(.footnote.monospaced())
                                 .textSelection(.enabled)
                         }
@@ -58,7 +58,7 @@ struct SettingsView: View {
                     Text(paired ? "Account" : "Sign In")
                 } footer: {
                     if !paired || showPairing {
-                        Text("Sign in with Google, or create a pairing code on your Mac (in the backend folder), copy it, then tap Paste. Paste turns on once there's text to paste.")
+                        Text("Sign in with Google. For development, you can instead copy a pairing code from the server (in the backend folder) and tap Paste. Paste turns on once there's text to paste.")
                     }
                 }
             }

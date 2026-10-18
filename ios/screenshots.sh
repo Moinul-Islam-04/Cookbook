@@ -5,7 +5,7 @@
 #   APPEARANCE=dark ios/screenshots.sh
 #   DEVICE="iPhone 17e" ios/screenshots.sh
 #
-# Needs the backend running (ops/install-services.sh) and the Simulator app paired. The
+# Needs a local backend running (see README, "Backend") and the Simulator app paired. The
 # tour creates an import draft (it expires after 24 h) but never saves a recipe.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"

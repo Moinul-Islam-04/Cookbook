@@ -18,14 +18,15 @@ class Settings(BaseSettings):
     # Google sign-in: comma-separated OAuth client IDs whose ID tokens we accept (the iOS
     # client's ID). Empty: POST /v1/auth/google is turned off.
     google_client_ids: str = ""
-    # Which extraction provider turns captions into drafts: "fake" (rule-based, no model),
-    # "ollama" (a local model) or "anthropic" (Claude over the API: captions leave the Mac).
+    # Which extraction provider turns captions into drafts: "fake" (rule-based, no model) or
+    # "anthropic" (Claude over the API: captions go to Anthropic and each import costs money).
     extraction_provider: str = "fake"
-    # A local 7B model on a 16 GB M2 took ~60 s on a real 1,000-character reel caption.
+    # Claude Haiku usually answers in a few seconds; this is the ceiling before a 504.
     extraction_timeout_s: float = 120.0
-    # Photos: "s3" (MinIO on this Mac; R2/S3 later) or "memory" (tests).
+    # Photos: "s3" (AWS S3 on the server) or "memory" (tests and local development; photos
+    # are lost when the process restarts).
     storage_backend: str = "memory"
-    s3_endpoint_url: str = "http://127.0.0.1:9000"
+    s3_endpoint_url: str = "https://s3.us-east-2.amazonaws.com"
     s3_bucket: str = "cookbook-images"
     s3_access_key: str = ""
     s3_secret_key: str = ""
@@ -34,8 +35,6 @@ class Settings(BaseSettings):
     image_signing_key: str = ""
     image_url_ttl_s: int = 600
     max_images_per_recipe: int = 10
-    ollama_url: str = "http://127.0.0.1:11434"
-    ollama_model: str = "qwen2.5:7b"
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-haiku-5-5"
     draft_ttl_hours: int = 24

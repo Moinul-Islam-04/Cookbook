@@ -26,10 +26,6 @@ def make_extractor(settings: "Settings") -> Extractor:
     provider = settings.extraction_provider
     if provider in ("fake", "rules"):
         return RuleBasedExtractor()
-    if provider == "ollama":
-        from app.extraction.ollama import OllamaExtractor
-
-        return OllamaExtractor(settings.ollama_url, settings.ollama_model, settings.extraction_timeout_s)
     if provider == "anthropic":
         if not settings.anthropic_api_key:
             raise RuntimeError("COOKBOOK_EXTRACTION_PROVIDER=anthropic needs COOKBOOK_ANTHROPIC_API_KEY.")
@@ -39,7 +35,7 @@ def make_extractor(settings: "Settings") -> Extractor:
             settings.anthropic_api_key, settings.anthropic_model, settings.extraction_timeout_s
         )
     raise RuntimeError(
-        f"Unknown COOKBOOK_EXTRACTION_PROVIDER {provider!r}; use 'fake', 'ollama' or 'anthropic'."
+        f"Unknown COOKBOOK_EXTRACTION_PROVIDER {provider!r}; use 'fake' or 'anthropic'."
     )
 
 
