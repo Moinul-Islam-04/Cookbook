@@ -319,6 +319,8 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   environment), so moving it is a hosting change.
 - **Revisit:** When the app needs to work with the laptop off, when there's more than one
   user, or when moving to a paid model API.
+- **Superseded (2026-10-18):** phones now use a Lightsail server (see "The server" below).
+  The Mac setup remains for local development and the Simulator.
 
 ## 2026-10-14: Device tokens instead of managed auth (auth_mode=token)
 
@@ -345,6 +347,9 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Revisit:** Before a second user or a public deployment. Then use a managed provider
   (Sign in with Apple, Supabase or Clerk), with JWT verification replacing the hash lookup
   in `app/deps.py`.
+- **Revisited (2026-10-18):** the device tokens stay. Google sign-in (verified JWT)
+  issues them instead of replacing them, so `app/deps.py` is unchanged and pairing codes
+  still work. See "Deploy to one Lightsail server" below.
 
 ## 2026-10-14: Photos in S3-compatible storage (MinIO locally), served by signed API URLs
 
@@ -650,3 +655,27 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Cost alert:** AWS Budget `cookbook-20-total`: $20 of total spend from 2026-10-18 to
   2027-09-30, emailing the owner at 70% ($14) and 90% ($18) of actual spend.
 - **Revisit:** When the budget runs out (around early January), or if memory runs short.
+
+## 2026-10-18: After the move: old tokens, Simulator settings, Andrew's access
+
+- **Old tokens:** the Mac's database brought its device tokens to the server: 2 working
+  (a phone pairing and the contract tests) and 3 expired. They're to be revoked on the
+  server with `python -m app.tokens revoke`, keeping the phone's Google sign-in token.
+  The Mac's own server keeps its copies.
+- **Simulator settings:** a server address saved by pairing (UserDefaults `serverURL`)
+  wins over the scheme's `COOKBOOK_API_URL`. A Simulator that was paired with the Mac
+  ignores the override until the saved address is changed or the app is reinstalled.
+  After unit tests run, the test-host copy of the app stays open as a blank window;
+  relaunching the app fixes it.
+- **The Mac and the server diverge:** after the move, new recipes from the phone go only
+  to the server. The Mac's server stays as it was for development; its data isn't synced
+  back.
+- **Andrew:** gets in by being added as a Google test user, then installing from the
+  owner's Xcode (free signing: the install lasts 7 days). His sign-in creates his own
+  account; he can't see the owner's recipes. TestFlight needs the $99 Apple Developer
+  membership, which the owner is still deciding on.
+- **Auto mode:** Claude Code's safety checks blocked Claude from running two kinds of
+  step: copying personal data to the cloud and changing data on the server over SSH. The
+  owner ran those steps (`deploy/migrate-from-mac.sh`, the token revocation) instead.
+- **Revisit:** If more people join (publish the Google client or add test users), add a
+  per-user import limit before Claude costs can be run up.
