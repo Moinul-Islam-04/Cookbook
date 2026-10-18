@@ -1,0 +1,8 @@
+[Unit]
+Description=Cookbook nightly database backup to S3
+
+[Service]
+Type=oneshot
+User=cookbook
+EnvironmentFile=/etc/cookbook/env
+ExecStart=/opt/cookbook/deploy/backup.sh

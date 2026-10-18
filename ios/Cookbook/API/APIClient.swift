@@ -3,8 +3,9 @@ import Foundation
 nonisolated enum AppConfig {
     private static let serverKey = "serverURL"
 
-    /// The paired server, else the scheme's COOKBOOK_API_URL, else 127.0.0.1 (the Simulator
-    /// shares the Mac's network, so that reaches a local uvicorn in dev mode).
+    /// The paired server, else the scheme's COOKBOOK_API_URL, else (on a phone) the deployed
+    /// server, else 127.0.0.1 (the Simulator shares the Mac's network, so that reaches a
+    /// local uvicorn in dev mode).
     static var apiBaseURL: URL {
         if let saved = UserDefaults.standard.string(forKey: serverKey), let url = URL(string: saved) {
             return url
@@ -13,6 +14,13 @@ nonisolated enum AppConfig {
            let url = URL(string: override) {
             return url
         }
+        #if !targetEnvironment(simulator)
+        // Phones default to the deployed server (Info.plist), so signing in needs no setup.
+        if let deployed = Bundle.main.object(forInfoDictionaryKey: "CookbookServerURL") as? String,
+           let url = URL(string: deployed) {
+            return url
+        }
+        #endif
         return URL(string: "http://127.0.0.1:8000")!
     }
 

@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The deployed server phones use by default (AppConfig.apiBaseURL). Not used in the Simulator. -->
+	<key>CookbookServerURL</key>
+	<string>https://77-112-189-191.sslip.io</string>
 	<!-- cookbook://import?url=… from the share extension (ios/Shared/ImportHandoff.swift). -->
 	<key>CFBundleURLTypes</key>
 	<array>

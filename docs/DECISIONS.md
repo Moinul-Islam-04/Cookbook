@@ -612,3 +612,36 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   form; typing the email and password works. Signing out now keeps the server address.
 - **Revisit:** When there's a paid Apple membership (add Sign in with Apple), or if the
   server runs out of memory on 1 GB.
+
+## 2026-10-18: The server: Lightsail, systemd, Caddy, S3 with a bucket-scoped IAM user
+
+- **Context:** Carries out the hosting plan above.
+- **Decision:**
+  - Lightsail `cookbook-server` (Ubuntu 24.04, `micro_3_0`) with the static IP
+    77.112.189.191 and 1 GB of swap. Firewall: 80 and 443 open, SSH only from the owner's IP.
+  - HTTPS name from sslip.io (`77-112-189-191.sslip.io`), so no domain to buy. Caddy gets
+    the Let's Encrypt certificate and proxies to uvicorn on 127.0.0.1:8000.
+  - PostgreSQL from Ubuntu, localhost only; the `cookbook` OS user connects by peer
+    authentication, so there's no database password.
+  - systemd runs the API (migrations first), the hourly cleanup, and a nightly `pg_dump`
+    uploaded to a backup bucket that expires copies after 14 days.
+  - Photos in the S3 bucket `cookbook-photos-220133863661`. Both buckets block public
+    access. The IAM user `cookbook-server` can read, write and delete photos and only add
+    backups (it can't read or delete them). Its access key is in `/etc/cookbook/env` on the
+    server, readable by root and the `cookbook` user.
+  - Secrets live in `deploy/server.env` on the Mac (git-ignored) and `/etc/cookbook/env`.
+  - Phones default to the server through `CookbookServerURL` in Info.plist. The
+    Simulator still uses 127.0.0.1.
+  - `python -m app.accounts link-owner` gives a Google sign-in to the owner account
+    from before sign-in existed, keeping its ID, so photo keys don't change.
+- **Alternatives:** Lightsail object storage ($1/month); MinIO on the server (memory);
+  a git checkout on the server (the repo would need deploy access), so `deploy/push.sh`
+  uses rsync instead.
+- **Verified:** a real Let's Encrypt certificate; `/healthz` over HTTPS; HTTP redirects to
+  HTTPS; `/v1/recipes` without a token is 401; Google sign-in is turned on (a bad token
+  gets 401, not 404); ports 8000 and 5432 closed from outside; a manual backup run
+  reached S3; the API started with S3 photo storage. 5 `link-owner` tests. 203 backend
+  tests, 74 iOS tests, and a device build with the server address.
+- **Not yet done:** moving the Mac's data (`deploy/migrate-from-mac.sh`, run by the
+  owner), Google sign-in on a phone against the server, and a cost alert.
+- **Revisit:** When the budget runs out (around early January), or if memory runs short.

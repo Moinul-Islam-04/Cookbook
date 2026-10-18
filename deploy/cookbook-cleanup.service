@@ -1,0 +1,9 @@
+[Unit]
+Description=Cookbook cleanup: expired drafts, old idempotency keys, orphaned photos
+
+[Service]
+Type=oneshot
+User=cookbook
+WorkingDirectory=/opt/cookbook/backend
+EnvironmentFile=/etc/cookbook/env
+ExecStart=/opt/cookbook/backend/.venv/bin/python -m app.cleanup

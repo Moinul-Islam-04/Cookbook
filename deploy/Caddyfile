@@ -1,0 +1,10 @@
+# HTTPS in front of the API. Caddy gets and renews the Let's Encrypt certificate itself.
+# COOKBOOK_HOST comes from /etc/default/caddy, e.g. 3-14-15-92.sslip.io.
+{$COOKBOOK_HOST} {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+	log {
+		output stderr
+		format console
+	}
+}

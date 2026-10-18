@@ -29,7 +29,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 198 passed (the test DB is dropped and recreated)
+pytest -q                       # 203 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -70,6 +70,21 @@ with `launchctl kickstart -k gui/$(id -u)/com.cookbook.api`.
   - UI tests (`CookbookUITests`) run with the `Screenshots` scheme. Each file's header
     says what it needs.
 
+### Server (AWS Lightsail, `deployment` branch)
+
+The API runs at https://77-112-189-191.sslip.io on one Lightsail server (us-east-2,
+$7/month) with PostgreSQL, Caddy (HTTPS) and S3 for photos and nightly backups. Phone
+builds use it by default; the Simulator still uses the Mac.
+
+- Deploy the current code: `deploy/push.sh` (copies `backend/`, installs requirements,
+  restarts the API, checks `/healthz`).
+- Needs `deploy/server.conf` and `deploy/server.env` (both git-ignored; template in
+  `deploy/env.example`) and the SSH key `~/.ssh/cookbook_lightsail`. SSH is open only to
+  one IP address: update the Lightsail firewall if yours changes.
+- Logs: `ssh -i ~/.ssh/cookbook_lightsail ubuntu@77.112.189.191 journalctl -u cookbook-api`.
+- Accounts: `sudo -u cookbook bash -c 'set -a; . /etc/cookbook/env; cd /opt/cookbook/backend && .venv/bin/python -m app.accounts list'`.
+- Backups: nightly `pg_dump` to `s3://cookbook-backups-220133863661/db/`, kept 14 days.
+
 ## Current status
 
 Milestones 1–5 in the brief are done, and the app runs on the owner's iPhone. Milestone 0's
@@ -82,10 +97,10 @@ Instagram access spike was never run.
 | Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. |
 | Share extension | Share → **Cookbook** from Safari or Instagram. **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
-| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. **`deployment` branch:** the backend can also sign people in with Google (`POST /v1/auth/google`, turned on by `COOKBOOK_GOOGLE_CLIENT_IDS`). The app's signed-out screen and Settings have **Sign in with Google**; a real Google account signed in end to end in the Simulator (against a local token-mode server). Not tried on a phone yet: that needs the deployed server. |
+| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. **`deployment` branch:** the backend can also sign people in with Google (`POST /v1/auth/google`, turned on by `COOKBOOK_GOOGLE_CLIENT_IDS`). The app's signed-out screen and Settings have **Sign in with Google**; a real Google account signed in end to end in the Simulator (against a local token-mode server). The server is deployed (see above); Google sign-in on a phone against it hasn't been tried yet. |
 
 **Verified:**
-- Backend: 198 tests against PostgreSQL.
+- Backend: 203 tests against PostgreSQL.
 - iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.
@@ -101,8 +116,8 @@ estimates and video/audio import.
 
 ## Next smallest task
 
-On the `deployment` branch (plan in DECISIONS, 2026-10-18): a Lightsail server with Caddy
-and S3, with its address built into the app, and moving the owner's recipes to their Google account.
+On the `deployment` branch: move the Mac's recipes to the server (`deploy/migrate-from-mac.sh`),
+sign in with Google on the phone, run `app.accounts link-owner`, then install on Andrew's phone.
 
 On `main`:
 
