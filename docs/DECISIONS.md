@@ -564,3 +564,51 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   - A UI test on a dev-mode server with the fake extractor: cancel, two ordered
     screenshots, no text found, and one screenshot through to Review Recipe.
   - Not tested on a device or on real Instagram screenshots.
+
+## 2026-10-18: Deploy to one Lightsail server; Google sign-in issues device tokens
+
+- **Context:** The owner wants a public deployment so the founder can try the app. The
+  budget is $20 total, enforced by an AWS spend limit that pauses the project, and the
+  AWS project is on the paid plan with no credits. There is no paid Apple Developer
+  membership yet, so Sign in with Apple and TestFlight aren't available.
+- **Decision:**
+  - Hosting: one Lightsail `micro_3_0` server in us-east-2 ($7 a month, 1 GB RAM, 40 GB
+    disk, public IPv4 included) running the API, PostgreSQL and Caddy for HTTPS. Photos
+    go to S3. About 2.5 months of hosting for the budget.
+  - Sign-in: Google. `POST /v1/auth/google` takes a Google ID token, checks its signature
+    against Google's published keys (PyJWT's `PyJWKClient`, cached), plus issuer, audience
+    (`COOKBOOK_GOOGLE_CLIENT_IDS`) and expiry. The user is found or created by
+    `users.auth_subject = "google:<sub>"`, and the response is an ordinary `ckb_` device
+    token. The rest of the API and the iOS Keychain storage stay as they are.
+  - The iOS app will sign in through `ASWebAuthenticationSession` (OAuth with PKCE), so
+    no Google SDK is added to the app.
+- **Alternatives:**
+  - EC2 plus RDS: about $30 a month, more than the whole budget.
+  - Sign in with Apple: needs the $99 membership. It can be added later as a second route
+    that issues the same device tokens.
+  - Google's tokeninfo endpoint instead of local verification: a network call on every
+    sign-in, and Google documents it for debugging.
+  - `google-auth`: pulls in more than PyJWT for one check.
+- **Not yet decided:** how the owner's existing Mac data moves to the server and joins
+  their Google account, account deletion, and a per-user import limit before strangers can
+  sign in.
+- **Verified:** 14 tests against PostgreSQL with a local signing key: forged signature,
+  wrong audience, wrong issuer, expired, missing or empty subject, garbage, Google
+  unreachable (503, retryable), turned off without client IDs, repeat sign-in reaching the
+  same recipes, and two Google users kept apart. The real verifier fetched Google's live
+  keys and rejected a token with an unknown key ID. No real Google sign-in has been tried.
+- **iOS (same day):** `GoogleSignInButton` runs the OAuth flow through SwiftUI's
+  `webAuthenticationSession` (shared browser session, so a phone already signed in to
+  Google can pick an account), redeems the code with PKCE at Google's token endpoint (iOS
+  clients have no secret), sends the ID token to the server, and saves the device token in
+  the Keychain like pairing does. It's on the signed-out screen and in Settings; pairing
+  codes still work. The client ID is in the app (not a secret). 8 unit tests (PKCE against
+  the RFC 7636 example, URL, redirect parsing, token exchange, server call). The UI test
+  `GoogleSignInFlow` reached Google's real sign-in page ("to continue to cookbook") in the
+  iOS 27 Simulator (the signed-out screen came from the Mac's token-mode server).
+  Then the owner signed in with a real Google account (a test user) in the Simulator
+  against a local token-mode server: 201 from /v1/auth/google, a `google:` user and token
+  created, and the recipe list loaded (200). AutoFill in the Simulator can't fill Google's
+  form; typing the email and password works. Signing out now keeps the server address.
+- **Revisit:** When there's a paid Apple membership (add Sign in with Apple), or if the
+  server runs out of memory on 1 GB.

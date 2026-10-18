@@ -11,3 +11,4 @@ anthropic==1.15.0  # Claude extraction provider (optional; off unless configured
 boto3==1.43.114  # S3-compatible object storage (MinIO, R2, S3)
 Pillow==12.3.0  # decode/validate/re-encode photos
 python-multipart==0.0.32  # FastAPI file uploads
+PyJWT[crypto]==2.15.1  # verify Google ID tokens (pulls in cryptography)

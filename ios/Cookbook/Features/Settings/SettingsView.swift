@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Pair this device with the backend on your Mac, check the connection, or unpair.
+/// Sign in (Google or a pairing code from your Mac), check the connection, or sign out.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var server = AppConfig.apiBaseURL.absoluteString
@@ -32,8 +32,11 @@ struct SettingsView: View {
 
                 Section {
                     if paired && !showPairing {
-                        Button("Pair with a New Code") { showPairing = true }
+                        Button("Sign In Again or Use a New Code") { showPairing = true }
                     } else {
+                        GoogleSignInButton {
+                            showingPairing(false)
+                        }
                         PasteButton(payloadType: String.self) { strings in
                             Task { @MainActor in pair(strings.first ?? "") }
                         }
@@ -49,13 +52,13 @@ struct SettingsView: View {
                         .font(.subheadline)
                     }
                     if paired {
-                        Button("Unpair This Device", role: .destructive) { confirmUnpair = true }
+                        Button("Sign Out of This Device", role: .destructive) { confirmUnpair = true }
                     }
                 } header: {
-                    Text(paired ? "Pairing" : "Pair This Device")
+                    Text(paired ? "Account" : "Sign In")
                 } footer: {
                     if !paired || showPairing {
-                        Text("Create a pairing code on your Mac (in the backend folder), copy it, then tap Paste. Paste turns on once there's text to paste.")
+                        Text("Sign in with Google, or create a pairing code on your Mac (in the backend folder), copy it, then tap Paste. Paste turns on once there's text to paste.")
                     }
                 }
             }
@@ -64,8 +67,8 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
-            .confirmationDialog("Unpair this device?", isPresented: $confirmUnpair, titleVisibility: .visible) {
-                Button("Unpair", role: .destructive) {
+            .confirmationDialog("Sign out of this device?", isPresented: $confirmUnpair, titleVisibility: .visible) {
+                Button("Sign Out", role: .destructive) {
                     AppConfig.unpair()
                     refresh()
                 }
@@ -111,6 +114,12 @@ struct SettingsView: View {
         pairError = nil
         showPairing = false
         AppConfig.pair(code)
+        refresh()
+        Task { await check() }
+    }
+
+    private func showingPairing(_ show: Bool) {
+        showPairing = show
         refresh()
         Task { await check() }
     }

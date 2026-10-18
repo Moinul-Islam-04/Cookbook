@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # "dev": no authentication, every request is the owner (127.0.0.1 only).
     # "token": every request needs `Authorization: Bearer <device token>`.
     auth_mode: str = "dev"
+    # Google sign-in: comma-separated OAuth client IDs whose ID tokens we accept (the iOS
+    # client's ID). Empty: POST /v1/auth/google is turned off.
+    google_client_ids: str = ""
     # Which extraction provider turns captions into drafts: "fake" (rule-based, no model),
     # "ollama" (a local model) or "anthropic" (Claude over the API: captions leave the Mac).
     extraction_provider: str = "fake"

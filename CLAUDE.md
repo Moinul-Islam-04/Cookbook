@@ -33,3 +33,13 @@ API contract: run the backend and open http://127.0.0.1:8000/docs, or read
 - PATCH needs `version`. A 409 `stale_version` must keep the user's unsaved edits.
 - Errors use one envelope: `code`, `message`, `field_errors[{field, message}]`,
   `retryable`, `request_id`.
+
+## AWS (deployment branch)
+
+- AWS CLI profile `cookbook`. The project uses the new AWS experience: say "project",
+  not "account". Create every regional resource in `us-east-2`; the project can't use
+  other Regions (the Agent Toolkit's own calls use `us-east-1`).
+- The project has a $20 spend limit that pauses it when exceeded. If calls that worked
+  start returning Access Denied, check AWS Settings → Billing before debugging.
+- The $20 is a one-time budget. State the cost of anything before creating it, and ask
+  before creating paid resources. Offer to clean up resources that aren't needed.

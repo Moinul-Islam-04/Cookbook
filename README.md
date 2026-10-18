@@ -29,7 +29,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 184 passed (the test DB is dropped and recreated)
+pytest -q                       # 198 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -65,7 +65,7 @@ with `launchctl kickstart -k gui/$(id -u)/com.cookbook.api`.
   4. Install the app from Xcode with your signing team. A free team's install lasts 7 days.
   5. Paste the pairing code in the app's Settings (gear icon).
 - **Tests:**
-  - Unit tests: `ios/run-tests.sh` (56 offline tests, plus 10 live contract tests when
+  - Unit tests: `ios/run-tests.sh` (64 offline tests, plus 10 live contract tests when
     you set `TOKEN=ckb_...`).
   - UI tests (`CookbookUITests`) run with the `Screenshots` scheme. Each file's header
     says what it needs.
@@ -82,11 +82,11 @@ Instagram access spike was never run.
 | Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. |
 | Share extension | Share → **Cookbook** from Safari or Instagram. **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
-| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. |
+| Accounts and access | One user, a device token per phone, and the API reachable only on your tailnet. **`deployment` branch:** the backend can also sign people in with Google (`POST /v1/auth/google`, turned on by `COOKBOOK_GOOGLE_CLIENT_IDS`). The app's signed-out screen and Settings have **Sign in with Google**; a real Google account signed in end to end in the Simulator (against a local token-mode server). Not tried on a phone yet: that needs the deployed server. |
 
 **Verified:**
-- Backend: 184 tests against PostgreSQL.
-- iOS: 66 XCTest tests, plus UI tests.
+- Backend: 198 tests against PostgreSQL.
+- iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.
 
@@ -100,6 +100,11 @@ Instagram access spike was never run.
 estimates and video/audio import.
 
 ## Next smallest task
+
+On the `deployment` branch (plan in DECISIONS, 2026-10-18): a Lightsail server with Caddy
+and S3, with its address built into the app, and moving the owner's recipes to their Google account.
+
+On `main`:
 
 1. Try the share extension and screenshot import on the iPhone: does the extension install
    with free signing and open the app? Does sharing from the Instagram app itself work?

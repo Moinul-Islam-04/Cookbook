@@ -152,3 +152,17 @@ nonisolated struct RecipePatch: Encodable {
         try c.encodeIfPresent(steps, forKey: .steps)
     }
 }
+
+// MARK: - Sign-in
+
+nonisolated struct GoogleSignInBody: Encodable, Equatable {
+    let idToken: String
+    let deviceName: String
+}
+
+/// POST /v1/auth/google: this device's token, shown once.
+nonisolated struct DeviceSession: Decodable, Equatable {
+    let token: String
+    let tokenId: UUID
+    let expiresAt: Date
+}

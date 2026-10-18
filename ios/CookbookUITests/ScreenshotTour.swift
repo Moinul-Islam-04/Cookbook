@@ -175,7 +175,7 @@ final class ScreenshotTour: XCTestCase {
         // Settings
         app.navigationBars.buttons["Settings"].tap()
         snap("17-settings")
-        app.buttons["Pair with a New Code"].tap()
+        app.buttons["Sign In Again or Use a New Code"].tap()
         snap("18-settings-pairing")
     }
 }

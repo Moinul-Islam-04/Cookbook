@@ -243,12 +243,12 @@ struct RecipeListView: View {
             ProgressView("Loading recipes…")
         case .failed(let error) where error.isUnauthenticated || Self.needsPairing:
             ContentUnavailableView {
-                Label("Pair This Device", systemImage: "lock.iphone")
+                Label("Sign In", systemImage: "lock.iphone")
             } description: {
-                Text("The Cookbook server on your Mac needs a pairing code before this device can see your recipes.")
+                Text("Sign in to see your recipes on this device.")
             } actions: {
-                Button("Open Settings") { showingSettings = true }
-                    .buttonStyle(.borderedProminent)
+                GoogleSignInButton { Task { await model.refresh() } }
+                Button("Use a Pairing Code") { showingSettings = true }
             }
         case .failed(let error):
             ErrorStateView(error: error) { await model.refresh() }

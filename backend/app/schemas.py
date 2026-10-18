@@ -277,3 +277,17 @@ class ImportDraftOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     expires_at: datetime
+
+
+class GoogleSignIn(RequestModel):
+    # A Google ID token is a JWT of roughly 1–2 KB.
+    id_token: str = Field(min_length=1, max_length=8192)
+    device_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
+class SessionOut(BaseModel):
+    """A device token, shown once. Send it as `Authorization: Bearer <token>`."""
+
+    token: str
+    token_id: uuid.UUID
+    expires_at: datetime

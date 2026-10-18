@@ -28,8 +28,15 @@ nonisolated enum AppConfig {
         KeychainToken.save(code.token)
     }
 
+    /// After Google sign-in: the token is for the server this app already talks to.
+    static func signIn(token: String) {
+        UserDefaults.standard.set(apiBaseURL.absoluteString, forKey: serverKey)
+        KeychainToken.save(token)
+    }
+
+    /// Signs this device out. The server address stays, so signing in again (with Google
+    /// or a new pairing code) reaches the same server.
     static func unpair() {
-        UserDefaults.standard.removeObject(forKey: serverKey)
         KeychainToken.delete()
     }
 }
@@ -107,6 +114,13 @@ nonisolated struct APIClient {
     /// Reachability only; /healthz needs no token.
     func health() async throws {
         let _: [String: String] = try await send("GET", "healthz")
+    }
+
+    // MARK: Sign-in
+
+    /// Exchanges a Google ID token for this device's token (POST /v1/auth/google).
+    func signInWithGoogle(idToken: String, deviceName: String) async throws -> DeviceSession {
+        try await send("POST", "v1/auth/google", body: GoogleSignInBody(idToken: idToken, deviceName: deviceName))
     }
 
     // MARK: Recipes
