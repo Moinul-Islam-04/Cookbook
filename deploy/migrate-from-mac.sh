@@ -4,6 +4,8 @@
 # as it is. Run from the repo root:  deploy/migrate-from-mac.sh
 # Needs deploy/server.conf, the cookbook AWS profile, and MinIO credentials in backend/.env.
 set -euo pipefail
+# The AWS CLI installer puts `aws` here; shells started before it was installed lack it.
+export PATH="$HOME/.local/bin:$PATH"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/server.conf"
 PHOTOS_BUCKET=cookbook-photos-220133863661
