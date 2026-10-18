@@ -1,0 +1,20 @@
+[Unit]
+Description=Cookbook API (FastAPI on 127.0.0.1:8000, behind Caddy)
+After=network-online.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+User=cookbook
+WorkingDirectory=/opt/cookbook/backend
+EnvironmentFile=/etc/cookbook/env
+ExecStartPre=/opt/cookbook/backend/.venv/bin/alembic upgrade head
+ExecStart=/opt/cookbook/backend/.venv/bin/uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

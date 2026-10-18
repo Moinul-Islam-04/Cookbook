@@ -15,9 +15,10 @@ from sqlalchemy.orm import sessionmaker
 from app.config import DEV_USER_ID, Settings, get_settings
 from app.errors import install_error_handlers
 from app.extraction import make_extractor
+from app.google_auth import GoogleVerifier
 from app.models import User
 from app.images import ImageSigner
-from app.routers import images, import_drafts, recipes
+from app.routers import auth, images, import_drafts, recipes
 from app.storage import make_store
 
 log = logging.getLogger("cookbook")
@@ -58,6 +59,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Tests swap this for a FakeExtractor with canned responses.
     app.state.extractor = make_extractor(settings)
     app.state.store = make_store(settings)
+    client_ids = [c.strip() for c in settings.google_client_ids.split(",") if c.strip()]
+    # Tests swap this for a verifier that trusts a local test key.
+    app.state.google_verifier = GoogleVerifier(client_ids) if client_ids else None
     app.state.image_signer = ImageSigner(
         settings.image_signing_key or __import__("secrets").token_urlsafe(32), settings.image_url_ttl_s
     )
@@ -82,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     install_error_handlers(app)
+    app.include_router(auth.router)
     app.include_router(recipes.router)
     app.include_router(import_drafts.router)
     app.include_router(images.router)
