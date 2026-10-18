@@ -659,8 +659,9 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 ## 2026-10-18: After the move: old tokens, Simulator settings, Andrew's access
 
 - **Old tokens:** the Mac's database brought its device tokens to the server: 2 working
-  (a phone pairing and the contract tests) and 3 expired. They're to be revoked on the
-  server with `python -m app.tokens revoke`, keeping the phone's Google sign-in token.
+  (a phone pairing and the contract tests) and 3 expired. The owner revoked all 5 on the
+  server with `python -m app.tokens revoke`; the phone's Google sign-in token is the only
+  active one left.
   The Mac's own server keeps its copies.
 - **Simulator settings:** a server address saved by pairing (UserDefaults `serverURL`)
   wins over the scheme's `COOKBOOK_API_URL`. A Simulator that was paired with the Mac
