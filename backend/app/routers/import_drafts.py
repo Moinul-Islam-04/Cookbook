@@ -87,6 +87,9 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
         raise ApiError(503, "extraction_account", "Recipe reading is paused because the recipe reader's account needs attention, for example it's out of credit. You can still enter the recipe manually.", retryable=False) from None
     except ExtractionError:
         raise ApiError(503, "extraction_unavailable", "Recipe extraction is unavailable right now. You can still enter the recipe manually.", retryable=True) from None
+    # Kept before the duplicate_post warning is added: that comes from the user's cookbook,
+    # not the model.
+    extracted = content.model_dump(mode="json")
 
     if post is not None:
         # A heads-up only; the save itself enforces the duplicate rule (409).
@@ -114,6 +117,7 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
         source_url=post.canonical_url if post else None,
         source_post_key=post.post_key if post else None,
         content=content.model_dump(mode="json"),
+        extracted_content=extracted,
         extraction_version=extractor.version,
         created_at=now,
         updated_at=now,

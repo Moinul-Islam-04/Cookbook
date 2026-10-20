@@ -276,6 +276,8 @@ def create_recipe(
         notes=body.notes,
         source_kind="caption" if draft else "manual",
         source_text=draft.source_text if draft else None,
+        extracted_content=draft.extracted_content if draft else None,
+        extraction_version=draft.extraction_version if draft else None,
         source_url=post.canonical_url if post else None,
         source_post_key=post.post_key if post else None,
         ingredients=_ingredient_rows(body.ingredients),
