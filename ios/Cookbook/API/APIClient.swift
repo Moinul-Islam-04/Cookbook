@@ -183,9 +183,10 @@ nonisolated struct APIClient {
 
     // MARK: Import drafts
 
-    /// Runs extraction on the server; a local model can take up to the server's 120 s limit.
+    /// Runs extraction on the server, which gives up after 30 s with a 504. Waiting longer
+    /// means the app shows that error instead of a transport timeout.
     func createDraft(_ body: ImportDraftCreate) async throws -> ImportDraft {
-        try await send("POST", "v1/import-drafts", body: body, timeout: 150)
+        try await send("POST", "v1/import-drafts", body: body, timeout: 45)
     }
 
     func draft(id: UUID) async throws -> ImportDraft {

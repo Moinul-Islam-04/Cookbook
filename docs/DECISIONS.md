@@ -302,6 +302,8 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   headings on a synthetic multi-section caption (`eval`: 0 headings as ingredients). It
   didn't change Qwen's output on the real caption.
 - **Stopgap:** The server timeout is now 120 s and the iOS request timeout 150 s.
+- **Superseded (2026-10-20):** 30 s on the server, 45 s on iOS, sized for Haiku (see
+  "Extraction timeouts sized for Haiku" below).
 - **Open decision:** Keep Qwen (free, private, slow), try a smaller local model, or switch
   to Claude Haiku 5.5 (fast, costs per caption, sends captions to Anthropic) and run
   `eval` on it.
@@ -703,3 +705,42 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Verified:** 197 backend tests (203 minus the 6 Ollama tests), 74 iOS tests, a device
   build, and the 10 live contract tests against a local server with in-memory photos and
   Claude extraction.
+
+## 2026-10-20: Extraction timeouts sized for Haiku; one retry inside the deadline
+
+- **Context:** The server still waited 120 s and the app 150 s, set for Qwen (2026-10-14
+  entry above). Haiku took 1.9 s median / 9.4 s max (prompt-5) and 3.3 s / 8.6 s
+  (prompt-6) in `backend/eval/RESULTS.md`. A slow or stuck call held an extraction
+  thread and kept the user waiting two minutes.
+- **Decision:**
+  - `extraction_timeout_s` (`COOKBOOK_EXTRACTION_TIMEOUT_S`) defaults to 30 s. Neither
+    `deploy/env.example` nor `backend/.env.example` sets it, so the server gets the new
+    default on its next deploy.
+  - The app waits 45 s for `POST /v1/import-drafts`, so the server's 504 envelope always
+    arrives before the app's own transport timeout. The screenshot UI test waits 45 s too.
+  - The SDK's retry is off (`max_retries=0`). Read in the installed `anthropic` 1.15.0
+    (`_base_client.py`): the SDK honors any `retry-after`/`retry-after-ms` the API sends,
+    capped only at about 50 days, and otherwise backs off 0.5 s, then 1 s (up to 8 s). Its
+    `timeout` is an httpx timeout per phase and per attempt, not a total. So a 429 with
+    `retry-after: 60` would have kept the worker thread, and maybe a second paid call,
+    going long after the 504.
+  - Instead, `AnthropicExtractor.extract` makes at most two attempts within the deadline
+    minus 1 s (29 s), each with 3 s to connect and at most 15 s for the reply (about 1.6×
+    the slowest eval call). It retries the same errors the SDK did (connection errors,
+    timeouts, 408, 409, 429, 5xx/529). The wait before the retry is the API's
+    `retry-after` or 0.5 s, and it retries only if at least 10 s for the reply would be
+    left (more than the slowest eval call). Worst case: 3 + 15 for the first attempt, then
+    whatever is left of the 29 s for the second, so the worker thread ends before the 504.
+    A reply that times out at 15 s after a quick connect leaves 10.4 s, so it is retried
+    once. One that also took 3 s to connect leaves 7.5 s, so it isn't. A `retry-after`
+    that doesn't fit isn't waited for: the user gets the retryable 503 right away.
+  - The 1 s margin means the adapter fails first with the precise error, and
+    `run_extraction`'s 30 s deadline stays as the backstop.
+- **Supersedes:** "one SDK retry" in "Claude Haiku 5.5 as an optional extraction
+  provider" above.
+- **Verified:** 4 new tests (retried once and never a third time; per-attempt timeouts
+  passed to the HTTP client; `retry-after: 60` fails at once; a 5 s deadline makes one
+  attempt that fits; the 30 s default). The 504 test still passes. `pytest` 201 passed. iOS
+  Simulator build succeeded, and `ios/run-tests.sh` passed 64 tests (10 live tests
+  skipped). **Not verified:** a real slow or overloaded Anthropic response, and the
+  import timeout in the Simulator or on a phone.
