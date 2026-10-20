@@ -783,3 +783,36 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   Simulator build succeeded, and `ios/run-tests.sh` passed 64 tests (10 live tests
   skipped). **Not verified:** a real slow or overloaded Anthropic response, and the
   import timeout in the Simulator or on a phone.
+
+## 2026-10-20: Keep the model's original output to measure corrections
+
+- **Context:** PATCH /v1/import-drafts overwrote the model's output in `content`, and
+  cleanup deletes drafts (saved or not) after their 24 h expiry. A saved recipe kept the
+  caption but not what the model produced or the prompt version, so there was no way to
+  measure how much users correct the model.
+- **Decision:** Migration 0006 adds a nullable `extracted_content` JSONB to `import_drafts`
+  and nullable `extracted_content` JSONB plus `extraction_version` to `recipes`.
+  - `create_draft` stores the validated output once and nothing ever patches it. This is
+    the model's output after the server's source-fidelity checks (`validate.py`), since
+    that's what the user is shown and corrects. The `duplicate_post` warning is left out:
+    it comes from the user's cookbook, not the model.
+  - Saving a draft (POST /v1/recipes with `draft_id`) copies both onto the recipe in the
+    same transaction, so they outlive draft cleanup. Manual recipes leave them NULL. The
+    JSONB columns use `none_as_null`, so Python `None` is stored as SQL NULL, not JSON null.
+  - Existing rows stay NULL and aren't backfilled: an old draft's `content` may already
+    hold the user's edits, so it can't stand in for the model's output.
+  - Neither column is returned by the API. The OpenAPI document is byte-for-byte the same
+    as before.
+  - `python -m app.corrections` prints, per `extraction_version`, how many ingredient and
+    step rows were added, removed or edited, and how many quantities changed. It compares
+    against the recipe's **current** rows, so later edits to the recipe count as
+    corrections too. Rows are matched in order on their text (difflib). Moving a row counts
+    as a removal plus an addition.
+- **Privacy and scope:** unchanged. This keeps caption-derived data the server already
+  holds: the recipe already stores the caption itself. Nothing new is sent anywhere or
+  shown to the client, and the data is deleted with the recipe (and with the user, by
+  cascade).
+- **Alternatives:** Keeping drafts after saving (more rows, and they'd have to be filtered
+  out everywhere). A separate `extractions` table. Both are more than this needs.
+- **Revisit:** If the report should only count corrections made at review time; that
+  would also need the draft's content at save time.

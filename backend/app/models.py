@@ -104,6 +104,12 @@ class Recipe(Base):
     source_url: Mapped[str | None] = mapped_column(Text)
     source_post_key: Mapped[str | None] = mapped_column(Text)
     source_text: Mapped[str | None] = mapped_column(Text)
+    # Imported recipes only: the draft's extracted_content and extraction_version, copied
+    # on save so corrections can be measured after the draft is cleaned up. Never returned
+    # by the API. NULL for manual recipes and for imports saved before 2026-10-20
+    # (none_as_null: Python None is SQL NULL, not a JSON null).
+    extracted_content: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
+    extraction_version: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = timestamp()
     updated_at: Mapped[datetime] = timestamp()
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
@@ -185,6 +191,10 @@ class ImportDraft(Base):
     # Validated DraftContent (title, ingredients, steps, warnings) as JSON, including the
     # user's corrections. Draft rows are edited as a whole, so they aren't normalized.
     content: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # The validated model output as first stored, before the user's corrections or the
+    # server's duplicate_post warning. Written once and never patched. NULL for drafts
+    # created before 2026-10-20.
+    extracted_content: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     extraction_version: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     # SET NULL: deleting the saved recipe leaves the (saved, soon expiring) draft behind.

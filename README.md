@@ -29,7 +29,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 210 passed (the test DB is dropped and recreated)
+pytest -q                       # 217 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -84,13 +84,13 @@ Instagram access spike was never run.
 | --- | --- |
 | Manual recipes | Create, edit, delete, photos. Missing amounts stay empty. An edit made on another device is detected (409) without losing yours. |
 | Search and duplicates | Search by title or ingredient. Saving a post twice warns and links to the existing recipe. |
-| Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s; the server gives up after 30 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. Imports are limited to 20 an hour and 100 a day per user, and 300 a day across everyone; past a limit the app says so, and manual entry still works. |
+| Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s; the server gives up after 30 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. Imports are limited to 20 an hour and 100 a day per user, and 300 a day across everyone; past a limit the app says so, and manual entry still works. A saved import keeps what Claude produced (never shown in the app), and `python -m app.corrections` reports how much users corrected it. |
 | Share extension | Share → **Cookbook** from Safari or Instagram. **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
-- Backend: 210 tests against PostgreSQL.
+- Backend: 217 tests against PostgreSQL.
 - iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.
