@@ -24,6 +24,7 @@ class ApiError(Exception):
         field_errors: list[FieldError] | None = None,
         retryable: bool = False,
         details: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -32,6 +33,7 @@ class ApiError(Exception):
         self.field_errors = field_errors or []
         self.retryable = retryable
         self.details = details
+        self.headers = headers
 
 
 def not_found(resource: str = "recipe") -> ApiError:
@@ -48,7 +50,9 @@ def _respond(request: Request, err: ApiError) -> JSONResponse:
         request_id=getattr(request.state, "request_id", None),
         details=err.details,
     )
-    return JSONResponse(status_code=err.status_code, content=body.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=err.status_code, content=body.model_dump(mode="json"), headers=err.headers
+    )
 
 
 _STATUS_CODES = {

@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user_id, get_db
@@ -65,11 +65,43 @@ def _to_out(draft: ImportDraft) -> ImportDraftOut:
     )
 
 
+def _retry_after(db: Session, user_id: uuid.UUID | None, window: timedelta, limit: int, now: datetime) -> int | None:
+    """Seconds until fewer than `limit` drafts were created in the window, or None if already
+    under it. Counts this user's drafts, or everyone's when user_id is None."""
+    since = now - window
+    stmt = select(ImportDraft.created_at).where(ImportDraft.created_at > since)
+    if user_id is not None:
+        stmt = stmt.where(ImportDraft.user_id == user_id)
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    if total < limit:
+        return None
+    # Once this draft leaves the window, the count drops below the limit.
+    freed_by = db.scalar(stmt.order_by(ImportDraft.created_at).offset(total - limit).limit(1))
+    return max(1, int((freed_by + window - now).total_seconds()) + 1)
+
+
+def check_import_limits(db: Session, settings, user_id: uuid.UUID) -> None:
+    """429 before the extractor is called. Concurrent requests can each pass the check
+    before any of them inserts, so a burst may overshoot by the number in flight."""
+    now = datetime.now(UTC)
+    hour, day = timedelta(hours=1), timedelta(hours=24)
+    wait = _retry_after(db, None, day, settings.import_limit_global_per_day, now)
+    if wait is not None:
+        log.warning("global daily import limit reached")
+        raise ApiError(429, "rate_limited", "Recipe reading is paused for everyone because today's limit was reached. You can still enter the recipe manually.", retryable=True, headers={"Retry-After": str(wait)})
+    for window, limit, period in ((hour, settings.import_limit_per_hour, "hour"), (day, settings.import_limit_per_day, "day")):
+        wait = _retry_after(db, user_id, window, limit, now)
+        if wait is not None:
+            raise ApiError(429, "rate_limited", f"You've read {limit} recipes in the last {period}, the most allowed. Try again later, or enter the recipe manually now.", retryable=True, headers={"Retry-After": str(wait)})
+
+
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=ImportDraftOut)
 def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_id: UserId) -> ImportDraftOut:
     post = _parse_source(body.source_url)
     settings = request.app.state.settings
     extractor = request.app.state.extractor
+    check_import_limits(db, settings, user_id)
+    db.rollback()  # end the read-only transaction; don't hold it open during extraction
 
     # Extraction runs before any DB write, so a provider failure leaves nothing behind.
     # The client still has the caption and can retry or enter the recipe manually.

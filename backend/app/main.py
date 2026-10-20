@@ -40,6 +40,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "another device can reach, or 'dev' (no authentication) on 127.0.0.1 only."
         )
 
+    if settings.draft_ttl_hours < 24:
+        raise RuntimeError(
+            "COOKBOOK_DRAFT_TTL_HOURS must be at least 24: the daily import limits count the "
+            "last 24 hours of drafts, and expired drafts are deleted."
+        )
+
     # Sessions run in UTC so every timestamp the API returns is UTC.
     engine = create_engine(
         settings.database_url, pool_pre_ping=True, connect_args={"options": "-c timezone=UTC"}
