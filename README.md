@@ -29,7 +29,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 203 passed (the test DB is dropped and recreated)
+pytest -q                       # 202 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -90,7 +90,7 @@ Instagram access spike was never run.
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
-- Backend: 203 tests against PostgreSQL.
+- Backend: 202 tests against PostgreSQL. Photo uploads no longer hold up other requests, and need a fifth (JPEG) to half (PNG) of the memory (DECISIONS 2026-10-20; not yet deployed).
 - iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.

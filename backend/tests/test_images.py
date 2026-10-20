@@ -1,16 +1,20 @@
 """Milestone 4 photos: validation, privacy, signed reads, ownership, failures, cleanup."""
 
 import io
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from PIL import Image
+from PIL import Image, JpegImagePlugin
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+from app import images as app_images
 from app.cleanup import cleanup_orphan_objects
+from app.routers import images as images_router
 from app.images import signed_path
 from app.storage import MemoryStore
 from tests.conftest import count, test_settings
@@ -214,3 +218,100 @@ def test_in_token_mode_upload_needs_a_token_but_signed_reads_do_not(engine: Engi
         assert_error(upload(c, rid, image_bytes()), 401, "unauthenticated")
         img = c.post(f"/v1/recipes/{rid}/images", files={"file": ("p.jpg", image_bytes(), "image/jpeg")}, headers=h).json()
         assert c.get(img["url"]).status_code == 200  # AsyncImage can load it without a header
+
+
+# ---- uploads don't block other requests, and decode one at a time ----
+
+
+def slow_processing(monkeypatch, seconds: float, started: threading.Event | None = None) -> dict:
+    """Make process_upload block like a large Pillow decode, and record its concurrency."""
+    real = images_router.process_upload
+    stats = {"running": 0, "max": 0}
+    lock = threading.Lock()
+
+    def slow(data: bytes):
+        with lock:
+            stats["running"] += 1
+            stats["max"] = max(stats["max"], stats["running"])
+        if started is not None:
+            started.set()
+        time.sleep(seconds)  # blocking on purpose, as Pillow is
+        with lock:
+            stats["running"] -= 1
+        return real(data)
+
+    monkeypatch.setattr(images_router, "process_upload", slow)
+    return stats
+
+
+def test_an_upload_in_progress_does_not_block_other_requests(monkeypatch, client: TestClient) -> None:
+    rid = create(client)["id"]
+    started = threading.Event()
+    slow_processing(monkeypatch, 1.5, started)
+    with ThreadPoolExecutor(1) as pool:
+        pending = pool.submit(upload, client, rid, image_bytes())
+        assert started.wait(5)
+        t = time.perf_counter()
+        assert client.get("/healthz").status_code == 200
+        waited = time.perf_counter() - t
+        assert pending.result().status_code == 201
+    # Under the old `async def` this waited for the whole 1.5 s upload.
+    assert waited < 0.5, f"/healthz waited {waited:.2f}s behind the upload"
+
+
+def test_photos_are_processed_one_at_a_time(monkeypatch, app, client: TestClient) -> None:
+    rid = create(client)["id"]
+    stats = slow_processing(monkeypatch, 0.3)
+    with ThreadPoolExecutor(3) as pool:
+        results = list(pool.map(lambda _: upload(client, rid, image_bytes()), range(3)))
+    assert [r.status_code for r in results] == [201, 201, 201]
+    assert stats["max"] == 1
+
+
+def test_upload_waiting_too_long_for_processing_gets_a_retryable_503(monkeypatch, app, client: TestClient) -> None:
+    rid = create(client)["id"]
+    monkeypatch.setattr(app_images, "PROCESSING_WAIT_S", 0.1)
+    with app_images.processing_slot():  # another upload is being processed
+        body = assert_error(upload(client, rid, image_bytes()), 503, "photo_processing_busy")
+    assert body["retryable"] is True
+    assert store(app).objects == {}
+    assert upload(client, rid, image_bytes()).status_code == 201  # the slot was released
+
+
+def test_more_than_24_megapixels_is_rejected(client: TestClient) -> None:
+    rid = create(client)["id"]
+    big = io.BytesIO()
+    Image.new("L", (5000, 5000)).save(big, "PNG")  # 25 MP
+    assert_error(upload(client, rid, big.getvalue(), name="b.png"), 422, "invalid_image")
+
+
+def test_large_rotated_jpeg_is_decoded_reduced_and_comes_out_upright(monkeypatch, client: TestClient) -> None:
+    drafted = []
+    real_draft = JpegImagePlugin.JpegImageFile.draft
+
+    def spy(self, mode, size):
+        before = self.size
+        result = real_draft(self, mode, size)
+        drafted.append((before, self.size))
+        return result
+
+    monkeypatch.setattr(JpegImagePlugin.JpegImageFile, "draft", spy)
+    # 6000x4000 sensor image, red top-left corner; orientation 6 = rotate 90° clockwise.
+    sensor = Image.new("RGB", (6000, 4000), (255, 255, 255))
+    sensor.paste((255, 0, 0), (0, 0, 1000, 1000))
+    out = io.BytesIO()
+    sensor.save(out, "JPEG", exif=gps_exif(orientation=6))
+    rid = create(client)["id"]
+    img = upload(client, rid, out.getvalue()).json()
+
+    assert drafted[0] == ((6000, 4000), (3000, 2000))  # decoded at half size, not 24 MP
+    assert (img["width"], img["height"]) == (1365, 2048)
+    for url, edge in ((img["url"], 2048), (img["thumbnail_url"], 600)):
+        stored = Image.open(io.BytesIO(client.get(url).content)).convert("RGB")
+        assert max(stored.size) == edge and stored.width < stored.height
+        # Rotated clockwise, the sensor's top-left corner is now the top-right.
+        r, g, b = stored.getpixel((stored.width - 5, 5))
+        assert r > 200 and g < 60 and b < 60
+        r, g, b = stored.getpixel((5, 5))
+        assert r > 200 and g > 200 and b > 200
+        assert len(stored.getexif()) == 0
