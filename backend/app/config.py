@@ -37,7 +37,16 @@ class Settings(BaseSettings):
     max_images_per_recipe: int = 10
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-haiku-5-5"
+    # Drafts are deleted after this; must stay >= 24, since the daily import limits below
+    # count the last 24 hours of drafts (checked at startup).
     draft_ttl_hours: int = 24
+    # Import limits (each import calls the extractor, about $0.0006 with Haiku). Counted from
+    # import_drafts rows, so only successful imports count.
+    # Per user: worst case $0.012/hour, $0.06/day.
+    import_limit_per_hour: int = 20
+    import_limit_per_day: int = 100
+    # All users together, a kill switch: worst case $0.18/day (about $5.40/month).
+    import_limit_global_per_day: int = 300
 
 
 @lru_cache

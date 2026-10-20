@@ -703,3 +703,42 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Verified:** 197 backend tests (203 minus the 6 Ollama tests), 74 iOS tests, a device
   build, and the 10 live contract tests against a local server with in-memory photos and
   Claude extraction.
+
+## 2026-10-20: Per-user and global import limits, counted in PostgreSQL
+
+- **Context:** Others can sign in now, and every `POST /v1/import-drafts` calls Claude
+  (about $0.0006 each). With no limit, one scripted user could spend about $60 a day. The
+  brief rules out Redis and API gateways.
+- **Decision:**
+  - Before calling the extractor, `create_draft` counts `import_drafts` rows: this user's
+    in the last hour and last 24 hours, and everyone's in the last 24 hours. At a limit
+    it returns 429 `rate_limited`, `retryable: true`, a message saying manual entry still
+    works, and `Retry-After`: the seconds until enough drafts leave the window to get back
+    under the limit.
+  - Defaults, chosen by the owner, and their worst-case cost: 20 per user per hour
+    ($0.012/hour), 100 per user per day ($0.06/day), 300 per day across all users ($0.18/day,
+    about $5.40/month). Set with `COOKBOOK_IMPORT_LIMIT_PER_HOUR`, `_PER_DAY` and
+    `_GLOBAL_PER_DAY`. The global limit is the kill switch: set it to 0 to stop all imports.
+  - `ApiError` gained an optional `headers` argument for `Retry-After`.
+- **Depends on draft expiry:** the daily counts only see drafts that still exist, and
+  `python -m app.cleanup` deletes drafts once they expire (saved or not). So
+  `draft_ttl_hours` must stay at 24 or more. The server refuses to start if it's lower.
+- **No new index:** the per-user count uses the existing `ix_import_drafts_user_id`, and
+  one user has at most about 100 rows in a day. The global count scans the table, which
+  stays small because the global limit caps it at about 300 new rows a day and cleanup
+  deletes them after 24 hours. Add `(user_id, created_at)` or `(created_at)` only if
+  measurements show the counts are slow, for example if cleanup stops running.
+- **Known slack:** the check runs before extraction, and the row is inserted after it
+  (a few seconds later). Requests sent at the same moment can all pass the check, so a
+  burst can overshoot by the number of requests in flight. That's bounded by the server's
+  worker threads (about 40), so a few cents at most, and the next request is refused.
+  Locking the user's row for the whole extraction would close this gap, but it would
+  serialize a user's imports and hold a transaction open during the call. Not done.
+- **Not counted:** extractions that fail (timeout, malformed output) cost money but leave
+  no draft, so they don't count. Revisit if the logs show repeated failures from one user.
+- **Alternatives:** an in-memory counter (lost on restart, and wrong with more than one
+  process), or a separate counter table (more code than counting the rows that already
+  exist).
+- **iOS:** no change needed. The import screen shows the server's `message` in its error
+  banner, keeps the caption, and offers "Enter Manually Instead".
+- **Revisit:** if imports are legitimately hitting the limits, or the table grows.
