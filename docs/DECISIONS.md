@@ -363,7 +363,7 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
     Cloudflare R2 or AWS S3 is a config change.
   - Uploads (`POST /v1/recipes/{id}/images`, multipart):
     - The server decodes the file with Pillow and accepts only JPEG, PNG or WebP of at
-      most 10 MB and 50 MP. Content-Type and extension aren't trusted, and decompression
+      most 10 MB and 50 MP (24 MP since 2026-10-20). Content-Type and extension aren't trusted, and decompression
       bombs are rejected.
     - It applies the EXIF rotation, then re-encodes to JPEG with **no metadata**, so GPS
       and camera details never reach storage.
@@ -816,3 +816,50 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   out everywhere). A separate `extractions` table. Both are more than this needs.
 - **Revisit:** If the report should only count corrections made at review time; that
   would also need the draft's content at save time.
+
+## 2026-10-20: Photo uploads run in the thread pool, one decode at a time, at reduced size
+
+- **Context:** `upload_image` was `async def` but did blocking work (Pillow, S3 puts,
+  database calls), so it ran on the event loop and stalled every other request. Measured
+  against a local uvicorn with a continuous `GET /healthz` pinger, before any change:
+  healthz normally answers in about 2 ms; during a 24 MP JPEG upload its worst case was
+  331–359 ms, and during a 48 MP PNG 780–835 ms, i.e. the whole upload. On the slower
+  1 GB server it would be longer. Memory, measured as `ru_maxrss` growth in a fresh
+  process for `process_upload` alone (tracemalloc only saw about 4 MB, because Pillow's
+  pixel buffers are C allocations): +348–354 MB for a 24 MP image and +663–671 MB for a
+  48 MP PNG, more than the server can spare.
+- **Decision:**
+  - `upload_image` is a plain `def`, so FastAPI runs it in its thread pool.
+  - One photo is processed at a time (`threading.Semaphore(1)` in `app/images.py`). The
+    request body is read into memory only after the slot is taken; until then it sits in
+    Starlette's spooled temp file. An upload waits up to 20 s for the slot, then gets a
+    retryable 503 `photo_processing_busy` (the app's upload timeout is 60 s). Waiting
+    blocks one thread-pool thread each, which is bounded by the pool's 40 threads.
+  - JPEGs are decoded at 1/2, 1/4 or 1/8 scale (`Image.draft`) when the long edge stays
+    at least 2048 px, so output size is unchanged. The 600 px thumbnail is made from the
+    2048 px image instead of the original. No full-size copies: rotation is applied in
+    place and an RGB image isn't converted again. EXIF rotation is still applied before
+    saving, and saved JPEGs still carry no metadata.
+  - `MAX_SOURCE_PIXELS` is 24 MP (was 50 MP), approved by the owner: the app sends at
+    most 2048 px (about 4 MP).
+  - `deploy/cookbook-api.service` has `MemoryMax=600M`, approved by the owner, so a
+    runaway API is killed and restarted by systemd rather than the kernel's OOM killer
+    choosing PostgreSQL.
+- **After (same measurements, on the Mac):** healthz's worst case during a 24 MP JPEG
+  upload was 7–9 ms and during a 23.5 MP PNG 14 ms, with one run at 113 ms (other Python
+  work still shares the GIL with Pillow). The old code took 416–467 ms on that PNG.
+  Memory: 24 MP JPEG +69 MB (was +348 MB), 23.5 MP PNG +158–160 MB (was +353 MB); a
+  48 MP image is now rejected before decoding.
+- **Alternatives:** keep `async def` and wrap the blocking calls in `run_in_threadpool`
+  (the same effect but more code); a worker process or queue (the brief rules out
+  queues until measurements need one); reject when busy instead of waiting (one person
+  adding two photos quickly would see an error).
+- **Verified:** 5 new tests: healthz isn't held up by a slow upload (fails with the old
+  `async def`: 1.52 s), at most one decode runs at a time (fails without the semaphore:
+  3), the busy 503, 25 MP rejected, and a rotated 24 MP JPEG decoded at half size comes
+  out upright. All earlier photo tests pass.
+- **Not verified:** the numbers come from a Mac (macOS reports `ru_maxrss` in bytes,
+  Linux in KiB; the script handles both); they weren't measured on the Lightsail server.
+  `MemoryMax` relies on cgroup v2, which current Ubuntu on Lightsail uses, but the unit
+  hasn't been deployed or tested there.
+- **Revisit:** If photos queue up behind each other in real use, or the server is resized.

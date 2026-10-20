@@ -11,6 +11,10 @@ ExecStartPre=/opt/cookbook/backend/.venv/bin/alembic upgrade head
 ExecStart=/opt/cookbook/backend/.venv/bin/uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --proxy-headers
 Restart=always
 RestartSec=5
+# The server has 1 GB shared with PostgreSQL and Caddy. Above this the kernel kills only
+# the API (cgroup v2), and Restart=always brings it back, instead of the OOM killer
+# picking PostgreSQL. A 24 MP photo needs about 70-160 MB to process (DECISIONS 2026-10-20).
+MemoryMax=600M
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_current_user_id, get_db
 from app.errors import ApiError, not_found
-from app.images import MAX_UPLOAD_BYTES, ImageSigner, InvalidImage, process_upload
+from app.images import MAX_UPLOAD_BYTES, ImageSigner, InvalidImage, ProcessingBusy, process_upload, processing_slot
 from app.models import Recipe, RecipeImage
 from app.schemas import FieldError, RecipeImageOut
 from app.storage import ObjectStore, StorageError
@@ -61,16 +61,23 @@ def _owned_recipe(db: Session, user_id: uuid.UUID, recipe_id: uuid.UUID, *, lock
     return recipe
 
 
+# A plain def: FastAPI runs it in its thread pool. Pillow, S3 and the database all block,
+# and under `async def` one large photo stalled every other request on the event loop.
 @router.post("/v1/recipes/{recipe_id}/images", status_code=status.HTTP_201_CREATED, response_model=RecipeImageOut)
-async def upload_image(
+def upload_image(
     recipe_id: uuid.UUID, request: Request, db: DbSession, user_id: UserId, file: Annotated[UploadFile, File()]
 ) -> RecipeImageOut:
     _owned_recipe(db, user_id, recipe_id)  # 404 before reading a large body
-    data = await file.read(MAX_UPLOAD_BYTES + 1)
     try:
-        processed = process_upload(data)
+        # The body stays in Starlette's spooled temp file until this upload's turn.
+        with processing_slot():
+            data = file.file.read(MAX_UPLOAD_BYTES + 1)
+            processed = process_upload(data)
+            del data
     except InvalidImage as e:
         raise ApiError(422, "invalid_image", str(e), field_errors=[FieldError(field="file", message=str(e))]) from None
+    except ProcessingBusy:
+        raise ApiError(503, "photo_processing_busy", "The server is busy with other photos. Try again shortly.", retryable=True) from None
 
     settings = request.app.state.settings
     store: ObjectStore = request.app.state.store

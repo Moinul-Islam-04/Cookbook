@@ -7,21 +7,45 @@ no metadata, so GPS and other EXIF never reach storage, and capped in size and p
 import hashlib
 import hmac
 import io
+import math
+import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-MAX_SOURCE_PIXELS = 50_000_000  # rejects decompression bombs before decoding
+# Rejects decompression bombs before decoding. The phone sends at most 2048 px (~4 MP);
+# 24 MP still fits a full-resolution camera photo from another client.
+MAX_SOURCE_PIXELS = 24_000_000
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 FULL_EDGE = 2048
 THUMB_EDGE = 600
 JPEG_QUALITY = 85
+# One decode at a time, so concurrent uploads can't stack their full-size buffers in the
+# server's 1 GB. Waiting uploads hold a thread and their spooled request body, not pixels.
+PROCESSING_WAIT_S = 20.0
+_processing = threading.Semaphore(1)
 
 
 class InvalidImage(ValueError):
     pass
+
+
+class ProcessingBusy(Exception):
+    """Another upload held the processing slot for longer than PROCESSING_WAIT_S."""
+
+
+@contextmanager
+def processing_slot() -> Iterator[None]:
+    if not _processing.acquire(timeout=PROCESSING_WAIT_S):
+        raise ProcessingBusy()
+    try:
+        yield
+    finally:
+        _processing.release()
 
 
 @dataclass(frozen=True)
@@ -46,11 +70,17 @@ def process_upload(data: bytes) -> ProcessedImage:
                 raise InvalidImage("That image is too large.")
             probe.verify()  # structural check; the image must be reopened afterwards
         with Image.open(io.BytesIO(data)) as img:
-            img = ImageOps.exif_transpose(img)  # bake in rotation before EXIF is dropped
-            img = img.convert("RGB")
-            full = _jpeg(img, FULL_EDGE)
-            thumb = _jpeg(img, THUMB_EDGE)
-            width, height = Image.open(io.BytesIO(full)).size
+            if fmt == "JPEG":
+                _decode_at_reduced_size(img, FULL_EDGE)
+            ImageOps.exif_transpose(img, in_place=True)  # bake in rotation before EXIF is dropped
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.thumbnail((FULL_EDGE, FULL_EDGE), Image.Resampling.LANCZOS)
+            width, height = img.size
+            full = _jpeg(img)
+            # From the 2048 px result, not the original: no second full-size pass.
+            img.thumbnail((THUMB_EDGE, THUMB_EDGE), Image.Resampling.LANCZOS)
+            thumb = _jpeg(img)
     except InvalidImage:
         raise
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError):
@@ -58,11 +88,22 @@ def process_upload(data: bytes) -> ProcessedImage:
     return ProcessedImage(full=full, thumb=thumb, width=width, height=height)
 
 
-def _jpeg(img: Image.Image, edge: int) -> bytes:
-    copy = img.copy()
-    copy.thumbnail((edge, edge), Image.Resampling.LANCZOS)
+def _decode_at_reduced_size(img: Image.Image, edge: int) -> None:
+    """Ask the JPEG decoder to scale by 1/2, 1/4 or 1/8 while decoding, as long as the long
+    edge stays at least `edge`: a 24 MP photo then decodes to 6 MP, not 24.
+
+    The scale is uniform, so EXIF rotation applied afterwards is unaffected.
+    """
+    w, h = img.size
+    if max(w, h) <= edge:
+        return
+    r = edge / max(w, h)
+    img.draft("RGB", (max(1, math.ceil(w * r)), max(1, math.ceil(h * r))))
+
+
+def _jpeg(img: Image.Image) -> bytes:
     out = io.BytesIO()
-    copy.save(out, "JPEG", quality=JPEG_QUALITY, optimize=True)  # no exif= → no metadata
+    img.save(out, "JPEG", quality=JPEG_QUALITY, optimize=True)  # no exif= → no metadata
     return out.getvalue()
 
 
