@@ -535,6 +535,69 @@ def test_anthropic_adapter_failures_map_to_extraction_errors(response, error) ->
         _claude(response).extract("caption")
 
 
+def _claude_sequence(responses, timeout_s: float = 30):
+    """An adapter whose mocked API answers with `responses` in order; returns (extractor, calls)."""
+    import anthropic
+    import httpx2
+
+    from app.extraction.anthropic import AnthropicExtractor
+
+    calls = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        calls.append(request.extensions["timeout"])
+        return responses[len(calls) - 1]
+
+    http = anthropic.DefaultHttpxClient(transport=httpx2.MockTransport(handler))
+    return AnthropicExtractor("sk-ant-test", "claude-haiku-5-5", timeout_s, http_client=http), calls
+
+
+def _overloaded(headers: dict | None = None):
+    import httpx2
+
+    return httpx2.Response(529, headers=headers or {}, json={
+        "type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}})
+
+
+def test_claude_is_retried_once_within_the_deadline() -> None:
+    import httpx2
+
+    ok = httpx2.Response(200, json=_claude_message(json.dumps(BRIEF_OUTPUT)))
+    ex, calls = _claude_sequence([_overloaded(), ok])
+    assert json.loads(ex.extract(BRIEF_CAPTION)) == BRIEF_OUTPUT
+    # Each attempt waits at most 3 s to connect and 15 s for the reply: two fit in 30 s.
+    assert len(calls) == 2
+    assert all(t["connect"] == 3.0 and t["read"] <= 15.0 for t in calls)
+
+    ex, calls = _claude_sequence([_overloaded(), _overloaded(), ok])
+    with pytest.raises(ExtractionError):
+        ex.extract("caption")
+    assert len(calls) == 2  # never a third call
+
+
+def test_claude_retry_after_longer_than_the_deadline_is_not_waited_for() -> None:
+    ex, calls = _claude_sequence([_overloaded({"retry-after": "60"})])
+    started = time.monotonic()
+    with pytest.raises(ExtractionError):
+        ex.extract("caption")
+    assert len(calls) == 1 and time.monotonic() - started < 1
+
+
+def test_claude_with_a_short_deadline_makes_one_short_attempt() -> None:
+    # 5 s deadline: no room for a 10 s retry, and the one attempt fits inside the deadline.
+    ex, calls = _claude_sequence([_overloaded()], timeout_s=5)
+    with pytest.raises(ExtractionError):
+        ex.extract("caption")
+    assert len(calls) == 1 and calls[0]["connect"] + calls[0]["read"] <= 5
+
+
+def test_default_extraction_timeout_is_sized_for_haiku() -> None:
+    from app.config import Settings
+
+    # The iOS client waits 45 s for POST /v1/import-drafts (APIClient.createDraft).
+    assert Settings(_env_file=None).extraction_timeout_s == 30.0
+
+
 def test_anthropic_provider_needs_a_key() -> None:
     from app.config import Settings
     from app.extraction import make_extractor
