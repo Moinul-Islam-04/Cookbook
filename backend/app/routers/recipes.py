@@ -25,6 +25,7 @@ from app.routers.images import delete_objects, image_out
 from app.errors import ApiError, not_found
 from app.models import IdempotencyKey, Recipe, RecipeIngredient, RecipeStep, User
 from app.schemas import (
+    DraftContent,
     FieldError,
     IngredientIn,
     IngredientOut,
@@ -79,7 +80,7 @@ def _ingredient_rows(items: list[IngredientIn]) -> list[RecipeIngredient]:
     # Positions come from array order, so clients can't send duplicates or gaps.
     return [
         RecipeIngredient(
-            position=i, name=ing.name, quantity=ing.quantity, unit=ing.unit, raw_text=_raw_text(ing)
+            position=i, name=ing.name, quantity=ing.quantity, unit=ing.unit, raw_text=_raw_text(ing), note=ing.note
         )
         for i, ing in enumerate(items)
     ]
@@ -103,6 +104,7 @@ def _to_out(recipe: Recipe, signer: ImageSigner) -> RecipeOut:
         id=recipe.id,
         title=recipe.title,
         notes=recipe.notes,
+        servings=recipe.servings,
         source_kind=recipe.source_kind,
         source_url=recipe.source_url,
         created_at=recipe.created_at,
@@ -263,6 +265,9 @@ def create_recipe(
             raise ApiError(422, "invalid_request", "Some fields are invalid.", field_errors=missing)
         if post is None and "source_url" not in body.model_fields_set and draft.source_url:
             post = _parse_source(draft.source_url)
+    servings = body.servings
+    if draft is not None and "servings" not in body.model_fields_set:
+        servings = DraftContent.model_validate(draft.content).servings
 
     if post is not None and not body.allow_duplicate:
         _reject_duplicate(db, user_id, post.post_key)
@@ -274,6 +279,7 @@ def create_recipe(
         updated_at=now,
         title=body.title,
         notes=body.notes,
+        servings=servings,
         source_kind="caption" if draft else "manual",
         source_text=draft.source_text if draft else None,
         extracted_content=draft.extracted_content if draft else None,
@@ -395,6 +401,8 @@ def update_recipe(
         recipe.title = body.title
     if "notes" in fields:
         recipe.notes = body.notes
+    if "servings" in fields:
+        recipe.servings = body.servings
     if "ingredients" in fields:
         recipe.ingredients.clear()
         db.flush()  # delete old rows before inserting new ones at the same positions
