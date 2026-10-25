@@ -863,3 +863,31 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   `MemoryMax` relies on cgroup v2, which current Ubuntu on Lightsail uses, but the unit
   hasn't been deployed or tested there.
 - **Revisit:** If photos queue up behind each other in real use, or the server is resized.
+
+## 2026-10-24: Sub-recipes stay 1→M; M:N measured in a separate lab database
+
+- **Context:** Andrew's parser spec stores sub-recipes (a sauce made separately) as their
+  own recipe rows linked by a `recipe_components(parent_recipe_id, child_recipe_id)` join
+  table. The brief advises against adding relationships before a feature needs them.
+- **Decision (owner's choice):** the app keeps today's 1→M shape: a sub-recipe's
+  ingredients and steps are rows of the parent recipe. The M:N design was built and
+  measured in a separate `cookbook_lab` database instead (`backend/lab/`), never in the
+  app's schema or migrations.
+- **Result** (`backend/lab/RESULTS.md`; Apple M2, PostgreSQL 14.15, synthetic data):
+  - Making M:N safe takes a self-link CHECK, a cycle trigger (recursive CTE plus a
+    per-user advisory lock), composite FKs so both ends have the same owner, and a
+    RESTRICT rule for deleting a sauce that a dish still uses. All are checked on every
+    run.
+  - Loading a recipe takes about 0.1–0.2 ms in both designs. The plain recursive M:N
+    query hit a planner misestimate at 10k recipes (3 ms, a full ingredients scan); a
+    LATERAL join fixed it.
+  - Ingredient search with 10,000 recipes per user: 9.5 ms (1→M) vs 69 ms (M:N), because
+    M:N has to walk every match up through its links before it can return the newest
+    50. At 100–1,000 recipes per user both take 1–16 ms.
+  - Writes cost about 0.2 ms more under M:N.
+- **Alternatives:** M:N in the app now. Rejected for now: the complexity buys nothing a
+  current screen uses.
+- **Revisit:** When a feature needs a sub-recipe as a shared, independently edited thing
+  (reusing one saved sauce in several dishes, or scaling a dish together with its sauce).
+  Start from the lab's `mn` schema and check search with `EXPLAIN ANALYZE` at the largest
+  real user's size.
