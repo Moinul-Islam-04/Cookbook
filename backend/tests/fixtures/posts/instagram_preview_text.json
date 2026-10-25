@@ -1,0 +1,19 @@
+{
+  "description": "User pasted Instagram's og:description preview text; handle and date come out of it",
+  "synthetic": true,
+  "payload": {
+    "source_text": "1,234 likes, 56 comments - chef.ann on May 1, 2026: \"Garlic noodles 🍜\n\nIngredients:\n- 8 oz noodles\n- 4 cloves garlic\n\nSteps:\n1. Boil noodles.\".",
+    "source_url": "https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MTc4bWx0"
+  },
+  "expected": {
+    "platform": "instagram",
+    "post_id": "C1a2B3c4D5e",
+    "url": "https://www.instagram.com/reel/C1a2B3c4D5e/",
+    "author_handle": "chef.ann",
+    "caption": "Garlic noodles 🍜\n\nIngredients:\n- 8 oz noodles\n- 4 cloves garlic\n\nSteps:\n1. Boil noodles.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": "2026-05-01T00:00:00Z"
+  }
+}

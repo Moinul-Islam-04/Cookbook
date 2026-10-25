@@ -36,7 +36,7 @@ from app.schemas import (
     StepIn,
     StepOut,
 )
-from app.source_urls import InstagramPost, UnsupportedSourceUrl, parse_instagram_url
+from app.source_urls import SourcePost, UnsupportedSourceUrl, parse_source_url
 
 router = APIRouter(prefix="/v1/recipes", tags=["recipes"])
 
@@ -156,11 +156,11 @@ def _lock_owner(db: Session, user_id: uuid.UUID) -> None:
     db.execute(select(User.id).where(User.id == user_id).with_for_update())
 
 
-def _parse_source(url: str | None) -> InstagramPost | None:
+def _parse_source(url: str | None) -> SourcePost | None:
     if url is None:
         return None
     try:
-        return parse_instagram_url(url)
+        return parse_source_url(url)
     except UnsupportedSourceUrl as e:
         raise ApiError(
             422,
@@ -278,6 +278,7 @@ def create_recipe(
         source_text=draft.source_text if draft else None,
         extracted_content=draft.extracted_content if draft else None,
         extraction_version=draft.extraction_version if draft else None,
+        raw_post_id=draft.raw_post_id if draft else None,
         source_url=post.canonical_url if post else None,
         source_post_key=post.post_key if post else None,
         ingredients=_ingredient_rows(body.ingredients),

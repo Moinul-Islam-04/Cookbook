@@ -1,0 +1,21 @@
+{
+  "description": "TikTok video whose recipe is only spoken; the device supplied a transcript",
+  "synthetic": true,
+  "payload": {
+    "source_text": "the 3 ingredient pasta everyone is making #pasta #easyrecipe",
+    "source_url": "https://www.tiktok.com/@noodle.nina/video/7301234567890123456?is_from_webapp=1&sender_device=pc",
+    "transcript": "Okay so boil about 200 grams of spaghetti. While that cooks, melt two tablespoons of butter and grate in a big handful of parmesan. Toss it all with a splash of pasta water and that's it.",
+    "posted_at": "2026-09-30T18:04:00Z"
+  },
+  "expected": {
+    "platform": "tiktok",
+    "post_id": "7301234567890123456",
+    "url": "https://www.tiktok.com/@noodle.nina/video/7301234567890123456",
+    "author_handle": "noodle.nina",
+    "caption": "the 3 ingredient pasta everyone is making #pasta #easyrecipe",
+    "transcript": "Okay so boil about 200 grams of spaghetti. While that cooks, melt two tablespoons of butter and grate in a big handful of parmesan. Toss it all with a splash of pasta water and that's it.",
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": "2026-09-30T18:04:00Z"
+  }
+}

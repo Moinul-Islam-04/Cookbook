@@ -1,0 +1,25 @@
+{
+  "description": "Caption says the recipe is in the comments; the user added the creator's comment",
+  "synthetic": true,
+  "payload": {
+    "source_text": "Best focaccia of my life 😍 recipe in the comments!",
+    "source_url": "https://www.instagram.com/some.baker/p/Cx9Yz8Wv7Ut/",
+    "top_comments": [
+      "RECIPE: 500g bread flour, 400g water, 10g salt, 7g yeast, olive oil. Mix, rest overnight in the fridge, stretch into a pan, dimple with oil and bake at 230C for 25 minutes."
+    ],
+    "media_urls": ["https://cdn.example/focaccia.jpg"]
+  },
+  "expected": {
+    "platform": "instagram",
+    "post_id": "Cx9Yz8Wv7Ut",
+    "url": "https://www.instagram.com/p/Cx9Yz8Wv7Ut/",
+    "author_handle": "some.baker",
+    "caption": "Best focaccia of my life 😍 recipe in the comments!",
+    "transcript": null,
+    "top_comments": [
+      "RECIPE: 500g bread flour, 400g water, 10g salt, 7g yeast, olive oil. Mix, rest overnight in the fridge, stretch into a pan, dimple with oil and bake at 230C for 25 minutes."
+    ],
+    "media_urls": ["https://cdn.example/focaccia.jpg"],
+    "posted_at": null
+  }
+}

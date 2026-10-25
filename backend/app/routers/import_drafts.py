@@ -1,7 +1,8 @@
-"""/v1/import-drafts: pasted caption → validated, editable draft.
+"""/v1/import-drafts: what the device read from a post → validated, editable draft.
 
-Creating a draft runs the configured extraction provider with a deadline, then
-validates its output against the caption (app/extraction/validate.py). Drafts are only
+Creating a draft normalizes the request into a RawPost (app/ingest), runs the configured
+extraction provider with a deadline, then validates its output against the post
+(app/extraction/validate.py). The RawPost is stored alongside the draft. Drafts are only
 ever turned into recipes by an explicit POST /v1/recipes with draft_id.
 """
 
@@ -25,7 +26,8 @@ from app.extraction import (
     ProviderUnreachable,
     run_extraction,
 )
-from app.models import ImportDraft, Recipe
+from app.ingest import normalize
+from app.models import ImportDraft, RawPostRow, Recipe
 from app.routers.recipes import _parse_source
 from app.schemas import (
     DraftContent,
@@ -98,6 +100,7 @@ def check_import_limits(db: Session, settings, user_id: uuid.UUID) -> None:
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=ImportDraftOut)
 def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_id: UserId) -> ImportDraftOut:
     post = _parse_source(body.source_url)
+    raw = normalize(body, post)
     settings = request.app.state.settings
     extractor = request.app.state.extractor
     check_import_limits(db, settings, user_id)
@@ -106,7 +109,7 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
     # Extraction runs before any DB write, so a provider failure leaves nothing behind.
     # The client still has the caption and can retry or enter the recipe manually.
     try:
-        content = run_extraction(extractor, body.source_text, settings.extraction_timeout_s)
+        content = run_extraction(extractor, raw.caption, settings.extraction_timeout_s)
     except ExtractionTimeout:
         raise ApiError(504, "extraction_timeout", "Reading the caption took too long. Try again, or enter it manually.", retryable=True) from None
     except MalformedOutput:
@@ -143,9 +146,11 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
             )
 
     now = datetime.now(UTC)
+    raw_row = RawPostRow(user_id=user_id, created_at=now, **raw.model_dump())
     draft = ImportDraft(
         user_id=user_id,
-        source_text=body.source_text,
+        raw_post=raw_row,
+        source_text=raw.caption,
         source_url=post.canonical_url if post else None,
         source_post_key=post.post_key if post else None,
         content=content.model_dump(mode="json"),
