@@ -1,0 +1,18 @@
+{
+  "description": "Caption pasted with no link: no platform or post identity",
+  "synthetic": true,
+  "payload": {
+    "source_text": "Tomato pasta: pasta, 2 tomatoes, olive oil. Cook pasta, toss with tomatoes and oil."
+  },
+  "expected": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Tomato pasta: pasta, 2 tomatoes, olive oil. Cook pasta, toss with tomatoes and oil.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  }
+}

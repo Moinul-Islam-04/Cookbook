@@ -1,4 +1,4 @@
-"""Delete expired import drafts and old idempotency keys.
+"""Delete expired import drafts, the raw posts nothing refers to, and old idempotency keys.
 
 Run on a schedule (e.g. hourly cron/launchd):  python -m app.cleanup
 Safe to re-run: each delete is one statement and only touches expired rows.
@@ -6,13 +6,13 @@ Safe to re-run: each delete is one statement and only touches expired rows.
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import create_engine, delete
+from sqlalchemy import create_engine, delete, exists
 from sqlalchemy.orm import Session
 
 from sqlalchemy import select
 
 from app.config import get_settings
-from app.models import IdempotencyKey, ImportDraft, RecipeImage
+from app.models import IdempotencyKey, ImportDraft, RawPostRow, Recipe, RecipeImage
 from app.storage import ObjectStore, StorageError, make_store
 
 # Clients retry within seconds or minutes; a day is generous.
@@ -24,11 +24,19 @@ ORPHAN_GRACE = timedelta(hours=1)
 def cleanup(session: Session, now: datetime | None = None) -> dict[str, int]:
     now = now or datetime.now(UTC)
     drafts = session.execute(delete(ImportDraft).where(ImportDraft.expires_at <= now))
+    # After the drafts: a post whose draft just expired unsaved goes too. A draft and its
+    # post are inserted in one transaction, so there's no in-flight post to spare.
+    posts = session.execute(
+        delete(RawPostRow).where(
+            ~exists().where(ImportDraft.raw_post_id == RawPostRow.id),
+            ~exists().where(Recipe.raw_post_id == RawPostRow.id),
+        )
+    )
     keys = session.execute(
         delete(IdempotencyKey).where(IdempotencyKey.created_at <= now - IDEMPOTENCY_KEY_TTL)
     )
     session.commit()
-    return {"import_drafts": drafts.rowcount, "idempotency_keys": keys.rowcount}
+    return {"import_drafts": drafts.rowcount, "raw_posts": posts.rowcount, "idempotency_keys": keys.rowcount}
 
 
 def cleanup_orphan_objects(session: Session, store: ObjectStore, now: datetime | None = None) -> int:

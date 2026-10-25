@@ -89,6 +89,47 @@ class ApiToken(Base):
     )
 
 
+class RawPostRow(Base):
+    """A post as the user's device read it (app/ingest/raw_post.RawPost), kept so imports
+    can be re-parsed when extraction improves. One row per import: a snapshot, not a
+    canonical copy of the post. Removed by `python -m app.cleanup` once no draft or recipe
+    refers to it. Never returned by the API."""
+
+    __tablename__ = "raw_posts"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    # All three NULL for text pasted without a recognized link.
+    platform: Mapped[str | None] = mapped_column(Text)
+    post_id: Mapped[str | None] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(Text)
+    author_handle: Mapped[str | None] = mapped_column(Text)
+    caption: Mapped[str] = mapped_column(Text, nullable=False)
+    transcript: Mapped[str | None] = mapped_column(Text)
+    # JSON arrays of strings.
+    top_comments: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb"))
+    media_urls: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb"))
+    posted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = timestamp()
+
+    __table_args__ = (
+        CheckConstraint("platform IN ('instagram', 'tiktok')", name="platform_valid"),
+        CheckConstraint(
+            "(platform IS NULL) = (post_id IS NULL) AND (platform IS NULL) = (url IS NULL)",
+            name="identity_complete",
+        ),
+        CheckConstraint("btrim(caption) <> ''", name="caption_not_blank"),
+        CheckConstraint("char_length(caption) <= 10000", name="caption_length"),
+        CheckConstraint("char_length(transcript) <= 20000", name="transcript_length"),
+        CheckConstraint("jsonb_typeof(top_comments) = 'array'", name="top_comments_array"),
+        CheckConstraint("jsonb_typeof(media_urls) = 'array'", name="media_urls_array"),
+        # Re-parse "every import of this post"; the leading user_id serves owner lookups.
+        Index("ix_raw_posts_user_id_platform_post_id", "user_id", "platform", "post_id"),
+    )
+
+
 class Recipe(Base):
     __tablename__ = "recipes"
 
@@ -110,6 +151,11 @@ class Recipe(Base):
     # (none_as_null: Python None is SQL NULL, not a JSON null).
     extracted_content: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     extraction_version: Mapped[str | None] = mapped_column(Text)
+    # Imported recipes: the post the draft was extracted from. SET NULL: cleanup never
+    # touches a referenced post, but a recipe must survive losing it.
+    raw_post_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("raw_posts.id", ondelete="SET NULL")
+    )
     created_at: Mapped[datetime] = timestamp()
     updated_at: Mapped[datetime] = timestamp()
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
@@ -142,6 +188,7 @@ class Recipe(Base):
         Index("ix_recipes_user_id_created_at_id", "user_id", "created_at", "id"),
         # Duplicate-post checks (Milestone 2). Not unique: deliberate copies are allowed.
         Index("ix_recipes_user_id_source_post_key", "user_id", "source_post_key"),
+        Index("ix_recipes_raw_post_id", "raw_post_id"),
     )
 
 
@@ -196,6 +243,11 @@ class ImportDraft(Base):
     # created before 2026-10-20.
     extracted_content: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     extraction_version: Mapped[str] = mapped_column(Text, nullable=False)
+    # NULL for drafts created before 2026-10-24.
+    raw_post_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("raw_posts.id", ondelete="SET NULL")
+    )
+    raw_post: Mapped["RawPostRow | None"] = relationship()
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     # SET NULL: deleting the saved recipe leaves the (saved, soon expiring) draft behind.
     saved_recipe_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -213,6 +265,7 @@ class ImportDraft(Base):
         Index("ix_import_drafts_user_id", "user_id"),
         Index("ix_import_drafts_saved_recipe_id", "saved_recipe_id"),
         Index("ix_import_drafts_expires_at", "expires_at"),
+        Index("ix_import_drafts_raw_post_id", "raw_post_id"),
     )
 
 

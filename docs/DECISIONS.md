@@ -863,3 +863,34 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   `MemoryMax` relies on cgroup v2, which current Ubuntu on Lightsail uses, but the unit
   hasn't been deployed or tested there.
 - **Revisit:** If photos queue up behind each other in real use, or the server is resized.
+
+## 2026-10-24: Posts arrive as a RawPost from the device; TikTok links accepted
+
+- **Context:** Andrew's spec asks for one pipeline for Instagram and TikTok food posts:
+  per-platform fetch and normalize, then a shared extract → validate → save path, with the
+  post stored so it can be re-parsed later. The brief forbids scraping and the server
+  never contacts Instagram.
+- **Decision (owner's choice: the user's device fetches):**
+  - Stage 1, fetch, stays on the device: the in-app browser, a paste or screenshots.
+    The server never contacts Instagram or TikTok, and never downloads `media_urls`.
+  - `POST /v1/import-drafts` accepts optional `transcript`, `top_comments` (≤ 20),
+    `author_handle`, `posted_at` and `media_urls` (https only, ≤ 20) next to
+    `source_text`/`source_url`. The current iOS app sends none of them and works as before.
+  - Stage 2, normalize: `app/ingest/{instagram,tiktok}.py` turn the request into a
+    `RawPost` (`app/ingest/raw_post.py`). The Instagram normalizer unwraps pasted
+    `og:description`/`og:title` preview text (as iOS already does) and keeps the handle
+    and date. The TikTok normalizer takes the handle from the link and the caption as
+    sent: no TikTok page format has been verified.
+  - `app/source_urls.parse_source_url` accepts TikTok `/@handle/video/ID` and
+    `/@handle/photo/ID`; the post key is `tiktok:<ID>`. Short links (`vm.`/`vt.tiktok.com`,
+    `/t/…`) are rejected: resolving them means fetching TikTok.
+  - `raw_posts` (migration 0007) stores one snapshot per import. Drafts and recipes point
+    at it with SET NULL. `python -m app.cleanup` deletes posts nothing refers to, so an
+    abandoned import or a deleted recipe doesn't keep someone's caption and comments.
+    Never returned by the API.
+- **Alternatives:** a paid scraping provider (breaks the brief, costs money); TikTok
+  oEmbed from the server (terms unchecked; not pursued).
+- **Verified:** 39 new tests (fixtures in `tests/fixtures/posts/`, all synthetic), 261
+  total against PostgreSQL; migration round trip and `alembic check` clean.
+- **Not done yet:** extraction still reads only the caption; transcript and comments
+  reach the model in the next slice. iOS doesn't send the new fields or open TikTok links.

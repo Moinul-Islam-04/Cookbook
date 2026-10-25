@@ -442,7 +442,7 @@ def test_expired_draft_is_410_and_cleaned_up(app, client: TestClient, engine: En
     assert_error(client.get(f"/v1/import-drafts/{d['id']}"), 410, "draft_expired")
     assert_error(client.post("/v1/recipes", json=save_body(d)), 410, "draft_expired")
     with Session(engine) as s:
-        assert cleanup(s) == {"import_drafts": 1, "idempotency_keys": 0}
+        assert cleanup(s) == {"import_drafts": 1, "raw_posts": 1, "idempotency_keys": 0}
     assert count(engine, "import_drafts") == 0
 
 

@@ -72,7 +72,7 @@ class RecipeCreate(RequestModel):
     draft_id: uuid.UUID | None = None
     title: Title
     notes: Notes | None = None
-    # An Instagram post or reel link. Normalized by the server; other hosts are rejected.
+    # An Instagram post/reel or TikTok post link. Normalized by the server; other hosts are rejected.
     source_url: SourceUrl | None = None
     # Save even if this post is already in the cookbook (the user chose "Save Anyway").
     allow_duplicate: bool = False
@@ -223,12 +223,35 @@ class DraftContent(BaseModel):
     warnings: list[DraftWarning]
 
 
+MAX_TRANSCRIPT = 20_000
+MAX_COMMENTS = 20
+MAX_MEDIA_URLS = 20
+Comment = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2_200)]
+MediaUrl = Annotated[
+    str, StringConstraints(strip_whitespace=True, max_length=2048, pattern=r"^https://\S+$")
+]
+
+
 class ImportDraftCreate(RequestModel):
-    # The caption the user pasted. Treated as data only: it never changes extraction rules.
+    """What the user's device read from a post (app/ingest normalizes it into a RawPost).
+
+    Everything is treated as data only: it never changes extraction rules. The server never
+    fetches the post or its media itself.
+    """
+
+    # The caption the user pasted or the in-app browser read.
     source_text: SourceText
     source_url: SourceUrl | None = None
+    # Optional extras the device or user supplied: speech in the video, and comments,
+    # where creators often post the recipe ("recipe in the comments").
+    transcript: Annotated[str, StringConstraints(strip_whitespace=True, max_length=MAX_TRANSCRIPT)] | None = None
+    top_comments: list[Comment] = Field(default_factory=list, max_length=MAX_COMMENTS)
+    author_handle: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)] | None = None
+    posted_at: datetime | None = None
+    # Stored for reference only; never downloaded.
+    media_urls: list[MediaUrl] = Field(default_factory=list, max_length=MAX_MEDIA_URLS)
 
-    _blank_optional = field_validator("source_url", mode="before")(_blank_to_none)
+    _blank_optional = field_validator("source_url", "transcript", "author_handle", mode="before")(_blank_to_none)
 
 
 class IngredientDraftIn(RequestModel):
