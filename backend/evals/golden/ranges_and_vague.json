@@ -1,0 +1,68 @@
+{
+  "id": "ranges_and_vague",
+  "categories": [
+    "caption",
+    "messy_formatting"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Spicy peanut noodles\nIngredients\n- 2-3 tbsp chili oil\n- a handful of peanuts\n- noodles\n- 1 lime\n- soy sauce, to taste\nSteps\n- Cook noodles.\n- Toss with chili oil, soy and lime.\n- Top with peanuts.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Spicy peanut noodles",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "2-3 tbsp chili oil",
+        "name": "chili oil",
+        "quantity": null,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "a handful of peanuts",
+        "name": "peanuts",
+        "quantity": null,
+        "unit": "handful",
+        "note": null
+      },
+      {
+        "raw_text": "noodles",
+        "name": "noodles",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "1 lime",
+        "name": "lime",
+        "quantity": 1,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "soy sauce, to taste",
+        "name": "soy sauce",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Cook noodles.",
+      "Toss with chili oil, soy and lime.",
+      "Top with peanuts."
+    ],
+    "sub_recipes": []
+  }
+}

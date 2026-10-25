@@ -1,0 +1,127 @@
+{
+  "id": "sections_with_own_steps",
+  "categories": [
+    "caption",
+    "sub_recipe",
+    "messy_formatting"
+  ],
+  "synthetic": false,
+  "notes": "Real reel that failed in the app (2026-10-15). Three sections, the first with its own instructions; macros, cookbook ads and emoji around them. 'x3 servings' is stated. The two 'Cook on high heat' sentences follow the sauce list but cook the chicken, so they're labelled under the chicken.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "SAVE THIS RECIPE! 30-minute Buffalo loaded fries to make your weight loss journey easier 💪🏽🤤 (recipe 👇🏽) \n\nMacros per serving with 2 tbsp yogurt ranch per serving(x3 servings): approx 571 calories |45g P | 29g C | 31g F\n\nFor more tasty high protein recipes just like this comment comment “cookbook” and I’ll send you a special link to purchase my digital cookbooks 🙂‍↔️\n\nFor the fries:\n2-3 medium russet potatoes, cut into thin fries 🥔🍟 \nAvocado oil spray 🥑 \n\nCooking instructions:\nAir fry at 400°F FOR 12-15 mins shake every 5 mins.\n\nFor the sticky chicken:\n1.5 lbs ground chicken 🐓 \nSalt & Pepper, to taste 🧂 \n1 tsp garlic powder 🧄 \nAvocado oil, spray 🥑 \n\nFor the sauce:\nYour favorite buffalo sauce, 1/2 cup (or more)\nOptional: 1 tbsp butter\n\nCook on high heat for 6-7 mins! Turn heat to low and add enough sauce to coat the chicken. \n\nServe over the air fried French fries\n\nTop with low calorie yogurt ranch full recipe for this is on pg. 72 of my Meal Prep Magic cookbook! Comment “cookbook” and I’ll send the purchase link 😌\n\nChives, to garnish 🌿\n.\n.\n.\n.\n#icekarim #healthyrecipes #easyrecipes #mealprep #quickrecipes",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Buffalo loaded fries",
+    "servings": 3,
+    "ingredients": [
+      {
+        "raw_text": "low calorie yogurt ranch",
+        "name": "yogurt ranch",
+        "quantity": null,
+        "unit": null,
+        "note": "low calorie"
+      },
+      {
+        "raw_text": "Chives, to garnish",
+        "name": "Chives",
+        "quantity": null,
+        "unit": null,
+        "note": "to garnish"
+      }
+    ],
+    "steps": [
+      "Serve over the air fried French fries",
+      "Top with low calorie yogurt ranch"
+    ],
+    "sub_recipes": [
+      {
+        "title": "fries",
+        "ingredients": [
+          {
+            "raw_text": "2-3 medium russet potatoes, cut into thin fries",
+            "name": "russet potatoes",
+            "quantity": null,
+            "unit": null,
+            "note": "cut into thin fries"
+          },
+          {
+            "raw_text": "Avocado oil spray",
+            "name": "Avocado oil spray",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          }
+        ],
+        "steps": [
+          "Air fry at 400°F FOR 12-15 mins shake every 5 mins."
+        ]
+      },
+      {
+        "title": "sticky chicken",
+        "ingredients": [
+          {
+            "raw_text": "1.5 lbs ground chicken",
+            "name": "ground chicken",
+            "quantity": 1.5,
+            "unit": "lb",
+            "note": null
+          },
+          {
+            "raw_text": "Salt & Pepper, to taste",
+            "name": "Salt & Pepper",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          },
+          {
+            "raw_text": "1 tsp garlic powder",
+            "name": "garlic powder",
+            "quantity": 1,
+            "unit": "tsp",
+            "note": null
+          },
+          {
+            "raw_text": "Avocado oil, spray",
+            "name": "Avocado oil",
+            "quantity": null,
+            "unit": null,
+            "note": "spray"
+          }
+        ],
+        "steps": [
+          "Cook on high heat for 6-7 mins!",
+          "Turn heat to low and add enough sauce to coat the chicken."
+        ]
+      },
+      {
+        "title": "sauce",
+        "ingredients": [
+          {
+            "raw_text": "Your favorite buffalo sauce, 1/2 cup (or more)",
+            "name": "buffalo sauce",
+            "quantity": 0.5,
+            "unit": "cup",
+            "note": null
+          },
+          {
+            "raw_text": "Optional: 1 tbsp butter",
+            "name": "butter",
+            "quantity": 1,
+            "unit": "tbsp",
+            "note": "Optional"
+          }
+        ],
+        "steps": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "id": "paragraph_only",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. Steps are the two cooking sentences, chatter trimmed.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Made my grandma's lemon cake today 🥹 you just beat 2 cups of sugar with 1 cup of butter, add 4 eggs one at a time, then fold in 3 cups of flour and the zest of 2 lemons. Bake it at 325 for an hour and glaze with powdered sugar mixed with lemon juice. Tastes like childhood!!",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "2 cups of sugar",
+        "name": "sugar",
+        "quantity": 2,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 cup of butter",
+        "name": "butter",
+        "quantity": 1,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "4 eggs",
+        "name": "eggs",
+        "quantity": 4,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "3 cups of flour",
+        "name": "flour",
+        "quantity": 3,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "zest of 2 lemons",
+        "name": "lemons",
+        "quantity": 2,
+        "unit": null,
+        "note": "zest"
+      },
+      {
+        "raw_text": "powdered sugar",
+        "name": "powdered sugar",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "lemon juice",
+        "name": "lemon juice",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "you just beat 2 cups of sugar with 1 cup of butter, add 4 eggs one at a time, then fold in 3 cups of flour and the zest of 2 lemons.",
+      "Bake it at 325 for an hour and glaze with powdered sugar mixed with lemon juice."
+    ],
+    "sub_recipes": []
+  }
+}

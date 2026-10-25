@@ -14,7 +14,7 @@ check the draft before saving it. Saved recipes can be searched by title or ingr
 More detail: [product brief](docs/BRIEF.md) · [engineering decisions](docs/DECISIONS.md) ·
 [data flow, end to end](docs/DATA_FLOW.md) · [data modeling primer](docs/DATA_MODELING.md) ·
 [features and verification log](docs/VERIFICATION.md) ·
-[extraction evaluation](backend/eval/RESULTS.md).
+[extraction evals](backend/evals/RESULTS.md).
 
 ## How to run it
 
@@ -30,7 +30,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 297 passed (the test DB is dropped and recreated)
+pytest -q                       # 350 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -92,7 +92,7 @@ Instagram access spike was never run.
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
-- Backend: 297 tests against PostgreSQL.
+- Backend: 350 tests against PostgreSQL.
 - iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.
@@ -112,5 +112,6 @@ estimates and video/audio import.
    with free signing and open the app? Does sharing from the Instagram app itself work?
    Does on-device text recognition misread "1 1/2" the way the Simulator did?
 3. Then fix the known issue above.
-4. Or work on the remaining extraction misses in `backend/eval/RESULTS.md`, adding real
-   captions that go wrong to `backend/eval/captions.json`.
+4. Or work on the remaining extraction misses in `backend/evals/RESULTS.md`
+   (`python -m evals.run anthropic`, about $0.02 a run), adding real
+   posts that go wrong to `backend/evals/golden/` (see its README).

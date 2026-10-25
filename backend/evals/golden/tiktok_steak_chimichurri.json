@@ -1,0 +1,90 @@
+{
+  "id": "tiktok_steak_chimichurri",
+  "categories": [
+    "caption",
+    "sub_recipe"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. The steak is the main recipe; the chimichurri is made separately. A model that also makes 'Steak' a sub-recipe only loses the count metric.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7306789012345678901",
+    "url": "https://www.tiktok.com/@grillgod/video/7306789012345678901",
+    "author_handle": "grillgod",
+    "caption": "Steak with chimichurri 🥩🌿\nSteak: 1 ribeye, salt, pepper. Sear 4 minutes per side and rest 5 minutes.\nChimichurri: 1 cup parsley, 3 cloves garlic, ½ cup olive oil, 2 tbsp red wine vinegar. Chop the parsley and garlic, then stir in the oil and vinegar.\nSlice the steak and spoon the chimichurri over it.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Steak with chimichurri",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "1 ribeye",
+        "name": "ribeye",
+        "quantity": 1,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "salt",
+        "name": "salt",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "pepper",
+        "name": "pepper",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Sear 4 minutes per side and rest 5 minutes.",
+      "Slice the steak and spoon the chimichurri over it."
+    ],
+    "sub_recipes": [
+      {
+        "title": "Chimichurri",
+        "ingredients": [
+          {
+            "raw_text": "1 cup parsley",
+            "name": "parsley",
+            "quantity": 1,
+            "unit": "cup",
+            "note": null
+          },
+          {
+            "raw_text": "3 cloves garlic",
+            "name": "garlic",
+            "quantity": 3,
+            "unit": "clove",
+            "note": null
+          },
+          {
+            "raw_text": "½ cup olive oil",
+            "name": "olive oil",
+            "quantity": 0.5,
+            "unit": "cup",
+            "note": null
+          },
+          {
+            "raw_text": "2 tbsp red wine vinegar",
+            "name": "red wine vinegar",
+            "quantity": 2,
+            "unit": "tbsp",
+            "note": null
+          }
+        ],
+        "steps": [
+          "Chop the parsley and garlic, then stir in the oil and vinegar."
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "chatter",
+  "categories": [
+    "not_a_recipe"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Sunday reset ☀️ farmers market haul, long walk, and a nap. What's everyone up to? #weekend #selfcare",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": false,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": []
+  }
+}

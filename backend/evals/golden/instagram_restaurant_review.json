@@ -1,0 +1,27 @@
+{
+  "id": "instagram_restaurant_review",
+  "categories": [
+    "not_a_recipe"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Food words and numbers, but a review.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CvLucia9876",
+    "url": "https://www.instagram.com/p/CvLucia9876/",
+    "author_handle": "nyc.bites",
+    "caption": "Date night at Lucia's 🍝 the truffle pasta ($28) was unreal, the burrata was just ok. 8/10 would come back for the tiramisu! #nycfood #restaurantreview",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": false,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": []
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "id": "metric_sections",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. 'For the chicken'/'For the rice' share one Method list, so they're labelled as one recipe, not sub-recipes; a split here only costs the sub-recipe metric.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Chicken tikka bowls\n\nFor the chicken:\n- 500g chicken thighs\n- 150g yoghurt\n- 2 tsp garam masala\n\nFor the rice:\n- 200g basmati\n- 400ml water\n\nMethod\n1. Marinate the chicken in yoghurt and spices for 1 hour.\n2. Grill until charred.\n3. Simmer rice in water for 12 minutes.\n4. Serve together.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Chicken tikka bowls",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "500g chicken thighs",
+        "name": "chicken thighs",
+        "quantity": 500,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "150g yoghurt",
+        "name": "yoghurt",
+        "quantity": 150,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "2 tsp garam masala",
+        "name": "garam masala",
+        "quantity": 2,
+        "unit": "tsp",
+        "note": null
+      },
+      {
+        "raw_text": "200g basmati",
+        "name": "basmati",
+        "quantity": 200,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "400ml water",
+        "name": "water",
+        "quantity": 400,
+        "unit": "ml",
+        "note": null
+      }
+    ],
+    "steps": [
+      "Marinate the chicken in yoghurt and spices for 1 hour.",
+      "Grill until charred.",
+      "Simmer rice in water for 12 minutes.",
+      "Serve together."
+    ],
+    "sub_recipes": []
+  }
+}

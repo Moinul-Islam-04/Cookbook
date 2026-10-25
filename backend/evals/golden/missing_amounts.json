@@ -1,0 +1,72 @@
+{
+  "id": "missing_amounts",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Lazy shakshuka\nYou need: eggs, canned tomatoes, onion, garlic, cumin, feta.\nSoften the onion and garlic, add tomatoes and cumin, simmer, crack in the eggs, cover until set, top with feta.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Lazy shakshuka",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "eggs",
+        "name": "eggs",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "canned tomatoes",
+        "name": "canned tomatoes",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "onion",
+        "name": "onion",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "garlic",
+        "name": "garlic",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "cumin",
+        "name": "cumin",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "feta",
+        "name": "feta",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Soften the onion and garlic, add tomatoes and cumin, simmer, crack in the eggs, cover until set, top with feta."
+    ],
+    "sub_recipes": []
+  }
+}
