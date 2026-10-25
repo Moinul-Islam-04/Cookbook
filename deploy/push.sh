@@ -26,5 +26,11 @@ fi
   .venv/bin/pip install -q -r requirements.txt
   sudo chown -R cookbook:cookbook /opt/cookbook
   sudo systemctl restart cookbook-api
-  sleep 3; systemctl is-active cookbook-api"
-curl -fsS "https://$HOST/healthz" && echo "  <- https://$HOST is up"
+  systemctl is-active cookbook-api"
+# Startup runs pending migrations first, so the API can take a while to answer.
+for _ in $(seq 1 30); do
+  curl -fsS "https://$HOST/healthz" 2>/dev/null && echo "  <- https://$HOST is up" && exit 0
+  sleep 1
+done
+echo "https://$HOST/healthz didn't answer within 30 s; check: journalctl -u cookbook-api" >&2
+exit 1
