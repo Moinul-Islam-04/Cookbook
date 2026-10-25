@@ -1,0 +1,74 @@
+{
+  "id": "instagram_sheet_pan_gnocchi",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Stated servings; basil named only in a step.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CsGnocchi44",
+    "url": "https://www.instagram.com/p/CsGnocchi44/",
+    "author_handle": "weeknight.wins",
+    "caption": "Sheet pan gnocchi 🍅 Serves 4\n\nIngredients\n• 1 lb shelf-stable gnocchi\n• 2 cups cherry tomatoes\n• 1 red onion, chopped\n• 3 tbsp olive oil\n• 1/2 tsp salt\n\nMethod\n1. Toss everything on a sheet pan.\n2. Roast at 425F for 25 minutes.\n3. Top with basil.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Sheet pan gnocchi",
+    "servings": 4,
+    "ingredients": [
+      {
+        "raw_text": "1 lb shelf-stable gnocchi",
+        "name": "gnocchi",
+        "quantity": 1,
+        "unit": "lb",
+        "note": "shelf-stable"
+      },
+      {
+        "raw_text": "2 cups cherry tomatoes",
+        "name": "cherry tomatoes",
+        "quantity": 2,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 red onion, chopped",
+        "name": "red onion",
+        "quantity": 1,
+        "unit": null,
+        "note": "chopped"
+      },
+      {
+        "raw_text": "3 tbsp olive oil",
+        "name": "olive oil",
+        "quantity": 3,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "1/2 tsp salt",
+        "name": "salt",
+        "quantity": 0.5,
+        "unit": "tsp",
+        "note": null
+      },
+      {
+        "raw_text": "basil",
+        "name": "basil",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Toss everything on a sheet pan.",
+      "Roast at 425F for 25 minutes.",
+      "Top with basil."
+    ],
+    "sub_recipes": []
+  }
+}

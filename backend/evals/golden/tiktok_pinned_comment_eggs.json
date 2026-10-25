@@ -1,0 +1,56 @@
+{
+  "id": "tiktok_pinned_comment_eggs",
+  "categories": [
+    "comments"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. The recipe comment sits between reaction comments.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7303456789012345678",
+    "url": "https://www.tiktok.com/@eggcellent/video/7303456789012345678",
+    "author_handle": "eggcellent",
+    "caption": "chili crisp fried eggs >>> recipe pinned in the comments 📌",
+    "transcript": null,
+    "top_comments": [
+      "recipe pls!!",
+      "PINNED: 2 eggs, 1 tbsp chili crisp, 1 green onion, sliced. Heat the chili crisp in a pan, crack in the eggs and fry until the edges are crispy. Top with green onion.",
+      "need this"
+    ],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "chili crisp fried eggs",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "2 eggs",
+        "name": "eggs",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "1 tbsp chili crisp",
+        "name": "chili crisp",
+        "quantity": 1,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "1 green onion, sliced",
+        "name": "green onion",
+        "quantity": 1,
+        "unit": null,
+        "note": "sliced"
+      }
+    ],
+    "steps": [
+      "Heat the chili crisp in a pan, crack in the eggs and fry until the edges are crispy.",
+      "Top with green onion."
+    ],
+    "sub_recipes": []
+  }
+}

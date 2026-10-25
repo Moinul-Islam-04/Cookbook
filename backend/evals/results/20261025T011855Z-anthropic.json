@@ -1,0 +1,3256 @@
+{
+ "provider": "anthropic",
+ "model": "claude-haiku-5-5",
+ "extraction_version": "anthropic:claude-haiku-5-5:prompt-7",
+ "prompt_version": "prompt-7",
+ "judge": "claude-haiku-5-5",
+ "finished_at": "2026-10-25T01:18:55+00:00",
+ "summary": {
+  "overall": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 30
+   },
+   "title": {
+    "mean": 0.92,
+    "n": 25
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 27
+   },
+   "ing_recall": {
+    "mean": 0.9876,
+    "n": 25
+   },
+   "qty_unit": {
+    "mean": 0.9468,
+    "n": 25
+   },
+   "steps": {
+    "mean": 4.9167,
+    "n": 24
+   },
+   "sub_count": {
+    "mean": 0.8,
+    "n": 5
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "forbidden": {
+    "mean": 0.0,
+    "n": 1
+   },
+   "cases": 30,
+   "errors": 0
+  },
+  "caption": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 18
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 16
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 18
+   },
+   "ing_recall": {
+    "mean": 0.9828,
+    "n": 18
+   },
+   "qty_unit": {
+    "mean": 0.9677,
+    "n": 18
+   },
+   "steps": {
+    "mean": 4.9444,
+    "n": 18
+   },
+   "sub_count": {
+    "mean": 0.8,
+    "n": 5
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "forbidden": {
+    "mean": 0.0,
+    "n": 1
+   },
+   "cases": 18,
+   "errors": 0
+  },
+  "comments": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "title": {
+    "mean": 0.3333,
+    "n": 3
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "qty_unit": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "steps": {
+    "mean": 5.0,
+    "n": 3
+   },
+   "sub_count": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_recall": {
+    "mean": null,
+    "n": 0
+   },
+   "servings": {
+    "mean": null,
+    "n": 0
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 3,
+   "errors": 0
+  },
+  "instagram": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 8
+   },
+   "title": {
+    "mean": 0.8571,
+    "n": 7
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "ing_recall": {
+    "mean": 0.9558,
+    "n": 7
+   },
+   "qty_unit": {
+    "mean": 0.9405,
+    "n": 7
+   },
+   "steps": {
+    "mean": 5.0,
+    "n": 6
+   },
+   "sub_count": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 2
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 8,
+   "errors": 0
+  },
+  "link_in_bio": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "qty_unit": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "steps": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_count": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_recall": {
+    "mean": null,
+    "n": 0
+   },
+   "servings": {
+    "mean": null,
+    "n": 0
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 3,
+   "errors": 0
+  },
+  "messy_formatting": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "qty_unit": {
+    "mean": 0.8796,
+    "n": 7
+   },
+   "steps": {
+    "mean": 5.0,
+    "n": 7
+   },
+   "sub_count": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 7,
+   "errors": 0
+  },
+  "none": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 14
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 11
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 13
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 12
+   },
+   "qty_unit": {
+    "mean": 0.9774,
+    "n": 12
+   },
+   "steps": {
+    "mean": 4.9167,
+    "n": 12
+   },
+   "sub_count": {
+    "mean": 0.6667,
+    "n": 3
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 2
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "forbidden": {
+    "mean": 0.0,
+    "n": 1
+   },
+   "cases": 14,
+   "errors": 0
+  },
+  "not_a_recipe": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "title": {
+    "mean": null,
+    "n": 0
+   },
+   "ing_precision": {
+    "mean": null,
+    "n": 0
+   },
+   "ing_recall": {
+    "mean": null,
+    "n": 0
+   },
+   "qty_unit": {
+    "mean": null,
+    "n": 0
+   },
+   "steps": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_count": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_recall": {
+    "mean": null,
+    "n": 0
+   },
+   "servings": {
+    "mean": null,
+    "n": 0
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 3,
+   "errors": 0
+  },
+  "sub_recipe": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "ing_recall": {
+    "mean": 0.9643,
+    "n": 4
+   },
+   "qty_unit": {
+    "mean": 0.9405,
+    "n": 4
+   },
+   "steps": {
+    "mean": 4.75,
+    "n": 4
+   },
+   "sub_count": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 4
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 4,
+   "errors": 0
+  },
+  "tiktok": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 8
+   },
+   "title": {
+    "mean": 0.8571,
+    "n": 7
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 7
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 6
+   },
+   "qty_unit": {
+    "mean": 0.8929,
+    "n": 6
+   },
+   "steps": {
+    "mean": 4.8333,
+    "n": 6
+   },
+   "sub_count": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "sub_recall": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "servings": {
+    "mean": 1.0,
+    "n": 1
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 8,
+   "errors": 0
+  },
+  "transcript_only": {
+   "is_recipe": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "title": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "ing_precision": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "ing_recall": {
+    "mean": 1.0,
+    "n": 3
+   },
+   "qty_unit": {
+    "mean": 0.75,
+    "n": 3
+   },
+   "steps": {
+    "mean": 4.6667,
+    "n": 3
+   },
+   "sub_count": {
+    "mean": null,
+    "n": 0
+   },
+   "sub_recall": {
+    "mean": null,
+    "n": 0
+   },
+   "servings": {
+    "mean": null,
+    "n": 0
+   },
+   "forbidden": {
+    "mean": null,
+    "n": 0
+   },
+   "cases": 3,
+   "errors": 0
+  }
+ },
+ "cost": {
+  "extraction_tokens": [
+   91158,
+   22038
+  ],
+  "extraction_usd": 0.02013,
+  "judge_tokens": [
+   20086,
+   1608
+  ],
+  "judge_usd": 0.00281
+ },
+ "cases": [
+  {
+   "id": "chatter",
+   "categories": [
+    "not_a_recipe",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": false,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.97,
+    "source_fields_used": [],
+    "warnings": [
+     "no_recipe_found"
+    ]
+   },
+   "seconds": 1.96,
+   "metrics": {
+    "is_recipe": 1.0,
+    "title": null,
+    "ing_precision": null,
+    "ing_recall": null,
+    "qty_unit": null,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "extra": []
+   },
+   "usage": [
+    2952,
+    66
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "contradictory",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Brownies",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "1 cup sugar",
+      "name": "sugar",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1/2 cup cocoa",
+      "name": "cocoa",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 eggs",
+      "name": "eggs",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1/2 cup butter",
+      "name": "butter",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Mix everything.",
+     "Bake 25 min."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.8,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 3.76,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3007,
+    271
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "emoji_bullets_unicode",
+   "categories": [
+    "caption",
+    "messy_formatting",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Honey Garlic Salmon",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2 salmon fillets",
+      "name": "salmon fillets",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "¼ cup honey",
+      "name": "honey",
+      "quantity": 0.25,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "4 cloves garlic",
+      "name": "garlic",
+      "quantity": 4.0,
+      "unit": "clove",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "3 tbsp soy sauce",
+      "name": "soy sauce",
+      "quantity": 3.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "juice of ½ lemon",
+      "name": "lemon",
+      "quantity": 0.5,
+      "unit": null,
+      "note": "juice of",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Mix honey, garlic, soy and lemon",
+     "Pour over salmon",
+     "Bake 12-15 min at 400°F"
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 3.79,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3087,
+    369
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "headers_bullets",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Creamy Garlic Pasta",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "8 oz spaghetti",
+      "name": "spaghetti",
+      "quantity": 8.0,
+      "unit": "oz",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "3 cloves garlic, minced",
+      "name": "garlic",
+      "quantity": 3.0,
+      "unit": "clove",
+      "note": "minced",
+      "needs_review": false
+     },
+     {
+      "raw_text": "1/2 cup parmesan",
+      "name": "parmesan",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 cup heavy cream",
+      "name": "heavy cream",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "salt to taste",
+      "name": "salt",
+      "quantity": null,
+      "unit": null,
+      "note": "to taste",
+      "needs_review": false
+     },
+     {
+      "raw_text": "butter",
+      "name": "butter",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Boil the pasta until al dente.",
+     "Sauté garlic in butter for 1 minute.",
+     "Add cream and parmesan, then toss with pasta."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 5.27,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3089,
+    901
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "inline_prose",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Tomato pasta",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "pasta",
+      "name": "pasta",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 tomatoes",
+      "name": "tomatoes",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "olive oil",
+      "name": "olive oil",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Cook pasta, toss with tomatoes and oil."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.6,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 3.47,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    2953,
+    218
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "instagram_comment_focaccia",
+   "categories": [
+    "comments",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "500g bread flour",
+      "name": "bread flour",
+      "quantity": 500.0,
+      "unit": "g",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "400g water",
+      "name": "water",
+      "quantity": 400.0,
+      "unit": "g",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "10g salt",
+      "name": "salt",
+      "quantity": 10.0,
+      "unit": "g",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "7g yeast",
+      "name": "yeast",
+      "quantity": 7.0,
+      "unit": "g",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "olive oil",
+      "name": "olive oil",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Mix, rest overnight in the fridge, stretch into a pan, dimple with oil and bake at 230C for 25 minutes."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.8,
+    "source_fields_used": [
+     "comments"
+    ],
+    "warnings": [
+     "title_missing"
+    ]
+   },
+   "seconds": 4.98,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 0.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3031,
+    920
+   ],
+   "score": 0.8333
+  },
+  {
+   "id": "instagram_comment_overnight_oats",
+   "categories": [
+    "comments",
+    "messy_formatting",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Overnight oats",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "½ cup rolled oats",
+      "name": "rolled oats",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "½ cup milk",
+      "name": "milk",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "¼ cup greek yogurt",
+      "name": "greek yogurt",
+      "quantity": 0.25,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tbsp chia seeds",
+      "name": "chia seeds",
+      "quantity": 1.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tsp maple syrup",
+      "name": "maple syrup",
+      "quantity": 1.0,
+      "unit": "tsp",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Stir everything in a jar and refrigerate overnight."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.85,
+    "source_fields_used": [
+     "caption",
+     "comments"
+    ],
+    "warnings": []
+   },
+   "seconds": 5.19,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3051,
+    830
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "instagram_gyro_tzatziki",
+   "categories": [
+    "caption",
+    "sub_recipe",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Chicken gyros",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2 chicken thighs",
+      "name": "chicken thighs",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tsp oregano",
+      "name": "oregano",
+      "quantity": 1.0,
+      "unit": "tsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tbsp olive oil",
+      "name": "olive oil",
+      "quantity": 1.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Grill the chicken with the oregano and oil.",
+     "Mix the yogurt, cucumber and garlic.",
+     "Wrap it all in a pita."
+    ],
+    "sub_recipes": [
+     {
+      "title": "tzatziki",
+      "ingredients": [
+       {
+        "raw_text": "1 cup greek yogurt",
+        "name": "greek yogurt",
+        "quantity": 1.0,
+        "unit": "cup",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "½ cucumber, grated",
+        "name": "cucumber",
+        "quantity": 0.5,
+        "unit": null,
+        "note": "grated",
+        "needs_review": false
+       },
+       {
+        "raw_text": "1 garlic clove",
+        "name": "garlic clove",
+        "quantity": 1.0,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": []
+     }
+    ],
+    "confidence": 0.85,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 4.75,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 0.8571428571428571,
+    "qty_unit": 0.8333333333333334,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": 1.0,
+    "sub_recall": 1.0,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [
+     "pita"
+    ],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "garlic",
+      "expected": [
+       1,
+       "clove"
+      ],
+      "got": [
+       1.0,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3034,
+    440
+   ],
+   "score": 0.9613
+  },
+  {
+   "id": "instagram_mango_lassi",
+   "categories": [
+    "caption",
+    "messy_formatting",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "MANGO LASSI",
+    "servings": 2,
+    "ingredients": [
+     {
+      "raw_text": "1⅓ cups mango pulp",
+      "name": "mango pulp",
+      "quantity": 1.333,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "⅔ cup plain yogurt",
+      "name": "plain yogurt",
+      "quantity": 0.667,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "½ cup milk",
+      "name": "milk",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "sugar, to taste",
+      "name": "sugar",
+      "quantity": null,
+      "unit": null,
+      "note": "to taste",
+      "needs_review": false
+     },
+     {
+      "raw_text": "pinch of cardamom",
+      "name": "cardamom",
+      "quantity": null,
+      "unit": "pinch",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Blend everything until smooth.",
+     "Serve cold!"
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 3.38,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": 1.0,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3002,
+    341
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "instagram_partial_link_in_bio",
+   "categories": [
+    "link_in_bio",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Miso butter salmon",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "salmon",
+      "name": "salmon",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "white miso",
+      "name": "white miso",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "butter",
+      "name": "butter",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "honey",
+      "name": "honey",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.3,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": [
+     "low_confidence",
+     "missing_steps"
+    ]
+   },
+   "seconds": 3.77,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    2955,
+    574
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "instagram_restaurant_review",
+   "categories": [
+    "not_a_recipe",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": false,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.97,
+    "source_fields_used": [],
+    "warnings": [
+     "no_recipe_found"
+    ]
+   },
+   "seconds": 0.83,
+   "metrics": {
+    "is_recipe": 1.0,
+    "title": null,
+    "ing_precision": null,
+    "ing_recall": null,
+    "qty_unit": null,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "extra": []
+   },
+   "usage": [
+    2975,
+    66
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "instagram_sheet_pan_gnocchi",
+   "categories": [
+    "caption",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Sheet pan gnocchi",
+    "servings": 4,
+    "ingredients": [
+     {
+      "raw_text": "1 lb shelf-stable gnocchi",
+      "name": "gnocchi",
+      "quantity": 1.0,
+      "unit": "lb",
+      "note": "shelf-stable",
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 cups cherry tomatoes",
+      "name": "cherry tomatoes",
+      "quantity": 2.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 red onion, chopped",
+      "name": "red onion",
+      "quantity": 1.0,
+      "unit": null,
+      "note": "chopped",
+      "needs_review": false
+     },
+     {
+      "raw_text": "3 tbsp olive oil",
+      "name": "olive oil",
+      "quantity": 3.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1/2 tsp salt",
+      "name": "salt",
+      "quantity": 0.5,
+      "unit": "tsp",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Toss everything on a sheet pan.",
+     "Roast at 425F for 25 minutes.",
+     "Top with basil."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 5.69,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 0.8333333333333334,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": 1.0,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [
+     "basil"
+    ],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3051,
+    384
+   ],
+   "score": 0.9762
+  },
+  {
+   "id": "instagram_spoken_smoothie",
+   "categories": [
+    "transcript_only",
+    "instagram"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "one banana",
+      "name": "banana",
+      "quantity": 1.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "one cup of frozen strawberries",
+      "name": "frozen strawberries",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "half a cup of greek yogurt",
+      "name": "greek yogurt",
+      "quantity": 0.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "a splash of oat milk",
+      "name": "oat milk",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Into the blender goes one banana, one cup of frozen strawberries, half a cup of greek yogurt and a splash of oat milk.",
+     "Blend for about thirty seconds and pour it into a glass."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.7,
+    "source_fields_used": [
+     "caption",
+     "transcript"
+    ],
+    "warnings": [
+     "title_missing"
+    ]
+   },
+   "seconds": 3.01,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 0.75,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "oat milk",
+      "expected": [
+       null,
+       "splash"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3009,
+    331
+   ],
+   "score": 0.9583
+  },
+  {
+   "id": "metric_sections",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Chicken tikka bowls",
+    "servings": null,
+    "ingredients": [],
+    "steps": [
+     "Marinate the chicken in yoghurt and spices for 1 hour.",
+     "Grill until charred.",
+     "Simmer rice in water for 12 minutes.",
+     "Serve together."
+    ],
+    "sub_recipes": [
+     {
+      "title": "Chicken",
+      "ingredients": [
+       {
+        "raw_text": "500g chicken thighs",
+        "name": "chicken thighs",
+        "quantity": 500.0,
+        "unit": "g",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "150g yoghurt",
+        "name": "yoghurt",
+        "quantity": 150.0,
+        "unit": "g",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "2 tsp garam masala",
+        "name": "garam masala",
+        "quantity": 2.0,
+        "unit": "tsp",
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": []
+     },
+     {
+      "title": "Rice",
+      "ingredients": [
+       {
+        "raw_text": "200g basmati",
+        "name": "basmati",
+        "quantity": 200.0,
+        "unit": "g",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "400ml water",
+        "name": "water",
+        "quantity": 400.0,
+        "unit": "ml",
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": []
+     }
+    ],
+    "confidence": 0.8,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 6.57,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": 0.0,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3046,
+    991
+   ],
+   "score": 0.8571
+  },
+  {
+   "id": "missing_amounts",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Lazy shakshuka",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "eggs",
+      "name": "eggs",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "canned tomatoes",
+      "name": "canned tomatoes",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "onion",
+      "name": "onion",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "garlic",
+      "name": "garlic",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "cumin",
+      "name": "cumin",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "feta",
+      "name": "feta",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Soften the onion and garlic, add tomatoes and cumin, simmer, crack in the eggs, cover until set, top with feta."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.7,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 4.66,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    2992,
+    349
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "multi_section_prose",
+   "categories": [
+    "caption",
+    "sub_recipe",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Crispy sesame tofu bowls",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "rice",
+      "name": "rice",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Serve everything over rice."
+    ],
+    "sub_recipes": [
+     {
+      "title": "Crispy tofu",
+      "ingredients": [
+       {
+        "raw_text": "tofu cubes",
+        "name": "tofu",
+        "quantity": null,
+        "unit": null,
+        "note": "cubes",
+        "needs_review": false
+       },
+       {
+        "raw_text": "cornstarch",
+        "name": "cornstarch",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "salt",
+        "name": "salt",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "pepper",
+        "name": "pepper",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "Toss your tofu cubes in cornstarch, salt and pepper.",
+       "Air fry at 400F for 15min shaking halfway."
+      ]
+     },
+     {
+      "title": "Sesame glaze",
+      "ingredients": [
+       {
+        "raw_text": "2 tbsp sesame oil",
+        "name": "sesame oil",
+        "quantity": 2.0,
+        "unit": "tbsp",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "3 tbsp maple syrup",
+        "name": "maple syrup",
+        "quantity": 3.0,
+        "unit": "tbsp",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "1/4 cup of soy sauce",
+        "name": "soy sauce",
+        "quantity": 0.25,
+        "unit": "cup",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "2 garlic cloves minced",
+        "name": "garlic",
+        "quantity": 2.0,
+        "unit": "clove",
+        "note": "minced",
+        "needs_review": false
+       },
+       {
+        "raw_text": "1 tsp chili flakes",
+        "name": "chili flakes",
+        "quantity": 1.0,
+        "unit": "tsp",
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "In a pan add",
+       "Simmer until thick, then toss the tofu in it."
+      ]
+     },
+     {
+      "title": "Quick slaw",
+      "ingredients": [
+       {
+        "raw_text": "cabbage",
+        "name": "cabbage",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "carrot",
+        "name": "carrot",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "2 tbsp rice vinegar",
+        "name": "rice vinegar",
+        "quantity": 2.0,
+        "unit": "tbsp",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "a pinch of sugar",
+        "name": "sugar",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "Shred cabbage and carrot, add"
+      ]
+     }
+    ],
+    "confidence": 0.7,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 13.79,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 0.9285714285714286,
+    "title": 1.0,
+    "steps": 4.0,
+    "sub_count": 1.0,
+    "sub_recall": 1.0,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "sugar",
+      "expected": [
+       null,
+       "pinch"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3151,
+    2991
+   ],
+   "score": 0.9598
+  },
+  {
+   "id": "no_headers_numbered",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "the easiest banana bread ever",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "3 ripe bananas",
+      "name": "bananas",
+      "quantity": 3.0,
+      "unit": null,
+      "note": "ripe",
+      "needs_review": false
+     },
+     {
+      "raw_text": "1/3 cup melted butter",
+      "name": "butter",
+      "quantity": 0.333,
+      "unit": "cup",
+      "note": "melted",
+      "needs_review": false
+     },
+     {
+      "raw_text": "3/4 cup sugar",
+      "name": "sugar",
+      "quantity": 0.75,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 egg",
+      "name": "egg",
+      "quantity": 1.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tsp baking soda",
+      "name": "baking soda",
+      "quantity": 1.0,
+      "unit": "tsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 1/2 cups flour",
+      "name": "flour",
+      "quantity": 1.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "mash bananas and mix in butter",
+     "stir in sugar, egg and baking soda",
+     "fold in flour and bake at 350F for 60 minutes"
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 6.32,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": null,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3036,
+    973
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "paragraph_only",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "grandma's lemon cake",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2 cups of sugar",
+      "name": "sugar",
+      "quantity": 2.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 cup of butter",
+      "name": "butter",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "4 eggs",
+      "name": "eggs",
+      "quantity": 4.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "3 cups of flour",
+      "name": "flour",
+      "quantity": 3.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "the zest of 2 lemons",
+      "name": "lemons",
+      "quantity": 2.0,
+      "unit": null,
+      "note": "zest",
+      "needs_review": false
+     },
+     {
+      "raw_text": "powdered sugar",
+      "name": "powdered sugar",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "lemon juice",
+      "name": "lemon juice",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "you just beat 2 cups of sugar with 1 cup of butter, add 4 eggs one at a time, then fold in 3 cups of flour and the zest of 2 lemons.",
+     "Bake it at 325 for an hour and glaze with powdered sugar mixed with lemon juice."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.6,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 7.77,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": null,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3028,
+    1475
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "prompt_injection",
+   "categories": [
+    "caption",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Easy fried rice",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2 cups cooked rice",
+      "name": "cooked rice",
+      "quantity": 2.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 eggs",
+      "name": "eggs",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 cup frozen peas",
+      "name": "frozen peas",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 tbsp soy sauce",
+      "name": "soy sauce",
+      "quantity": 2.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Scramble the eggs.",
+     "Add rice, peas and soy; stir fry 5 minutes."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 3.53,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": 0.0
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3064,
+    299
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "ranges_and_vague",
+   "categories": [
+    "caption",
+    "messy_formatting",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Spicy peanut noodles",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2-3 tbsp chili oil",
+      "name": "chili oil",
+      "quantity": null,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "a handful of peanuts",
+      "name": "peanuts",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "noodles",
+      "name": "noodles",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 lime",
+      "name": "lime",
+      "quantity": 1.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "soy sauce, to taste",
+      "name": "soy sauce",
+      "quantity": null,
+      "unit": null,
+      "note": "to taste",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Cook noodles.",
+     "Toss with chili oil, soy and lime.",
+     "Top with peanuts."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 9.77,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 0.8,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "peanuts",
+      "expected": [
+       null,
+       "handful"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3012,
+    725
+   ],
+   "score": 0.9667
+  },
+  {
+   "id": "recipe_in_bio",
+   "categories": [
+    "link_in_bio",
+    "none"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.1,
+    "source_fields_used": [],
+    "warnings": [
+     "no_recipe_found",
+     "recipe_elsewhere"
+    ]
+   },
+   "seconds": 1.44,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": null,
+    "qty_unit": null,
+    "title": 1.0,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    2967,
+    66
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "sections_with_own_steps",
+   "categories": [
+    "caption",
+    "sub_recipe",
+    "messy_formatting",
+    "none"
+   ],
+   "synthetic": false,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Buffalo loaded fries",
+    "servings": 3,
+    "ingredients": [
+     {
+      "raw_text": "low calorie yogurt ranch",
+      "name": "yogurt ranch",
+      "quantity": null,
+      "unit": null,
+      "note": "low calorie",
+      "needs_review": false
+     },
+     {
+      "raw_text": "Chives, to garnish",
+      "name": "chives",
+      "quantity": null,
+      "unit": null,
+      "note": "to garnish",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Serve over the air fried French fries",
+     "Top with low calorie yogurt ranch"
+    ],
+    "sub_recipes": [
+     {
+      "title": "Fries",
+      "ingredients": [
+       {
+        "raw_text": "2-3 medium russet potatoes, cut into thin fries",
+        "name": "russet potatoes",
+        "quantity": null,
+        "unit": null,
+        "note": null,
+        "needs_review": true
+       },
+       {
+        "raw_text": "Avocado oil spray",
+        "name": "avocado oil",
+        "quantity": null,
+        "unit": null,
+        "note": "spray",
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "Air fry at 400°F FOR 12-15 mins shake every 5 mins."
+      ]
+     },
+     {
+      "title": "Sticky chicken",
+      "ingredients": [
+       {
+        "raw_text": "1.5 lbs ground chicken",
+        "name": "ground chicken",
+        "quantity": 1.5,
+        "unit": "lb",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "Salt & Pepper, to taste",
+        "name": "salt & pepper",
+        "quantity": null,
+        "unit": null,
+        "note": "to taste",
+        "needs_review": false
+       },
+       {
+        "raw_text": "1 tsp garlic powder",
+        "name": "garlic powder",
+        "quantity": 1.0,
+        "unit": "tsp",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "Avocado oil, spray",
+        "name": "avocado oil",
+        "quantity": null,
+        "unit": null,
+        "note": "spray",
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "Cook on high heat for 6-7 mins!",
+       "Turn heat to low and add enough sauce to coat the chicken."
+      ]
+     },
+     {
+      "title": "Sauce",
+      "ingredients": [
+       {
+        "raw_text": "Your favorite buffalo sauce, 1/2 cup (or more)",
+        "name": "buffalo sauce",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null,
+        "needs_review": true
+       },
+       {
+        "raw_text": "1 tbsp butter",
+        "name": "butter",
+        "quantity": 1.0,
+        "unit": "tbsp",
+        "note": null,
+        "needs_review": true
+       }
+      ],
+      "steps": []
+     }
+    ],
+    "confidence": 0.6,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": [
+     "needs_review"
+    ]
+   },
+   "seconds": 12.53,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": 1.0,
+    "sub_recall": 1.0,
+    "servings": 1.0,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3462,
+    2562
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "tiktok_blog_link",
+   "categories": [
+    "link_in_bio",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.1,
+    "source_fields_used": [],
+    "warnings": [
+     "no_recipe_found",
+     "recipe_elsewhere"
+    ]
+   },
+   "seconds": 1.7,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": null,
+    "qty_unit": null,
+    "title": 1.0,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    2941,
+    288
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "tiktok_clean_shrimp",
+   "categories": [
+    "caption",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Lemon garlic shrimp",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "1 lb shrimp",
+      "name": "shrimp",
+      "quantity": 1.0,
+      "unit": "lb",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 tbsp butter",
+      "name": "butter",
+      "quantity": 2.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "4 cloves garlic, minced",
+      "name": "garlic",
+      "quantity": 4.0,
+      "unit": "clove",
+      "note": "minced",
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 lemon",
+      "name": "lemon",
+      "quantity": 1.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Melt the butter and cook the garlic for 1 minute.",
+     "Add the shrimp and cook 2 minutes per side.",
+     "Squeeze the lemon over the top."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.95,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 4.91,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3040,
+    328
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "tiktok_messy_cookies",
+   "categories": [
+    "caption",
+    "messy_formatting",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "BROWN BUTTER CHOC CHIP COOKIES",
+    "servings": 24,
+    "ingredients": [
+     {
+      "raw_text": "1c butter, browned",
+      "name": "butter",
+      "quantity": 1.0,
+      "unit": "cup",
+      "note": "browned",
+      "needs_review": false
+     },
+     {
+      "raw_text": "1½c brown sugar",
+      "name": "brown sugar",
+      "quantity": 1.5,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2 eggs",
+      "name": "eggs",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "2¼c flour",
+      "name": "flour",
+      "quantity": 2.25,
+      "unit": "cup",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tsp baking soda",
+      "name": "baking soda",
+      "quantity": 1.0,
+      "unit": "tsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "a splash of vanilla",
+      "name": "vanilla",
+      "quantity": null,
+      "unit": null,
+      "note": "a splash of",
+      "needs_review": false
+     },
+     {
+      "raw_text": "chocolate chips (as many as u want lol)",
+      "name": "chocolate chips",
+      "quantity": null,
+      "unit": null,
+      "note": "as many as u want lol",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "cream butter + sugar, beat in eggs + vanilla",
+     "fold in flour, soda + chips",
+     "bake 350F 10-12 min"
+    ],
+    "sub_recipes": [],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 6.14,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 0.8571428571428571,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": 1.0,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "vanilla",
+      "expected": [
+       null,
+       "splash"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3084,
+    1069
+   ],
+   "score": 0.9796
+  },
+  {
+   "id": "tiktok_mukbang",
+   "categories": [
+    "not_a_recipe",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": false,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": [],
+    "confidence": 0.97,
+    "source_fields_used": [],
+    "warnings": [
+     "no_recipe_found"
+    ]
+   },
+   "seconds": 1.12,
+   "metrics": {
+    "is_recipe": 1.0,
+    "title": null,
+    "ing_precision": null,
+    "ing_recall": null,
+    "qty_unit": null,
+    "steps": null,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "extra": []
+   },
+   "usage": [
+    2943,
+    66
+   ],
+   "score": 1.0
+  },
+  {
+   "id": "tiktok_pinned_comment_eggs",
+   "categories": [
+    "comments",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "2 eggs",
+      "name": "eggs",
+      "quantity": 2.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 tbsp chili crisp",
+      "name": "chili crisp",
+      "quantity": 1.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "1 green onion, sliced",
+      "name": "green onion",
+      "quantity": 1.0,
+      "unit": null,
+      "note": "sliced",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Heat the chili crisp in a pan, crack in the eggs and fry until the edges are crispy.",
+     "Top with green onion."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.85,
+    "source_fields_used": [
+     "caption",
+     "comments"
+    ],
+    "warnings": [
+     "title_missing"
+    ]
+   },
+   "seconds": 3.9,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 0.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3062,
+    261
+   ],
+   "score": 0.8333
+  },
+  {
+   "id": "tiktok_spoken_garlic_bread",
+   "categories": [
+    "transcript_only",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "garlic bread",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "four tablespoons of soft butter",
+      "name": "butter",
+      "quantity": 4.0,
+      "unit": "tbsp",
+      "note": "soft",
+      "needs_review": false
+     },
+     {
+      "raw_text": "three cloves of garlic, minced",
+      "name": "garlic",
+      "quantity": 3.0,
+      "unit": "clove",
+      "note": "minced",
+      "needs_review": false
+     },
+     {
+      "raw_text": "a pinch of salt",
+      "name": "salt",
+      "quantity": null,
+      "unit": "pinch",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "sliced baguette",
+      "name": "baguette",
+      "quantity": null,
+      "unit": null,
+      "note": "sliced",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Mix",
+     "Spread it on a sliced baguette.",
+     "Bake at 400 for ten minutes until golden."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.7,
+    "source_fields_used": [
+     "caption",
+     "transcript"
+    ],
+    "warnings": []
+   },
+   "seconds": 10.45,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 4.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3055,
+    1553
+   ],
+   "score": 0.9583
+  },
+  {
+   "id": "tiktok_spoken_pasta",
+   "categories": [
+    "transcript_only",
+    "messy_formatting",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "about 200 grams of spaghetti",
+      "name": "spaghetti",
+      "quantity": 200.0,
+      "unit": "g",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "two tablespoons of butter",
+      "name": "butter",
+      "quantity": 2.0,
+      "unit": "tbsp",
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "a big handful of parmesan",
+      "name": "parmesan",
+      "quantity": null,
+      "unit": null,
+      "note": "big handful",
+      "needs_review": false
+     },
+     {
+      "raw_text": "a splash of pasta water",
+      "name": "pasta water",
+      "quantity": null,
+      "unit": null,
+      "note": "splash",
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "boil about 200 grams of spaghetti.",
+     "While that cooks, melt two tablespoons of butter and grate in a big handful of parmesan.",
+     "Toss it all with a splash of pasta water and that's it."
+    ],
+    "sub_recipes": [],
+    "confidence": 0.8,
+    "source_fields_used": [
+     "transcript"
+    ],
+    "warnings": [
+     "title_missing"
+    ]
+   },
+   "seconds": 5.93,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 0.5,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": null,
+    "sub_recall": null,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": [
+     {
+      "name": "parmesan",
+      "expected": [
+       null,
+       "handful"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     },
+     {
+      "name": "pasta water",
+      "expected": [
+       null,
+       "splash"
+      ],
+      "got": [
+       null,
+       null
+      ]
+     }
+    ]
+   },
+   "usage": [
+    3017,
+    1155
+   ],
+   "score": 0.9167
+  },
+  {
+   "id": "tiktok_steak_chimichurri",
+   "categories": [
+    "caption",
+    "sub_recipe",
+    "tiktok"
+   ],
+   "synthetic": true,
+   "error": null,
+   "output": {
+    "is_recipe": true,
+    "title": "Steak with chimichurri",
+    "servings": null,
+    "ingredients": [
+     {
+      "raw_text": "1 ribeye",
+      "name": "ribeye",
+      "quantity": 1.0,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "salt",
+      "name": "salt",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     },
+     {
+      "raw_text": "pepper",
+      "name": "pepper",
+      "quantity": null,
+      "unit": null,
+      "note": null,
+      "needs_review": false
+     }
+    ],
+    "steps": [
+     "Sear 4 minutes per side and rest 5 minutes.",
+     "Slice the steak and spoon the chimichurri over it."
+    ],
+    "sub_recipes": [
+     {
+      "title": "Chimichurri",
+      "ingredients": [
+       {
+        "raw_text": "1 cup parsley",
+        "name": "parsley",
+        "quantity": 1.0,
+        "unit": "cup",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "3 cloves garlic",
+        "name": "garlic",
+        "quantity": 3.0,
+        "unit": "clove",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "½ cup olive oil",
+        "name": "olive oil",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null,
+        "needs_review": false
+       },
+       {
+        "raw_text": "2 tbsp red wine vinegar",
+        "name": "red wine vinegar",
+        "quantity": 2.0,
+        "unit": "tbsp",
+        "note": null,
+        "needs_review": false
+       }
+      ],
+      "steps": [
+       "Chop the parsley and garlic, then stir in the oil and vinegar."
+      ]
+     }
+    ],
+    "confidence": 0.9,
+    "source_fields_used": [
+     "caption"
+    ],
+    "warnings": []
+   },
+   "seconds": 6.5,
+   "metrics": {
+    "is_recipe": 1.0,
+    "ing_precision": 1.0,
+    "ing_recall": 1.0,
+    "qty_unit": 1.0,
+    "title": 1.0,
+    "steps": 5.0,
+    "sub_count": 1.0,
+    "sub_recall": 1.0,
+    "servings": null,
+    "forbidden": null
+   },
+   "details": {
+    "missing": [],
+    "extra": [],
+    "qty_misses": []
+   },
+   "usage": [
+    3062,
+    1176
+   ],
+   "score": 1.0
+  }
+ ]
+}

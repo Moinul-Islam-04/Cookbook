@@ -1,0 +1,69 @@
+{
+  "id": "instagram_comment_overnight_oats",
+  "categories": [
+    "comments",
+    "messy_formatting"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Unicode fractions in a comment.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CzOats12345",
+    "url": "https://www.instagram.com/p/CzOats12345/",
+    "author_handle": "morning.bowls",
+    "caption": "Overnight oats for busy mornings 🥣 base recipe in the first comment!",
+    "transcript": null,
+    "top_comments": [
+      "Base: ½ cup rolled oats, ½ cup milk, ¼ cup greek yogurt, 1 tbsp chia seeds, 1 tsp maple syrup. Stir everything in a jar and refrigerate overnight.",
+      "Love this!!"
+    ],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Overnight oats",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "½ cup rolled oats",
+        "name": "rolled oats",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "½ cup milk",
+        "name": "milk",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "¼ cup greek yogurt",
+        "name": "greek yogurt",
+        "quantity": 0.25,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 tbsp chia seeds",
+        "name": "chia seeds",
+        "quantity": 1,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "1 tsp maple syrup",
+        "name": "maple syrup",
+        "quantity": 1,
+        "unit": "tsp",
+        "note": null
+      }
+    ],
+    "steps": [
+      "Stir everything in a jar and refrigerate overnight."
+    ],
+    "sub_recipes": []
+  }
+}

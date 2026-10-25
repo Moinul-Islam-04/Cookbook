@@ -1,0 +1,59 @@
+{
+  "id": "instagram_spoken_smoothie",
+  "categories": [
+    "transcript_only"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. 'recipe in the video' with the recipe spoken.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "Cq1Smo0thie",
+    "url": "https://www.instagram.com/reel/Cq1Smo0thie/",
+    "author_handle": null,
+    "caption": "my go-to breakfast smoothie 🍓 recipe in the video!",
+    "transcript": "Into the blender goes one banana, one cup of frozen strawberries, half a cup of greek yogurt and a splash of oat milk. Blend for about thirty seconds and pour it into a glass.",
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "one banana",
+        "name": "banana",
+        "quantity": 1,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "one cup of frozen strawberries",
+        "name": "strawberries",
+        "quantity": 1,
+        "unit": "cup",
+        "note": "frozen"
+      },
+      {
+        "raw_text": "half a cup of greek yogurt",
+        "name": "greek yogurt",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "a splash of oat milk",
+        "name": "oat milk",
+        "quantity": null,
+        "unit": "splash",
+        "note": null
+      }
+    ],
+    "steps": [
+      "Into the blender goes one banana, one cup of frozen strawberries, half a cup of greek yogurt and a splash of oat milk.",
+      "Blend for about thirty seconds and pour it into a glass."
+    ],
+    "sub_recipes": []
+  }
+}

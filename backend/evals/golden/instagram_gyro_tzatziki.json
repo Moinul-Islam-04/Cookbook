@@ -1,0 +1,90 @@
+{
+  "id": "instagram_gyro_tzatziki",
+  "categories": [
+    "caption",
+    "sub_recipe"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. The spec's example: tzatziki inside a gyro.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CuGyro11111",
+    "url": "https://www.instagram.com/p/CuGyro11111/",
+    "author_handle": "homecook.ari",
+    "caption": "Chicken gyros at home 🥙\n\n2 chicken thighs\n1 tsp oregano\n1 tbsp olive oil\n\nFor the tzatziki:\n1 cup greek yogurt\n½ cucumber, grated\n1 garlic clove\n\nGrill the chicken with the oregano and oil. Mix the yogurt, cucumber and garlic. Wrap it all in a pita.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Chicken gyros",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "2 chicken thighs",
+        "name": "chicken thighs",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "1 tsp oregano",
+        "name": "oregano",
+        "quantity": 1,
+        "unit": "tsp",
+        "note": null
+      },
+      {
+        "raw_text": "1 tbsp olive oil",
+        "name": "olive oil",
+        "quantity": 1,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "pita",
+        "name": "pita",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Grill the chicken with the oregano and oil.",
+      "Wrap it all in a pita."
+    ],
+    "sub_recipes": [
+      {
+        "title": "tzatziki",
+        "ingredients": [
+          {
+            "raw_text": "1 cup greek yogurt",
+            "name": "greek yogurt",
+            "quantity": 1,
+            "unit": "cup",
+            "note": null
+          },
+          {
+            "raw_text": "½ cucumber, grated",
+            "name": "cucumber",
+            "quantity": 0.5,
+            "unit": null,
+            "note": "grated"
+          },
+          {
+            "raw_text": "1 garlic clove",
+            "name": "garlic",
+            "quantity": 1,
+            "unit": "clove",
+            "note": null
+          }
+        ],
+        "steps": [
+          "Mix the yogurt, cucumber and garlic."
+        ]
+      }
+    ]
+  }
+}

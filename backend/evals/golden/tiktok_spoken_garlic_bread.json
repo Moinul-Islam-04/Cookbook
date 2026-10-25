@@ -1,0 +1,63 @@
+{
+  "id": "tiktok_spoken_garlic_bread",
+  "categories": [
+    "transcript_only"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Comments are only reactions; the recipe is spoken.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7302345678901234567",
+    "url": "https://www.tiktok.com/@breadboi/video/7302345678901234567",
+    "author_handle": "breadboi",
+    "caption": "garlic bread but make it crispy 🧄🍞 #garlicbread",
+    "transcript": "Mix four tablespoons of soft butter with three cloves of garlic, minced, and a pinch of salt. Spread it on a sliced baguette. Bake at 400 for ten minutes until golden.",
+    "top_comments": [
+      "omg making this tonight",
+      "what temp??"
+    ],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "garlic bread",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "four tablespoons of soft butter",
+        "name": "butter",
+        "quantity": 4,
+        "unit": "tbsp",
+        "note": "soft"
+      },
+      {
+        "raw_text": "three cloves of garlic, minced",
+        "name": "garlic",
+        "quantity": 3,
+        "unit": "clove",
+        "note": "minced"
+      },
+      {
+        "raw_text": "a pinch of salt",
+        "name": "salt",
+        "quantity": null,
+        "unit": "pinch",
+        "note": null
+      },
+      {
+        "raw_text": "a sliced baguette",
+        "name": "baguette",
+        "quantity": null,
+        "unit": null,
+        "note": "sliced"
+      }
+    ],
+    "steps": [
+      "Mix four tablespoons of soft butter with three cloves of garlic, minced, and a pinch of salt.",
+      "Spread it on a sliced baguette.",
+      "Bake at 400 for ten minutes until golden."
+    ],
+    "sub_recipes": []
+  }
+}

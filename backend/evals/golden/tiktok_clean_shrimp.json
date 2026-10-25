@@ -1,0 +1,60 @@
+{
+  "id": "tiktok_clean_shrimp",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. A clean caption on TikTok.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7308901234567890123",
+    "url": "https://www.tiktok.com/@quick.eats/video/7308901234567890123",
+    "author_handle": "quick.eats",
+    "caption": "Lemon garlic shrimp 🍤\nIngredients:\n- 1 lb shrimp\n- 2 tbsp butter\n- 4 cloves garlic, minced\n- 1 lemon\nSteps:\n1. Melt the butter and cook the garlic for 1 minute.\n2. Add the shrimp and cook 2 minutes per side.\n3. Squeeze the lemon over the top.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Lemon garlic shrimp",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "1 lb shrimp",
+        "name": "shrimp",
+        "quantity": 1,
+        "unit": "lb",
+        "note": null
+      },
+      {
+        "raw_text": "2 tbsp butter",
+        "name": "butter",
+        "quantity": 2,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "4 cloves garlic, minced",
+        "name": "garlic",
+        "quantity": 4,
+        "unit": "clove",
+        "note": "minced"
+      },
+      {
+        "raw_text": "1 lemon",
+        "name": "lemon",
+        "quantity": 1,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Melt the butter and cook the garlic for 1 minute.",
+      "Add the shrimp and cook 2 minutes per side.",
+      "Squeeze the lemon over the top."
+    ],
+    "sub_recipes": []
+  }
+}

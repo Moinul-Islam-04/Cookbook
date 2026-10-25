@@ -1,0 +1,67 @@
+{
+  "id": "instagram_comment_focaccia",
+  "categories": [
+    "comments"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "Cx9Yz8Wv7Ut",
+    "url": "https://www.instagram.com/p/Cx9Yz8Wv7Ut/",
+    "author_handle": "some.baker",
+    "caption": "Best focaccia of my life 😍 recipe in the comments!",
+    "transcript": null,
+    "top_comments": [
+      "RECIPE: 500g bread flour, 400g water, 10g salt, 7g yeast, olive oil. Mix, rest overnight in the fridge, stretch into a pan, dimple with oil and bake at 230C for 25 minutes."
+    ],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "focaccia",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "500g bread flour",
+        "name": "bread flour",
+        "quantity": 500,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "400g water",
+        "name": "water",
+        "quantity": 400,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "10g salt",
+        "name": "salt",
+        "quantity": 10,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "7g yeast",
+        "name": "yeast",
+        "quantity": 7,
+        "unit": "g",
+        "note": null
+      },
+      {
+        "raw_text": "olive oil",
+        "name": "olive oil",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Mix, rest overnight in the fridge, stretch into a pan, dimple with oil and bake at 230C for 25 minutes."
+    ],
+    "sub_recipes": []
+  }
+}

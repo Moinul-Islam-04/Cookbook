@@ -1,0 +1,56 @@
+{
+  "id": "instagram_partial_link_in_bio",
+  "categories": [
+    "link_in_bio"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Partial: ingredient names without amounts or steps; the rest is behind the link.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CwMiso54321",
+    "url": "https://www.instagram.com/p/CwMiso54321/",
+    "author_handle": "fishfriday",
+    "caption": "Miso butter salmon 🐟 you only need salmon, white miso, butter and honey! Full recipe with amounts at the link in my bio.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Miso butter salmon",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "salmon",
+        "name": "salmon",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "white miso",
+        "name": "white miso",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "butter",
+        "name": "butter",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "honey",
+        "name": "honey",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [],
+    "sub_recipes": []
+  }
+}

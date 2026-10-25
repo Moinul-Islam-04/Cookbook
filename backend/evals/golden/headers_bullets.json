@@ -1,0 +1,74 @@
+{
+  "id": "headers_bullets",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. Butter is named only in step 2; prompt-7 counts it as an ingredient (added after the first baseline run).",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Creamy Garlic Pasta 🍝\n\nThis is my go-to weeknight dinner, SAVE IT!\n\nIngredients:\n• 8 oz spaghetti\n• 3 cloves garlic, minced\n• 1/2 cup parmesan\n• 1 cup heavy cream\n• salt to taste\n\nInstructions:\n1. Boil the pasta until al dente.\n2. Sauté garlic in butter for 1 minute.\n3. Add cream and parmesan, then toss with pasta.\n\n#pasta #dinner #easyrecipes",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Creamy Garlic Pasta",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "8 oz spaghetti",
+        "name": "spaghetti",
+        "quantity": 8,
+        "unit": "oz",
+        "note": null
+      },
+      {
+        "raw_text": "3 cloves garlic, minced",
+        "name": "garlic",
+        "quantity": 3,
+        "unit": "clove",
+        "note": "minced"
+      },
+      {
+        "raw_text": "1/2 cup parmesan",
+        "name": "parmesan",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 cup heavy cream",
+        "name": "heavy cream",
+        "quantity": 1,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "salt to taste",
+        "name": "salt",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "butter",
+        "name": "butter",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Boil the pasta until al dente.",
+      "Sauté garlic in butter for 1 minute.",
+      "Add cream and parmesan, then toss with pasta."
+    ],
+    "sub_recipes": []
+  }
+}

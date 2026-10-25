@@ -60,8 +60,9 @@ UNIT_ALIASES = {
 
 
 def canonical_unit(unit: str) -> str | None:
-    """"Tablespoons" → "tbsp"; None for a unit outside the known list."""
-    return UNIT_ALIASES.get(re.sub(r"\s+", " ", unit.strip().lower().rstrip(".")))
+    """"Tablespoons" → "tbsp", "cup of" → "cup"; None for a unit outside the known list."""
+    text = re.sub(r"\s+", " ", unit.strip().lower().rstrip("."))
+    return UNIT_ALIASES.get(re.sub(r" of$", "", text))
 
 
 def spell_numbers(text: str) -> str:

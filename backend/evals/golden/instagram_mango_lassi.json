@@ -1,0 +1,67 @@
+{
+  "id": "instagram_mango_lassi",
+  "categories": [
+    "caption",
+    "messy_formatting"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Thirds as Unicode fractions.",
+  "input": {
+    "platform": "instagram",
+    "post_id": "CtLassi2222",
+    "url": "https://www.instagram.com/p/CtLassi2222/",
+    "author_handle": "chai.and.co",
+    "caption": "MANGO LASSI 🥭 (serves 2)\n- 1⅓ cups mango pulp\n- ⅔ cup plain yogurt\n- ½ cup milk\n- sugar, to taste\n- pinch of cardamom\nBlend everything until smooth. Serve cold!",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "MANGO LASSI",
+    "servings": 2,
+    "ingredients": [
+      {
+        "raw_text": "1⅓ cups mango pulp",
+        "name": "mango pulp",
+        "quantity": 1.333,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "⅔ cup plain yogurt",
+        "name": "plain yogurt",
+        "quantity": 0.667,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "½ cup milk",
+        "name": "milk",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "sugar, to taste",
+        "name": "sugar",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "pinch of cardamom",
+        "name": "cardamom",
+        "quantity": null,
+        "unit": "pinch",
+        "note": null
+      }
+    ],
+    "steps": [
+      "Blend everything until smooth.",
+      "Serve cold!"
+    ],
+    "sub_recipes": []
+  }
+}

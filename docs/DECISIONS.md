@@ -934,3 +934,28 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   sub-recipes, messy formatting, sanity flags, servings, confidence, retry, rendering,
   API); 290 total against PostgreSQL. No live model call yet: the eval baseline comes in
   the evals slice.
+
+## 2026-10-24: Golden-set evals with per-category scores (`backend/evals/`)
+
+- **Context:** Andrew's spec asks for a golden dataset (one JSON per case, tagged by
+  category), metrics per category, one command that writes results and diffs against
+  the previous run, and a recorded baseline. The old `backend/eval/` scored 14 captions
+  on counts only.
+- **Decision:**
+  - `backend/evals/golden/*.json`: 30 cases. The old 14 are relabelled to the
+    ParsedRecipe shape (names, canonical units, notes, step text, sub-recipes), plus 16
+    synthetic Instagram/TikTok cases covering transcripts, comments, link in bio,
+    non-recipes, sub-recipes and messy formatting. Only one is a real post; the owner
+    will add real posts.
+  - `python -m evals.run fake|anthropic` scores the validated draft with is_recipe
+    accuracy, title, ingredient-name precision/recall, quantity+unit on matched names,
+    steps 1–5, sub-recipe count and recall, servings and injected words. Results are
+    written to `evals/results/<timestamp>-<provider>.json` and diffed against the last
+    run.
+  - The title and step judge is Claude Haiku 5.5 (the project's model, about $0.003 a
+    run). `--no-judge` uses a deterministic fuzzy fallback.
+  - The old harness stays, marked superseded.
+- **Baseline (prompt-7, Haiku 5.5):** 100% recipe detection, 99% ingredient recall,
+  95% quantity+unit, steps 4.92/5, $0.023 a run. See `backend/evals/RESULTS.md`.
+- **Fixed on the way:** `canonical_unit` now accepts "cup of" (Haiku returned it).
+- **Revisit:** When real posts are added; before any prompt, model or validator change.

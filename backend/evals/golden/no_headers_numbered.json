@@ -1,0 +1,74 @@
+{
+  "id": "no_headers_numbered",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. No stated dish name ('the easiest banana bread ever' is chatter-like; title left null as in the old label).",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "the easiest banana bread ever 🍌\n3 ripe bananas, 1/3 cup melted butter, 3/4 cup sugar, 1 egg, 1 tsp baking soda, 1 1/2 cups flour\n1) mash bananas and mix in butter\n2) stir in sugar, egg and baking soda\n3) fold in flour and bake at 350F for 60 minutes",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "3 ripe bananas",
+        "name": "bananas",
+        "quantity": 3,
+        "unit": null,
+        "note": "ripe"
+      },
+      {
+        "raw_text": "1/3 cup melted butter",
+        "name": "butter",
+        "quantity": 0.333,
+        "unit": "cup",
+        "note": "melted"
+      },
+      {
+        "raw_text": "3/4 cup sugar",
+        "name": "sugar",
+        "quantity": 0.75,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 egg",
+        "name": "egg",
+        "quantity": 1,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "1 tsp baking soda",
+        "name": "baking soda",
+        "quantity": 1,
+        "unit": "tsp",
+        "note": null
+      },
+      {
+        "raw_text": "1 1/2 cups flour",
+        "name": "flour",
+        "quantity": 1.5,
+        "unit": "cup",
+        "note": null
+      }
+    ],
+    "steps": [
+      "mash bananas and mix in butter",
+      "stir in sugar, egg and baking soda",
+      "fold in flour and bake at 350F for 60 minutes"
+    ],
+    "sub_recipes": []
+  }
+}

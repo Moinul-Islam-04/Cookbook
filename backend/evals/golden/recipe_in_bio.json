@@ -1,0 +1,27 @@
+{
+  "id": "recipe_in_bio",
+  "categories": [
+    "link_in_bio"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. Was is_recipe=false under prompt-6; prompt-7 (Andrew's spec) calls a link-in-bio post a recipe with no content.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "These brown butter cookies broke the internet 🍪🔥 Full recipe at the link in my bio! Comment COOKIE and I'll DM it to you. #cookies #baking",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": []
+  }
+}

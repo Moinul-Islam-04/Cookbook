@@ -1,0 +1,82 @@
+{
+  "id": "tiktok_messy_cookies",
+  "categories": [
+    "caption",
+    "messy_formatting"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. Emoji bullets, 'c' for cup, fractions glued to numbers, vague amounts.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7307890123456789012",
+    "url": "https://www.tiktok.com/@cookie.queen/video/7307890123456789012",
+    "author_handle": "cookie.queen",
+    "caption": "BROWN BUTTER CHOC CHIP COOKIES 🍪\n🔸1c butter, browned\n🔸1½c brown sugar\n🔸2 eggs\n🔸2¼c flour\n🔸1 tsp baking soda\n🔸a splash of vanilla\n🔸chocolate chips (as many as u want lol)\n➡️ cream butter + sugar, beat in eggs + vanilla\n➡️ fold in flour, soda + chips\n➡️ bake 350F 10-12 min\nmakes 24!!",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "BROWN BUTTER CHOC CHIP COOKIES",
+    "servings": 24,
+    "ingredients": [
+      {
+        "raw_text": "1c butter, browned",
+        "name": "butter",
+        "quantity": 1,
+        "unit": "cup",
+        "note": "browned"
+      },
+      {
+        "raw_text": "1½c brown sugar",
+        "name": "brown sugar",
+        "quantity": 1.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "2 eggs",
+        "name": "eggs",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "2¼c flour",
+        "name": "flour",
+        "quantity": 2.25,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1 tsp baking soda",
+        "name": "baking soda",
+        "quantity": 1,
+        "unit": "tsp",
+        "note": null
+      },
+      {
+        "raw_text": "a splash of vanilla",
+        "name": "vanilla",
+        "quantity": null,
+        "unit": "splash",
+        "note": null
+      },
+      {
+        "raw_text": "chocolate chips (as many as u want lol)",
+        "name": "chocolate chips",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "cream butter + sugar, beat in eggs + vanilla",
+      "fold in flour, soda + chips",
+      "bake 350F 10-12 min"
+    ],
+    "sub_recipes": []
+  }
+}

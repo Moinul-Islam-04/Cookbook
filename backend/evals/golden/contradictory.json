@@ -1,0 +1,59 @@
+{
+  "id": "contradictory",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. The EDIT line contradicts the list; the label keeps what the ingredient line says (2 eggs).",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Brownies!\nIngredients\n- 1 cup sugar\n- 1/2 cup cocoa\n- 2 eggs\n- 1/2 cup butter\nSteps\n- Mix everything.\n- Bake 25 min.\n\nEDIT: use 3 eggs not 2, they come out fudgier",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Brownies!",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "1 cup sugar",
+        "name": "sugar",
+        "quantity": 1,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "1/2 cup cocoa",
+        "name": "cocoa",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "2 eggs",
+        "name": "eggs",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "1/2 cup butter",
+        "name": "butter",
+        "quantity": 0.5,
+        "unit": "cup",
+        "note": null
+      }
+    ],
+    "steps": [
+      "Mix everything.",
+      "Bake 25 min."
+    ],
+    "sub_recipes": []
+  }
+}

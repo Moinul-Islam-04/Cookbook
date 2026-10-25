@@ -1,0 +1,51 @@
+{
+  "id": "inline_prose",
+  "categories": [
+    "caption"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Tomato pasta: pasta, 2 tomatoes, olive oil. Cook pasta, toss with tomatoes and oil.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Tomato pasta",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "pasta",
+        "name": "pasta",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "2 tomatoes",
+        "name": "tomatoes",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "olive oil",
+        "name": "olive oil",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Cook pasta, toss with tomatoes and oil."
+    ],
+    "sub_recipes": []
+  }
+}

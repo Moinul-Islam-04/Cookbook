@@ -1,4 +1,8 @@
-# Extraction evaluation
+# Extraction evaluation (superseded)
+
+> **Superseded by [`backend/evals/`](../evals/RESULTS.md)** (2026-10-24): 30 golden cases
+> across Instagram, TikTok, transcripts, comments and sub-recipes, scored per category
+> with an LLM judge. This older harness and its log are kept for history.
 
 `eval/captions.json` holds 14 hand-labelled captions (13 written for the eval, plus one
 real reel that failed in the app; see the 2026-10-15 run below):

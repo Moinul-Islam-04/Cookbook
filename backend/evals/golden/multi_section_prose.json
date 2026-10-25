@@ -1,0 +1,156 @@
+{
+  "id": "multi_section_prose",
+  "categories": [
+    "caption",
+    "sub_recipe"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. Relabelled for prompt-7: each section has its own ingredients and steps, so it's a sub-recipe; ingredients named inside sentences (salt, pepper, sugar, rice) count, per the prompt.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "Crispy sesame tofu bowls 🥢\n\nHonestly the best thing I've made all month, you HAVE to try it.\n\nRecipe\n\nCrispy tofu\nToss your tofu cubes in cornstarch, salt and pepper. Air fry at 400F for 15min shaking halfway.\n\nSesame glaze\nIn a pan add\n2 tbsp sesame oil\n3 tbsp maple syrup\n1/4 cup of soy sauce\n2 garlic cloves minced\n1 tsp chili flakes\nSimmer until thick, then toss the tofu in it.\n\nQuick slaw\nShred cabbage and carrot, add 2 tbsp rice vinegar and a pinch of sugar. Serve everything over rice.",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "Crispy sesame tofu bowls",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "rice",
+        "name": "rice",
+        "quantity": null,
+        "unit": null,
+        "note": null
+      }
+    ],
+    "steps": [
+      "Serve everything over rice."
+    ],
+    "sub_recipes": [
+      {
+        "title": "Crispy tofu",
+        "ingredients": [
+          {
+            "raw_text": "tofu cubes",
+            "name": "tofu",
+            "quantity": null,
+            "unit": null,
+            "note": "cubes"
+          },
+          {
+            "raw_text": "cornstarch",
+            "name": "cornstarch",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          },
+          {
+            "raw_text": "salt",
+            "name": "salt",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          },
+          {
+            "raw_text": "pepper",
+            "name": "pepper",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          }
+        ],
+        "steps": [
+          "Toss your tofu cubes in cornstarch, salt and pepper.",
+          "Air fry at 400F for 15min shaking halfway."
+        ]
+      },
+      {
+        "title": "Sesame glaze",
+        "ingredients": [
+          {
+            "raw_text": "2 tbsp sesame oil",
+            "name": "sesame oil",
+            "quantity": 2,
+            "unit": "tbsp",
+            "note": null
+          },
+          {
+            "raw_text": "3 tbsp maple syrup",
+            "name": "maple syrup",
+            "quantity": 3,
+            "unit": "tbsp",
+            "note": null
+          },
+          {
+            "raw_text": "1/4 cup of soy sauce",
+            "name": "soy sauce",
+            "quantity": 0.25,
+            "unit": "cup",
+            "note": null
+          },
+          {
+            "raw_text": "2 garlic cloves minced",
+            "name": "garlic",
+            "quantity": 2,
+            "unit": "clove",
+            "note": "minced"
+          },
+          {
+            "raw_text": "1 tsp chili flakes",
+            "name": "chili flakes",
+            "quantity": 1,
+            "unit": "tsp",
+            "note": null
+          }
+        ],
+        "steps": [
+          "In a pan add",
+          "Simmer until thick, then toss the tofu in it."
+        ]
+      },
+      {
+        "title": "Quick slaw",
+        "ingredients": [
+          {
+            "raw_text": "cabbage",
+            "name": "cabbage",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          },
+          {
+            "raw_text": "carrot",
+            "name": "carrot",
+            "quantity": null,
+            "unit": null,
+            "note": null
+          },
+          {
+            "raw_text": "2 tbsp rice vinegar",
+            "name": "rice vinegar",
+            "quantity": 2,
+            "unit": "tbsp",
+            "note": null
+          },
+          {
+            "raw_text": "a pinch of sugar",
+            "name": "sugar",
+            "quantity": null,
+            "unit": "pinch",
+            "note": null
+          }
+        ],
+        "steps": [
+          "Shred cabbage and carrot, add 2 tbsp rice vinegar and a pinch of sugar."
+        ]
+      }
+    ]
+  }
+}

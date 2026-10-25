@@ -1,0 +1,27 @@
+{
+  "id": "tiktok_blog_link",
+  "categories": [
+    "link_in_bio"
+  ],
+  "synthetic": true,
+  "notes": "Synthetic (2026-10-24): written for the eval, not a real post. A recipe whose content is elsewhere: is_recipe true, nothing to extract.",
+  "input": {
+    "platform": "tiktok",
+    "post_id": "7304567890123456789",
+    "url": "https://www.tiktok.com/@highprotein.hana/video/7304567890123456789",
+    "author_handle": "highprotein.hana",
+    "caption": "the viral cottage cheese flatbread 🫓 full recipe is on my blog, link in bio!",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": null,
+    "servings": null,
+    "ingredients": [],
+    "steps": [],
+    "sub_recipes": []
+  }
+}

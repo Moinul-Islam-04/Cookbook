@@ -1,0 +1,68 @@
+{
+  "id": "emoji_bullets_unicode",
+  "categories": [
+    "caption",
+    "messy_formatting"
+  ],
+  "synthetic": true,
+  "notes": "Written for the eval (2026-10-14), converted from eval/captions.json. 'juice of ½ lemon': the number in raw_text is ½ (prompt-7 rule), so quantity 0.5 of lemon.",
+  "input": {
+    "platform": null,
+    "post_id": null,
+    "url": null,
+    "author_handle": null,
+    "caption": "HONEY GARLIC SALMON 🍯🐟\n\n✨ What you need ✨\n🐟 2 salmon fillets\n🍯 ¼ cup honey\n🧄 4 cloves garlic\n🥢 3 tbsp soy sauce\n🍋 juice of ½ lemon\n\n👩‍🍳 How to make it\n➡️ Mix honey, garlic, soy and lemon\n➡️ Pour over salmon\n➡️ Bake 12-15 min at 400°F\n\nTag someone who needs this! #salmon",
+    "transcript": null,
+    "top_comments": [],
+    "media_urls": [],
+    "posted_at": null
+  },
+  "expected": {
+    "is_recipe": true,
+    "title": "HONEY GARLIC SALMON",
+    "servings": null,
+    "ingredients": [
+      {
+        "raw_text": "2 salmon fillets",
+        "name": "salmon fillets",
+        "quantity": 2,
+        "unit": null,
+        "note": null
+      },
+      {
+        "raw_text": "¼ cup honey",
+        "name": "honey",
+        "quantity": 0.25,
+        "unit": "cup",
+        "note": null
+      },
+      {
+        "raw_text": "4 cloves garlic",
+        "name": "garlic",
+        "quantity": 4,
+        "unit": "clove",
+        "note": null
+      },
+      {
+        "raw_text": "3 tbsp soy sauce",
+        "name": "soy sauce",
+        "quantity": 3,
+        "unit": "tbsp",
+        "note": null
+      },
+      {
+        "raw_text": "juice of ½ lemon",
+        "name": "lemon",
+        "quantity": 0.5,
+        "unit": null,
+        "note": "juice of"
+      }
+    ],
+    "steps": [
+      "Mix honey, garlic, soy and lemon",
+      "Pour over salmon",
+      "Bake 12-15 min at 400°F"
+    ],
+    "sub_recipes": []
+  }
+}
