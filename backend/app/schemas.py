@@ -29,6 +29,9 @@ IngredientName = Annotated[
 Unit = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
 RawText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 Notes = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+# One ingredient's preparation or descriptor: "heaping", "finely chopped".
+Note = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+Servings = Annotated[int, Field(ge=1, le=1000)]
 SourceUrl = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2048)]
 Instruction = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
@@ -58,8 +61,9 @@ class IngredientIn(RequestModel):
     # What the user (or later, the source caption) actually wrote, e.g. "salt to taste".
     # If omitted, the server composes it from quantity/unit/name.
     raw_text: RawText | None = None
+    note: Note | None = None
 
-    _blank_optional = field_validator("unit", "raw_text", mode="before")(_blank_to_none)
+    _blank_optional = field_validator("unit", "raw_text", "note", mode="before")(_blank_to_none)
 
 
 class StepIn(RequestModel):
@@ -72,6 +76,9 @@ class RecipeCreate(RequestModel):
     draft_id: uuid.UUID | None = None
     title: Title
     notes: Notes | None = None
+    # Only what the source or the user states. When saving a draft and omitted, the
+    # draft's servings are used.
+    servings: Servings | None = None
     # An Instagram post/reel or TikTok post link. Normalized by the server; other hosts are rejected.
     source_url: SourceUrl | None = None
     # Save even if this post is already in the cookbook (the user chose "Save Anyway").
@@ -89,6 +96,8 @@ class RecipePatch(RequestModel):
     version: int = Field(ge=1)
     title: Title | None = None
     notes: Notes | None = None
+    # null clears it.
+    servings: Servings | None = None
     # null clears the link.
     source_url: SourceUrl | None = None
     allow_duplicate: bool = False
@@ -114,6 +123,7 @@ class IngredientOut(BaseModel):
     quantity: Quantity | None
     unit: str | None
     raw_text: str
+    note: str | None = None
 
 
 class StepOut(BaseModel):
@@ -139,6 +149,7 @@ class RecipeOut(BaseModel):
     id: uuid.UUID
     title: str
     notes: str | None
+    servings: int | None = None
     source_kind: str
     source_url: str | None
     created_at: datetime
@@ -276,9 +287,6 @@ class ImportDraftCreate(RequestModel):
     media_urls: list[MediaUrl] = Field(default_factory=list, max_length=MAX_MEDIA_URLS)
 
     _blank_optional = field_validator("source_url", "transcript", "author_handle", mode="before")(_blank_to_none)
-
-
-Note = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
 
 class IngredientDraftIn(RequestModel):

@@ -934,3 +934,16 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   sub-recipes, messy formatting, sanity flags, servings, confidence, retry, rendering,
   API); 290 total against PostgreSQL. No live model call yet: the eval baseline comes in
   the evals slice.
+
+## 2026-10-24: Servings and ingredient notes are saved on recipes (migration 0008)
+
+- **Decision:** `recipes.servings` (1–1000, nullable) and `recipe_ingredients.note`
+  (nullable, not blank) map the ParsedRecipe onto the existing tables. The recipe API
+  accepts and returns both; PATCH with `servings: null` clears it. Saving a draft without
+  `servings` uses the draft's, so the current iOS app (which sends neither) keeps
+  servings the post stated. Notes from a draft are saved only once the app sends them
+  (iOS round). `raw_text` still holds the full line either way.
+- **Sub-recipes are not saved as separate recipes** (owner's choice): their rows join
+  the parent's ingredients and steps, in draft order. The grouping survives in
+  `extracted_content`.
+- **Verified:** 6 new tests (296 total); migration round trip and `alembic check` clean.

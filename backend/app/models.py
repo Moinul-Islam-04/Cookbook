@@ -139,6 +139,7 @@ class Recipe(Base):
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
+    servings: Mapped[int | None] = mapped_column(Integer)
     source_kind: Mapped[str] = mapped_column(
         Text, nullable=False, default="manual", server_default="manual"
     )
@@ -182,6 +183,7 @@ class Recipe(Base):
     __table_args__ = (
         CheckConstraint("btrim(title) <> ''", name="title_not_blank"),
         CheckConstraint("char_length(title) <= 200", name="title_length"),
+        CheckConstraint("servings BETWEEN 1 AND 1000", name="servings_range"),
         CheckConstraint("source_kind IN ('manual', 'caption')", name="source_kind_valid"),
         CheckConstraint("version >= 1", name="version_positive"),
         # Leading user_id column also serves plain owner lookups.
@@ -281,6 +283,8 @@ class RecipeIngredient(Base):
     quantity: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
     unit: Mapped[str | None] = mapped_column(Text)
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
+    # "heaping", "finely chopped". Also inside raw_text; kept apart so the name stays clean.
+    note: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (
         # The unique index's leading recipe_id column also serves FK lookups and cascades.
@@ -290,6 +294,7 @@ class RecipeIngredient(Base):
         CheckConstraint("quantity IS NULL OR quantity > 0", name="quantity_positive"),
         CheckConstraint("unit IS NULL OR btrim(unit) <> ''", name="unit_not_blank"),
         CheckConstraint("btrim(raw_text) <> ''", name="raw_text_not_blank"),
+        CheckConstraint("note IS NULL OR btrim(note) <> ''", name="note_not_blank"),
     )
 
 
