@@ -12,7 +12,7 @@ check the draft before saving it. Saved recipes can be searched by title or ingr
   The server never contacts Instagram.
 
 More detail: [product brief](docs/BRIEF.md) · [engineering decisions](docs/DECISIONS.md) ·
-[data flow, end to end](docs/DATA_FLOW.md) ·
+[data flow, end to end](docs/DATA_FLOW.md) · [data modeling primer](docs/DATA_MODELING.md) ·
 [features and verification log](docs/VERIFICATION.md) ·
 [extraction evaluation](backend/eval/RESULTS.md).
 
