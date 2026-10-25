@@ -2,6 +2,8 @@
 
 Used two ways: by the rule-based fallback extractor to split lines, and by the
 validator to check that a model's quantity/unit actually appear in the source line.
+Spoken amounts ("two tablespoons", from a video transcript) count as amounts too;
+vague ones ("a splash", "a handful") never do.
 """
 
 import re
@@ -12,7 +14,8 @@ _UNICODE_FRACTIONS = {
     "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8", "⅕": "1/5", "⅙": "1/6",
 }
 
-# Common recipe units, singular and plural. Matching is case-insensitive and whole-word.
+# Units the rule-based splitter recognizes after an amount, singular and plural.
+# Matching is case-insensitive and whole-word.
 UNITS = {
     "cup", "cups", "c",
     "tbsp", "tbsps", "tablespoon", "tablespoons", "tbs", "tb",
@@ -25,6 +28,46 @@ UNITS = {
     "can", "cans", "pkg", "package", "packages", "stick", "sticks",
     "slice", "slices", "bunch", "bunches", "sprig", "sprigs", "handful", "handfuls",
 }
+
+# Spoken amounts in transcripts. "a"/"an" are left out on purpose: "a splash" has no amount.
+NUMBER_WORDS = {
+    "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6",
+    "seven": "7", "eight": "8", "nine": "9", "ten": "10", "eleven": "11", "twelve": "12",
+    "half": "1/2", "quarter": "1/4",
+}
+_NUMBER_WORD = re.compile(r"\b(" + "|".join(NUMBER_WORDS) + r")\b", re.I)
+
+# Canonical spelling for each known unit. A unit outside this table is kept as written
+# but flagged for review (validate.py).
+UNIT_ALIASES = {
+    "cup": "cup", "cups": "cup", "c": "cup",
+    "tbsp": "tbsp", "tbsps": "tbsp", "tablespoon": "tbsp", "tablespoons": "tbsp", "tbs": "tbsp", "tb": "tbsp",
+    "tsp": "tsp", "tsps": "tsp", "teaspoon": "tsp", "teaspoons": "tsp",
+    "oz": "oz", "ounce": "oz", "ounces": "oz", "fl oz": "fl oz",
+    "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb",
+    "g": "g", "gram": "g", "grams": "g", "gr": "g", "kg": "kg", "kilogram": "kg", "kilograms": "kg",
+    "ml": "ml", "milliliter": "ml", "milliliters": "ml", "millilitre": "ml", "millilitres": "ml",
+    "l": "l", "liter": "l", "liters": "l", "litre": "l", "litres": "l",
+    "pinch": "pinch", "pinches": "pinch", "dash": "dash", "dashes": "dash",
+    "clove": "clove", "cloves": "clove", "can": "can", "cans": "can",
+    "pkg": "package", "package": "package", "packages": "package",
+    "stick": "stick", "sticks": "stick", "slice": "slice", "slices": "slice",
+    "bunch": "bunch", "bunches": "bunch", "sprig": "sprig", "sprigs": "sprig",
+    "handful": "handful", "handfuls": "handful", "piece": "piece", "pieces": "piece",
+    "head": "head", "heads": "head", "jar": "jar", "jars": "jar", "bag": "bag", "bags": "bag",
+    "scoop": "scoop", "scoops": "scoop", "splash": "splash", "drizzle": "drizzle",
+}
+
+
+def canonical_unit(unit: str) -> str | None:
+    """"Tablespoons" → "tbsp"; None for a unit outside the known list."""
+    return UNIT_ALIASES.get(re.sub(r"\s+", " ", unit.strip().lower().rstrip(".")))
+
+
+def spell_numbers(text: str) -> str:
+    """"two tablespoons" → "2 tablespoons", "half a cup" → "1/2 a cup"."""
+    return _NUMBER_WORD.sub(lambda m: NUMBER_WORDS[m.group().lower()], text)
+
 
 # "1 1/2", "1/2", "1.5", "2", "1½" (after unicode expansion: "1 1/2").
 _AMOUNT = re.compile(r"^(?P<amount>\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)(?![\d/.])")
@@ -88,7 +131,7 @@ def split_ingredient_line(line: str) -> tuple[Decimal | None, str | None, str]:
 
 def amounts_in(text: str) -> set[Decimal]:
     """Every amount mentioned anywhere in a line, for checking a model's claimed quantity."""
-    expanded = expand_unicode_fractions(text)
+    expanded = spell_numbers(expand_unicode_fractions(text))
     found = set()
     for m in re.finditer(r"\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?", expanded):
         value = parse_amount(m.group())

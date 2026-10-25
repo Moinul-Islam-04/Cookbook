@@ -205,22 +205,46 @@ class IngredientDraft(BaseModel):
     quantity: Quantity | None = None
     unit: str | None = None
     raw_text: str
+    # "heaping", "finely chopped": read from raw_text, never added.
+    note: str | None = None
+    # Index into DraftContent.sub_recipes when this row belongs to a part made separately
+    # (a sauce); None for the main recipe.
+    sub_recipe: int | None = None
     needs_review: bool = False
-    # e.g. "not_in_source", "quantity_not_in_source", "name_missing"
+    # e.g. "not_in_source", "quantity_not_in_source", "name_missing", "unit_unknown"
     review_reasons: list[str] = []
 
 
 class StepDraft(BaseModel):
     instruction: str
+    sub_recipe: int | None = None
     needs_review: bool = False
     review_reasons: list[str] = []
 
 
+class SubRecipeDraft(BaseModel):
+    # None when the post doesn't name the part.
+    title: str | None = None
+
+
 class DraftContent(BaseModel):
+    """A validated extraction (the spec's ParsedRecipe, after app/extraction/validate.py).
+
+    Sub-recipes are kept flat: their rows sit in `ingredients` and `steps`, tagged with
+    their index in `sub_recipes`, so a saved recipe stays one recipe (DECISIONS 2026-10-24).
+    Fields after `warnings` default for drafts stored before 2026-10-24.
+    """
+
     title: str | None
     ingredients: list[IngredientDraft]
     steps: list[StepDraft]
     warnings: list[DraftWarning]
+    # The model's verdict. A "link in bio" post is a recipe whose content isn't here.
+    is_recipe: bool = True
+    servings: int | None = None
+    sub_recipes: list[SubRecipeDraft] = []
+    source_fields_used: list[str] = []
+    confidence: float | None = None
 
 
 MAX_TRANSCRIPT = 20_000
@@ -254,18 +278,24 @@ class ImportDraftCreate(RequestModel):
     _blank_optional = field_validator("source_url", "transcript", "author_handle", mode="before")(_blank_to_none)
 
 
+Note = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+
+
 class IngredientDraftIn(RequestModel):
     name: IngredientName | None = None
     quantity: Quantity | None = None
     unit: Unit | None = None
     raw_text: RawText
+    note: Note | None = None
+    sub_recipe: int | None = Field(default=None, ge=0)
     needs_review: bool = False
 
-    _blank_optional = field_validator("name", "unit", mode="before")(_blank_to_none)
+    _blank_optional = field_validator("name", "unit", "note", mode="before")(_blank_to_none)
 
 
 class StepDraftIn(RequestModel):
     instruction: Instruction
+    sub_recipe: int | None = Field(default=None, ge=0)
     needs_review: bool = False
 
 
@@ -294,6 +324,8 @@ class ImportDraftOut(BaseModel):
     ingredients: list[IngredientDraft]
     steps: list[StepDraft]
     warnings: list[DraftWarning]
+    servings: int | None = None
+    sub_recipes: list[SubRecipeDraft] = []
     extraction_version: str
     version: int
     saved_recipe_id: uuid.UUID | None

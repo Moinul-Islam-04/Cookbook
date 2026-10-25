@@ -11,6 +11,8 @@ import re
 from collections.abc import Callable
 
 from app.extraction.base import ExtractionOutput, RawIngredient, RawStep
+from app.extraction.source import as_post
+from app.ingest import RawPost
 from app.extraction.quantities import split_ingredient_line
 
 _INGREDIENT_HEADER = re.compile(r"^\W*(ingredients?|you(?:'|’)ll need|what you need)\W*$", re.I)
@@ -29,8 +31,9 @@ def _clean(line: str) -> str:
 class RuleBasedExtractor:
     version = "rules-1"
 
-    def extract(self, source_text: str) -> str:
-        lines = [_clean(l) for l in source_text.splitlines()]
+    def extract(self, post: RawPost | str) -> str:
+        # Captions only: transcripts and comments have no layout to read.
+        lines = [_clean(l) for l in as_post(post).caption.splitlines()]
         lines = [l for l in lines if l and not _HASHTAG_LINE.match(l)]
 
         title = None
@@ -70,12 +73,13 @@ class RuleBasedExtractor:
             title=title if (ingredients or steps) else None,
             ingredients=ingredients,
             steps=steps,
+            source_fields_used=["caption"] if (ingredients or steps) else [],
         )
         return output.model_dump_json()
 
 
 class FakeExtractor:
-    """Canned responses keyed by exact caption; a callable can raise or stall."""
+    """Canned responses keyed by exact caption; a callable can raise, stall or vary."""
 
     version = "fake-1"
 
@@ -88,11 +92,12 @@ class FakeExtractor:
         self.fallback = fallback or RuleBasedExtractor()
         self.calls: list[str] = []
 
-    def extract(self, source_text: str) -> str:
-        self.calls.append(source_text)
-        response = self.responses.get(source_text)
+    def extract(self, post: RawPost | str) -> str:
+        caption = as_post(post).caption
+        self.calls.append(caption)
+        response = self.responses.get(caption)
         if response is None:
-            return self.fallback.extract(source_text)
+            return self.fallback.extract(post)
         if callable(response):
             return response()
         return response if isinstance(response, str) else json.dumps(response)

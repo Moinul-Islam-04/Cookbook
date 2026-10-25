@@ -894,3 +894,43 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   total against PostgreSQL; migration round trip and `alembic check` clean.
 - **Not done yet:** extraction still reads only the caption; transcript and comments
   reach the model in the next slice. iOS doesn't send the new fields or open TikTok links.
+
+## 2026-10-24: Extraction returns a ParsedRecipe from the whole post (prompt-7)
+
+- **Context:** Andrew's spec: one shared extractor over the RawPost that handles a recipe
+  in the caption, the transcript or the comments; "link in bio"; non-recipes such as
+  restaurant reviews and mukbangs; sub-recipes; emoji bullets, fractions and vague
+  amounts. Output: `is_recipe`, `title`, `servings`, ingredients with `note`, steps,
+  `sub_recipes`, `source_fields_used`, `confidence`. Validation: schema check with one
+  retry, positive amounts, units from a known list, a title if it's a recipe.
+- **Decision:**
+  - Providers take a `RawPost`. The model sees `<caption>`, `<transcript>` and
+    `<comments>` blocks (`app/extraction/source.py`), and the fidelity check runs against
+    all three, so rows from a comment or the transcript aren't flagged.
+  - `ExtractionOutput` (`app/extraction/base.py`) is the ParsedRecipe. Sub-recipes are one
+    level deep: structured outputs need a finite schema, and no case needs more.
+  - **Sub-recipes stay inside one recipe (owner's choice).** The draft keeps them flat:
+    their rows sit in `ingredients`/`steps` with a `sub_recipe` index into
+    `sub_recipes: [{title}]`. Saved recipes stay one-to-many. A many-to-many
+    `recipe_components` design is measured separately in `backend/lab/`.
+  - Validation (`app/extraction/validate.py`):
+    - Units map to one spelling (`tablespoons` → `tbsp`, `cloves` → `clove`).
+      Unknown units are kept and flagged `unit_unknown`.
+    - Spoken numbers ("two tablespoons") count as amounts; "a"/"a splash" never do.
+    - A `note` must come from the ingredient's own text.
+    - `servings` is kept only when the post states it ("serves 4", "makes 12").
+    - `confidence` is clamped to 0–1, and below 0.5 adds a `low_confidence` warning.
+    - `source_fields_used` is limited to the blocks that were actually sent.
+    - "Link in bio" (`is_recipe` true, nothing found, and the post mentions a
+      bio/link/blog/comments) adds `recipe_elsewhere` next to `no_recipe_found`.
+  - `run_extraction` retries malformed output once when at least 10 s of the deadline
+    remain, then logs and returns the existing 502.
+  - The draft API adds `servings`, `sub_recipes`, and `note`/`sub_recipe` on rows. All
+    are optional for the iOS app, which ignores unknown fields. The needs-review message
+    keeps its wording because an iOS UI test checks it.
+- **Consequence:** Unit spelling changes what a draft shows ("cup" instead of "cups").
+  The app displays `raw_text`, so the visible ingredient line is unchanged.
+- **Verified:** 29 new tests (transcript-only, comments, link in bio, mukbang,
+  sub-recipes, messy formatting, sanity flags, servings, confidence, retry, rendering,
+  API); 290 total against PostgreSQL. No live model call yet: the eval baseline comes in
+  the evals slice.

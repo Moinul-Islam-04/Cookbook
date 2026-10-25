@@ -1,6 +1,6 @@
 """Hosted-model provider: Claude (default Haiku 5.5) through the Anthropic API.
 
-The caption is sent to Anthropic and each call costs money (about
+The post (caption, and any transcript and comments) is sent to Anthropic and each call costs money (about
 $0.10 per million input tokens and $0.50 per million output tokens). Structured outputs
 constrain the reply to the ExtractionOutput JSON schema; the output still goes through
 validate.py like any other provider's.
@@ -19,6 +19,8 @@ from app.extraction.base import (
     ProviderUnreachable,
 )
 from app.extraction.prompt import PROMPT_VERSION, SYSTEM_PROMPT
+from app.extraction.source import as_post, render_post
+from app.ingest import RawPost
 
 # Room for adaptive thinking plus the JSON; a long reel's JSON is about 1,500 tokens.
 _MAX_OUTPUT_TOKENS = 8000
@@ -50,13 +52,14 @@ class AnthropicExtractor:
         # (input_tokens, output_tokens) of the last call, for the eval's cost column.
         self.last_usage: tuple[int, int] | None = None
 
-    def extract(self, source_text: str) -> str:
+    def extract(self, post: RawPost | str) -> str:
+        user_content = render_post(as_post(post))
         deadline = time.monotonic() + self._budget_s
         retried = False
         while True:
             read_s = min(_ATTEMPT_READ_S, deadline - time.monotonic() - _CONNECT_S)
             try:
-                msg = self._call(source_text, read_s)
+                msg = self._call(user_content, read_s)
                 break
             except anthropic.APIError as e:
                 delay = _retry_delay(e)
@@ -77,14 +80,14 @@ class AnthropicExtractor:
         # A max_tokens cut leaves truncated JSON, which the validator rejects as malformed.
         return text
 
-    def _call(self, source_text: str, read_s: float):
+    def _call(self, user_content: str, read_s: float):
         return self._client.messages.create(
             model=self.model,
             max_tokens=_MAX_OUTPUT_TOKENS,
             system=SYSTEM_PROMPT,
             # At "low", Haiku sometimes split a paragraph's sentences into clauses (eval, prompt-6).
             output_config={"effort": "medium", "format": {"type": "json_schema", "schema": self._schema}},
-            messages=[{"role": "user", "content": f"<caption>\n{source_text}\n</caption>"}],
+            messages=[{"role": "user", "content": user_content}],
             timeout=anthropic.Timeout(max(read_s, 0.1), connect=_CONNECT_S),
         )
 
