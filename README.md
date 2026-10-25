@@ -29,7 +29,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 261 passed (the test DB is dropped and recreated)
+pytest -q                       # 290 passed (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -87,11 +87,11 @@ Instagram access spike was never run.
 | Import | Paste a caption, or open an Instagram link in the in-app browser. Claude Haiku drafts it (about 3 s; the server gives up after 30 s), you review flagged rows, then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. Imports are limited to 20 an hour and 100 a day per user, and 300 a day across everyone; past a limit the app says so, and manual entry still works. A saved import keeps what Claude produced (never shown in the app), and `python -m app.corrections` reports how much users corrected it. |
 | Share extension | Share → **Cookbook** from Safari or Instagram. **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
-| Post pipeline (backend) | Imports are normalized into a stored `RawPost` (Instagram or TikTok link, caption, optional transcript and comments) before extraction; see DECISIONS 2026-10-24. TikTok links are accepted by the API but the app doesn't open them yet. |
+| Post pipeline (backend) | Imports are normalized into a stored `RawPost` (Instagram or TikTok link, caption, optional transcript and comments) before extraction. Claude reads the caption, transcript and comments into a ParsedRecipe (servings, notes, sub-recipes, confidence; prompt-7); see DECISIONS 2026-10-24. TikTok links are accepted by the API but the app doesn't open them yet. |
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
-- Backend: 261 tests against PostgreSQL.
+- Backend: 290 tests against PostgreSQL.
 - iOS: 74 XCTest tests, plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.

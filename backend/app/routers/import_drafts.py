@@ -32,6 +32,7 @@ from app.routers.recipes import _parse_source
 from app.schemas import (
     DraftContent,
     DraftWarning,
+    FieldError,
     ImportDraftCreate,
     ImportDraftOut,
     ImportDraftPatch,
@@ -58,6 +59,8 @@ def _to_out(draft: ImportDraft) -> ImportDraftOut:
         ingredients=content.ingredients,
         steps=content.steps,
         warnings=content.warnings,
+        servings=content.servings,
+        sub_recipes=content.sub_recipes,
         extraction_version=draft.extraction_version,
         version=draft.version,
         saved_recipe_id=draft.saved_recipe_id,
@@ -109,7 +112,7 @@ def create_draft(body: ImportDraftCreate, request: Request, db: DbSession, user_
     # Extraction runs before any DB write, so a provider failure leaves nothing behind.
     # The client still has the caption and can retry or enter the recipe manually.
     try:
-        content = run_extraction(extractor, raw.caption, settings.extraction_timeout_s)
+        content = run_extraction(extractor, raw, settings.extraction_timeout_s)
     except ExtractionTimeout:
         raise ApiError(504, "extraction_timeout", "Reading the caption took too long. Try again, or enter it manually.", retryable=True) from None
     except MalformedOutput:
@@ -183,6 +186,14 @@ def update_draft(draft_id: uuid.UUID, body: ImportDraftPatch, db: DbSession, use
         )
     content = DraftContent.model_validate(draft.content)
     fields = body.model_fields_set
+    bad = [
+        FieldError(field=f"{name}.{i}.sub_recipe", message="No sub-recipe with this index in the draft.")
+        for name in ("ingredients", "steps") if name in fields
+        for i, row in enumerate(getattr(body, name))
+        if row.sub_recipe is not None and row.sub_recipe >= len(content.sub_recipes)
+    ]
+    if bad:
+        raise ApiError(422, "invalid_request", "Some fields are invalid.", field_errors=bad)
     if "title" in fields:
         content.title = body.title
     if "ingredients" in fields:

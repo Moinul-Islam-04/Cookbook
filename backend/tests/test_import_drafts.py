@@ -288,7 +288,7 @@ def test_rule_based_extractor_reads_a_typical_caption() -> None:
     assert d["title"] == "Creamy Garlic Pasta"
     assert [(i["quantity"], i["unit"], i["name"]) for i in d["ingredients"]] == [
         (8.0, "oz", "spaghetti"),
-        (3.0, "cloves", "garlic, minced"),
+        (3.0, "clove", "garlic, minced"),  # units come back in one spelling
         (0.5, "cup", "parmesan"),
         (None, None, "salt to taste"),
     ]
@@ -501,7 +501,7 @@ def test_anthropic_adapter_sends_strict_schema_and_caption_as_data() -> None:
     raw = ex.extract(BRIEF_CAPTION)
     # The text block is returned even when a thinking block comes first.
     assert json.loads(raw) == BRIEF_OUTPUT
-    assert ex.version == "anthropic:claude-haiku-5-5:prompt-6"
+    assert ex.version == "anthropic:claude-haiku-5-5:prompt-7"
     assert ex.last_usage == (900, 300)
     assert seen["key"] == "sk-ant-test" and seen["model"] == "claude-haiku-5-5"
     # Haiku 5.5 rejects non-default sampling parameters.
@@ -510,9 +510,12 @@ def test_anthropic_adapter_sends_strict_schema_and_caption_as_data() -> None:
     schema = seen["output_config"]["format"]["schema"]
     assert seen["output_config"]["format"]["type"] == "json_schema"
     ingredient = schema["$defs"]["RawIngredient"]
-    assert set(ingredient["required"]) == {"raw_text", "name", "quantity", "unit"}
+    assert set(ingredient["required"]) == {"raw_text", "name", "quantity", "unit", "note"}
     assert ingredient["additionalProperties"] is False and schema["additionalProperties"] is False
-    assert set(schema["required"]) == {"is_recipe", "title", "ingredients", "steps"}
+    assert set(schema["required"]) == {
+        "is_recipe", "title", "servings", "ingredients", "steps", "sub_recipes", "source_fields_used", "confidence"
+    }
+    assert schema["$defs"]["SubRecipeOutput"]["additionalProperties"] is False
     # The "title" property survives; pydantic's title annotations don't.
     assert "title" in schema["properties"] and "title" not in ingredient
 
@@ -665,7 +668,7 @@ def test_fields_the_model_left_empty_are_read_from_the_line() -> None:
         {"raw_text": "3 cloves garlic, minced"}, {"raw_text": "1 egg"}, {"raw_text": "salt to taste"}],
         "steps": [{"instruction": "Mix."}]})
     assert [(i["quantity"], i["unit"], i["name"]) for i in d["ingredients"]] == [
-        (3.0, "cloves", "garlic, minced"), (1.0, None, "egg"), (None, None, "salt to taste")]
+        (3.0, "clove", "garlic, minced"), (1.0, None, "egg"), (None, None, "salt to taste")]
     assert not any(i["needs_review"] for i in d["ingredients"])
 
 

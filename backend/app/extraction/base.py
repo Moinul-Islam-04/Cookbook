@@ -1,13 +1,17 @@
 """The extraction contract every provider (fake, local model, hosted model) implements.
 
-A provider turns caption text into a JSON string shaped like `ExtractionOutput`. It
-returns the *raw* string, so the same validator (validate.py) handles every provider's
-malformed or unfaithful output. Providers never see the database or the user.
+A provider turns a post (app/ingest RawPost: caption, optional transcript and comments)
+into a JSON string shaped like `ExtractionOutput`, the spec's ParsedRecipe. It returns
+the *raw* string, so the same validator (validate.py) handles every provider's malformed
+or unfaithful output. Providers never see the database or the user.
 """
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from app.ingest import RawPost
 
 
 class ExtractionError(Exception):
@@ -30,7 +34,7 @@ class Extractor(Protocol):
     # Stored on every draft so output can be traced to the provider and prompt version.
     version: str
 
-    def extract(self, source_text: str) -> str: ...
+    def extract(self, post: "RawPost | str") -> str: ...
 
 
 # ---- the JSON shape providers are asked to return (and LLMs will be prompted with) ----
@@ -43,6 +47,8 @@ class RawIngredient(BaseModel):
     name: str | None = None
     quantity: float | str | None = None
     unit: str | None = None
+    # Preparation or descriptor from raw_text: "heaping", "finely chopped".
+    note: str | None = None
 
 
 class RawStep(BaseModel):
@@ -51,10 +57,29 @@ class RawStep(BaseModel):
     instruction: str
 
 
+SourceField = Literal["caption", "transcript", "comments"]
+
+
+class SubRecipeOutput(BaseModel):
+    """A part made separately (a sauce, a marinade). One level deep: structured outputs
+    need a finite schema, and no eval case has needed more."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    title: str | None = None
+    ingredients: list[RawIngredient] = []
+    steps: list[RawStep] = []
+
+
 class ExtractionOutput(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     is_recipe: bool
     title: str | None = None
+    servings: int | None = None
     ingredients: list[RawIngredient] = []
     steps: list[RawStep] = []
+    sub_recipes: list[SubRecipeOutput] = []
+    source_fields_used: list[SourceField] = []
+    # The model's own 0-1 estimate; validate.py clamps it and never trusts it for fidelity.
+    confidence: float | None = Field(default=None)
