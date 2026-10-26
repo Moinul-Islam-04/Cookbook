@@ -119,7 +119,7 @@ nonisolated struct RecipeCreate: Encodable, Equatable {
     /// Always sent, null included: when saving a draft, an omitted key means "use the
     /// draft's servings", which would undo the user clearing them.
     var servings: Int?
-    /// An Instagram post or reel link; the server normalizes it and rejects other hosts.
+    /// An Instagram or TikTok post link; the server normalizes it and rejects other hosts.
     var sourceUrl: String?
     /// True after the user chose "Save Anyway" on a duplicate-post warning.
     var allowDuplicate = false

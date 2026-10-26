@@ -41,7 +41,7 @@ final class ShareExtensionFlow: XCTestCase {
 
     func testSharingAnotherLinkExplainsAndStaysPut() throws {
         share("https://example.com/recipes/garlic-noodles", prefix: "other")
-        let message = safari.staticTexts["Not an Instagram post"]
+        let message = safari.staticTexts["Not an Instagram or TikTok post"]
         if !message.waitForExistence(timeout: 15) { snap("other-FAILED-no-message"); XCTFail("no message") }
         snap("other-3-extension-not-instagram")
         XCTAssertNotEqual(app.state, .runningForeground, "the app must not open")

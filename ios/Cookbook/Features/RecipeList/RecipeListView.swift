@@ -13,17 +13,18 @@ struct RecipeListView: View {
     @State private var pickedScreenshots: [PhotosPickerItem] = []
     @State private var screenshotImport: ScreenshotImportRequest?
     @State private var showingSettings = false
-    @State private var instagramImport: InstagramImportRequest?
+    @State private var linkImport: LinkImportRequest?
     @State private var showingLinkPrompt = false
     @State private var typedLink = ""
     @State private var clipboardHasLink = false
     /// The clipboard contents already offered (UIPasteboard.changeCount), so dismissing
     /// the banner sticks until something new is copied.
     @State private var offeredChangeCount = -1
-    @State private var notInstagramLink = false
+    /// Why the last link couldn't be imported; shows the "not supported" alert.
+    @State private var unsupportedLinkMessage: String?
     /// A post link handed over by the share extension (cookbook://import?url=…), waiting
     /// for the user to confirm before the browser loads anything.
-    @State private var sharedLink: URL?
+    @State private var sharedLink: LinkImportRequest?
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDelete: RecipeSummary?
     @State private var deleteError: APIError?
@@ -53,7 +54,7 @@ struct RecipeListView: View {
                                 typedLink = ""
                                 showingLinkPrompt = true
                             } label: {
-                                Label("Import from Instagram Link", systemImage: "link")
+                                Label("Import from Link", systemImage: "link")
                             }
                             Button {
                                 showingImport = true
@@ -82,34 +83,41 @@ struct RecipeListView: View {
                         onSaved: { _ in Task { await model.recipeSaved() } },
                         onOpenExisting: { id in path = [id] })
                 }
-                .sheet(item: $instagramImport) { request in
-                    InstagramImportFlow(
-                        url: request.url,
+                .sheet(item: $linkImport) { request in
+                    LinkImportFlow(
+                        url: request.url, platform: request.platform,
                         onSaved: { saved in
                             Task { await model.recipeSaved() }
                             path = [saved.id]
                         },
                         onOpenExisting: { id in path = [id] })
                 }
-                .alert("Import from Instagram", isPresented: $showingLinkPrompt) {
-                    TextField("instagram.com/reel/…", text: $typedLink)
+                .alert("Import from Link", isPresented: $showingLinkPrompt) {
+                    TextField("Instagram or TikTok link", text: $typedLink)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Button("Open") { openInstagram(typedLink) }
+                    Button("Open") { openLink(typedLink) }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("Paste a link to an Instagram post or reel.")
+                    Text("Paste a link to an Instagram post or reel, or a TikTok post.")
                 }
-                .alert("Not an Instagram post", isPresented: $notInstagramLink) {
+                .alert(
+                    "Can't import this link",
+                    isPresented: Binding(get: { unsupportedLinkMessage != nil }, set: { if !$0 { unsupportedLinkMessage = nil } }),
+                    presenting: unsupportedLinkMessage
+                ) { _ in
                     Button("OK", role: .cancel) {}
-                } message: {
-                    Text("Use a link to a single Instagram post or reel (…/p/… or …/reel/…).")
+                } message: { message in
+                    Text(message)
                 }
-                .alert("Import from Instagram?", isPresented: sharedLinkPresented, presenting: sharedLink) { link in
-                    Button("Open") { instagramImport = InstagramImportRequest(url: link) }
+                .alert(
+                    "Import from \(sharedLink?.platform.name ?? "Link")?",
+                    isPresented: sharedLinkPresented, presenting: sharedLink
+                ) { request in
+                    Button("Open") { linkImport = request }
                     Button("Cancel", role: .cancel) {}
-                } message: { link in
-                    Text(link.absoluteString)
+                } message: { request in
+                    Text(request.url.absoluteString)
                 }
                 .onOpenURL { url in handleDeepLink(url) }
                 .safeAreaInset(edge: .top) {
@@ -170,7 +178,7 @@ struct RecipeListView: View {
         #endif
     }
 
-    // MARK: Instagram link import
+    // MARK: Link import
 
     private var clipboardBanner: some View {
         HStack(spacing: 12) {
@@ -210,15 +218,21 @@ struct RecipeListView: View {
         let pasteboard = UIPasteboard.general
         offeredChangeCount = pasteboard.changeCount
         clipboardHasLink = false
-        openInstagram(pasteboard.url?.absoluteString ?? pasteboard.string ?? "")
+        openLink(pasteboard.url?.absoluteString ?? pasteboard.string ?? "")
     }
 
-    private func openInstagram(_ text: String) {
-        if let url = InstagramLink.postURL(from: text) {
-            instagramImport = InstagramImportRequest(url: url)
+    private func openLink(_ text: String) {
+        if let post = PostPlatform.post(from: text) {
+            linkImport = LinkImportRequest(url: post.url, platform: post.platform)
         } else {
-            notInstagramLink = true
+            unsupportedLinkMessage = Self.unsupportedMessage(for: text)
         }
+    }
+
+    private static func unsupportedMessage(for text: String) -> String {
+        TikTokLink.isShortLink(text)
+            ? TikTokLink.shortLinkAdvice
+            : "Use a link to a single Instagram post or reel (…/p/… or …/reel/…), or a TikTok post (…/@name/video/…)."
     }
 
     private var sharedLinkPresented: Binding<Bool> {
@@ -229,10 +243,10 @@ struct RecipeListView: View {
     /// link is re-validated and the user confirms before the in-app browser loads it.
     private func handleDeepLink(_ url: URL) {
         guard ImportHandoff.isImportLink(url) else { return }
-        if let post = ImportHandoff.postURL(fromDeepLink: url) {
-            sharedLink = post
+        if let link = ImportHandoff.postURL(fromDeepLink: url), let post = PostPlatform.post(from: link.absoluteString) {
+            sharedLink = LinkImportRequest(url: post.url, platform: post.platform)
         } else {
-            notInstagramLink = true
+            unsupportedLinkMessage = Self.unsupportedMessage(for: "")
         }
     }
 
@@ -381,7 +395,7 @@ private struct RecipeCard: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel([recipe.title, summary, recipe.sourceUrl != nil ? "From Instagram" : nil]
+        .accessibilityLabel([recipe.title, summary, recipe.sourceUrl.flatMap(PostPlatform.of).map { "From \($0.name)" }]
             .compactMap { $0 }.joined(separator: ", "))
     }
 

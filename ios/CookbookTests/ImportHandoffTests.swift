@@ -7,28 +7,28 @@ final class ImportHandoffTests: XCTestCase {
 
     func testFindsTheReelInASharedURL() {
         let shared = URL(string: "https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MTc4bmR5")!
-        XCTAssertEqual(ImportHandoff.instagramPostURL(urls: [shared], texts: []), reel)
+        XCTAssertEqual(ImportHandoff.postURL(urls: [shared], texts: []), reel)
     }
 
     func testFindsTheLinkInsideSharedText() {
         let text = "Check out this reel by @chef.ann https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MTc4bmR5 🍜"
-        XCTAssertEqual(ImportHandoff.instagramPostURL(urls: [], texts: [text]), reel)
-        XCTAssertEqual(ImportHandoff.instagramPostURL(urls: [], texts: ["instagram.com/p/C1a2B3c4D5e"])?.absoluteString,
+        XCTAssertEqual(ImportHandoff.postURL(urls: [], texts: [text]), reel)
+        XCTAssertEqual(ImportHandoff.postURL(urls: [], texts: ["instagram.com/p/C1a2B3c4D5e"])?.absoluteString,
                        "https://www.instagram.com/p/C1a2B3c4D5e/", "bare pasted link")
     }
 
     func testSkipsOtherLinksForTheInstagramOne() {
         let other = URL(string: "https://example.com/recipes/noodles")!
         let text = "via https://example.com and https://www.instagram.com/p/C1a2B3c4D5e/"
-        XCTAssertEqual(ImportHandoff.instagramPostURL(urls: [other], texts: [text])?.absoluteString,
+        XCTAssertEqual(ImportHandoff.postURL(urls: [other], texts: [text])?.absoluteString,
                        "https://www.instagram.com/p/C1a2B3c4D5e/")
     }
 
     func testRejectsNonInstagramAndProfileLinks() {
-        XCTAssertNil(ImportHandoff.instagramPostURL(urls: [URL(string: "https://example.com/p/C1a2B3c4D5e/")!], texts: []))
-        XCTAssertNil(ImportHandoff.instagramPostURL(urls: [URL(string: "https://www.instagram.com/chef.ann/")!],
+        XCTAssertNil(ImportHandoff.postURL(urls: [URL(string: "https://example.com/p/C1a2B3c4D5e/")!], texts: []))
+        XCTAssertNil(ImportHandoff.postURL(urls: [URL(string: "https://www.instagram.com/chef.ann/")!],
                                                     texts: ["no links here", "https://www.tiktok.com/@a/video/1"]))
-        XCTAssertNil(ImportHandoff.instagramPostURL(urls: [], texts: []))
+        XCTAssertNil(ImportHandoff.postURL(urls: [], texts: []))
     }
 
     func testDeepLinkRoundTrips() {

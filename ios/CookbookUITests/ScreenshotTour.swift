@@ -79,7 +79,7 @@ final class ScreenshotTour: XCTestCase {
         // Add menu
         openAddMenu()
         snap("04-add-menu")
-        app.buttons["Import from Instagram Link"].tap()
+        app.buttons["Import from Link"].tap()
         snap("05-instagram-link-prompt")
         app.alerts.buttons["Cancel"].tap()
 

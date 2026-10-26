@@ -8,7 +8,7 @@ struct ImportCaptionView: View {
     var onSaved: (Recipe) -> Void
     var onOpenExisting: (UUID) -> Void
 
-    /// Read the caption as soon as the screen appears (it came from the Instagram browser).
+    /// Read the caption as soon as the screen appears (it came from the in-app browser).
     var autoRead = false
     /// Shown above the form, e.g. why the caption couldn't be read automatically.
     var notice: String?
@@ -133,11 +133,11 @@ struct ImportCaptionView: View {
                     }
 
                     Section {
-                        TextField("instagram.com/reel/…", text: $link)
+                        TextField("Instagram or TikTok link", text: $link)
                             .keyboardType(.URL)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                            .accessibilityLabel("Instagram link")
+                            .accessibilityLabel("Post link")
                         if let linkError {
                             Text(linkError).font(.footnote).foregroundStyle(.red)
                         }
