@@ -107,9 +107,9 @@ estimates and video/audio import.
 
 ## Next smallest task
 
-1. Try a TikTok link on the iPhone (deploy first: `deploy/push.sh` isn't needed, the server
-   already accepts TikTok links; just install the new app build). Then consider a golden
-   eval case for a line-break-free TikTok caption, to tune step grouping.
+1. Install the new build on the iPhone and import a TikTok link (no deploy needed: the
+   server already accepts them). Then consider a golden eval case for a TikTok caption
+   without line breaks, to tune how steps are grouped.
 2. Add Andrew as a Google test user and install the app on his phone.
 3. Try the share extension and screenshot import on the iPhone: does the extension install
    with free signing and open the app? Does sharing from the Instagram app itself work?
