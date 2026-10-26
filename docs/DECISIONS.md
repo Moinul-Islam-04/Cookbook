@@ -1068,8 +1068,15 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   - The detail screen says "View on TikTok" or "View on Instagram"; source fields are
     labelled "Post link".
 - **Known limit:** TikTok's page drops the caption's line breaks. The free `fake` extractor
-  splits on lines, so it finds no recipe in a real TikTok caption. Claude Haiku hasn't been
-  tried on one yet.
+  splits on lines, so it finds no recipe in a real TikTok caption. Claude Haiku (prompt-7)
+  handles it; one run on the real post (about $0.0006):
+  - Title right; servings empty (the caption states none).
+  - All 16 ingredients with correct amounts and units, nothing invented. "1 tsp each
+    cumin, dried cilantro, …" became four 1-tsp rows.
+  - One row flagged: the onion's note wasn't in the caption verbatim, so it was removed.
+  - Weak spots: "each" saved as the note on the spice rows. Steps were split per sentence
+    (20, including "Set aside.", "Stir well." and the creator's aside "I cooked the steak
+    for about 10 minutes."), because there are no line breaks to group them.
 - **Risk:** as for Instagram, this is user-initiated reading of a public page, not a
   permitted API. TikTok can change its markup; the selector is isolated in
   `TikTokPageText`, and a page with no caption falls back to paste or screenshots.
@@ -1078,5 +1085,5 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   offline, 10 live contract, 1 live TikTok page). Walkthrough tests 1–3 and the new
   `test5TikTokLinkImport` pass in the iOS 27 Simulator: a short link is explained, then
   the real post goes link prompt → TikTok page → caption on the review screen → saved
-  with the canonical TikTok link and "View on TikTok". Not verified: a real iPhone,
-  sharing from the TikTok app, and extraction with Claude Haiku.
+  with the canonical TikTok link and "View on TikTok". Not verified: a real iPhone and
+  sharing from the TikTok app.
