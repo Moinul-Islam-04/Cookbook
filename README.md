@@ -88,7 +88,7 @@ Instagram access spike was never run.
 | Import | Paste a caption, or open an Instagram or TikTok link in the in-app browser. Claude Haiku drafts it (about 3 s; the server gives up after 30 s), you review flagged rows (servings and ingredient notes the post states are filled in), then save. When Claude can't be reached or credit runs out, you see a clear error and can enter the recipe manually. Imports are limited to 20 an hour and 100 a day per user, and 300 a day across everyone; past a limit the app says so, and manual entry still works. A saved import keeps what Claude produced (never shown in the app), and `python -m app.corrections` reports how much users corrected it. |
 | Share extension | Share → **Cookbook** from Safari, Instagram or TikTok (TikTok sharing untested). **Simulator only:** not yet tried on the iPhone with free signing. It opens the app through an undocumented workaround (see DECISIONS). |
 | Import from screenshots | Text is read on the phone and you check it before importing. **Simulator only.** In the Simulator it read "1 1/2" as "11/2", so amounts like that are pointed out for you to check. |
-| Post pipeline (backend) | Imports are normalized into a stored `RawPost` (Instagram or TikTok link, caption, optional transcript and comments) before extraction. Claude reads the caption, transcript and comments into a ParsedRecipe (servings, notes, sub-recipes, confidence; prompt-7); see DECISIONS 2026-10-24. The app shows servings and notes; sub-recipes aren't grouped in the app yet. TikTok links open in the app too (DECISIONS 2026-10-26); TikTok's page drops the caption's line breaks, and Claude hasn't been tried on one yet. |
+| Post pipeline (backend) | Imports are normalized into a stored `RawPost` (Instagram or TikTok link, caption, optional transcript and comments) before extraction. Claude reads the caption, transcript and comments into a ParsedRecipe (servings, notes, sub-recipes, confidence; prompt-7); see DECISIONS 2026-10-24. The app shows servings and notes; sub-recipes aren't grouped in the app yet. TikTok links open in the app too (DECISIONS 2026-10-26). TikTok's page drops the caption's line breaks: Claude still gets the ingredients right, but splits steps per sentence. |
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
@@ -107,8 +107,9 @@ estimates and video/audio import.
 
 ## Next smallest task
 
-1. Import a real TikTok caption with Claude Haiku (about $0.0006) and check what it makes of
-   the caption without line breaks; then try a TikTok link on the iPhone.
+1. Try a TikTok link on the iPhone (deploy first: `deploy/push.sh` isn't needed, the server
+   already accepts TikTok links; just install the new app build). Then consider a golden
+   eval case for a line-break-free TikTok caption, to tune step grouping.
 2. Add Andrew as a Google test user and install the app on his phone.
 3. Try the share extension and screenshot import on the iPhone: does the extension install
    with free signing and open the app? Does sharing from the Instagram app itself work?
