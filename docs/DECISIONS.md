@@ -1000,3 +1000,21 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   95% quantity+unit, steps 4.92/5, $0.023 a run. See `backend/evals/RESULTS.md`.
 - **Fixed on the way:** `canonical_unit` now accepts "cup of" (Haiku returned it).
 - **Revisit:** When real posts are added; before any prompt, model or validator change.
+
+## 2026-10-26: Drop headings and ingredient lines from extracted steps
+
+- **Context:** a real three-section reel, imported on the phone, saved with steps like
+  "For the sticky chicken:", "1.5 lbs ground chicken" and "Salt & Pepper, to taste". Each
+  is caption text, so the source-fidelity check passed them as steps.
+- **Decision:** `validate.py` removes a step that (a) ends in a colon and is at most 6
+  words (a section heading), or (b) equals one of the draft's ingredient lines, ignoring
+  case, punctuation and emoji. Removed lines are not silent: a `steps_removed` warning
+  says how many, and the full caption stays on the review screen.
+- **Alternatives:** flag them `needs_review` instead. That leaves the user deleting five
+  junk rows by hand; these rows are never real steps.
+- **Accepted:** a real step that is only a heading-like line ("Method:") is removed;
+  longer steps with a colon ("Make the butter: mash…") are kept.
+- **Verified:** 3 new tests (the screenshot's output, steps that must be kept, all-heading
+  steps); disabling the filter fails 2 of them. `pytest -q`: 353 passed. `evals.run fake`:
+  no metric change. Not yet run: `evals.run anthropic`, and an import on the phone after
+  deploying.
