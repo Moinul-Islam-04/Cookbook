@@ -45,7 +45,7 @@ exactly the same path.
 
 | Stage | Where | Called by | Input type | Output type |
 |---|---|---|---|---|
-| 1. Fetch | iOS: `ios/Cookbook/Features/InstagramImport/InstagramPageText.swift`, `ios/Cookbook/Features/Import/ImportCaptionView.swift` → `APIClient.createDraft` | the user's tap | a post on screen | `ImportDraftCreate` JSON |
+| 1. Fetch | iOS: `ios/Cookbook/Features/LinkImport/InstagramPageText.swift` (TikTok: `TikTokPageText.swift`), `ios/Cookbook/Features/Import/ImportCaptionView.swift` → `APIClient.createDraft` | the user's tap | a post on screen | `ImportDraftCreate` JSON |
 | Route | `app/routers/import_drafts.py` · `create_draft` | FastAPI | `ImportDraftCreate` (`app/schemas.py`) | `ImportDraftOut` |
 | Link identity | `app/source_urls.py` · `parse_source_url` (via `app/routers/recipes.py` · `_parse_source`, which turns errors into a 422) | `create_draft` | `str` URL | `SourcePost` (platform, post_id, kind, author_handle, `post_key`, `canonical_url`) |
 | 2. Normalize | `app/ingest/__init__.py` · `normalize` → `app/ingest/instagram.py` · `normalize_instagram`, `app/ingest/tiktok.py` · `normalize_tiktok`, `app/ingest/raw_post.py` · `normalize_pasted` | `create_draft` | `ImportDraftCreate`, `SourcePost \| None` | `RawPost` (`app/ingest/raw_post.py`) |
