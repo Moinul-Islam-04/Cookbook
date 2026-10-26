@@ -54,7 +54,7 @@ nonisolated struct RecipeForm: Equatable {
     var notes = ""
     /// Whole number of servings, as typed. Empty means not stated.
     var servings = ""
-    /// Instagram post or reel link, as typed or pasted.
+    /// Instagram or TikTok post link, as typed or pasted.
     var sourceUrl = ""
     var ingredients: [IngredientRow] = [IngredientRow()]
     var steps: [StepRow] = [StepRow()]

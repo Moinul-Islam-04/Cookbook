@@ -1,9 +1,9 @@
 import Foundation
 
 /// How the share extension hands a link to the app: it opens
-/// `cookbook://import?url=<canonical Instagram post URL>`, and the app starts the usual
-/// Instagram import for that link. Only the link crosses over; the extension never fetches
-/// Instagram or calls the backend. Compiled into both the app and CookbookShare.
+/// `cookbook://import?url=<canonical Instagram or TikTok post URL>`, and the app starts the
+/// usual link import. Only the link crosses over; the extension never fetches the post or
+/// calls the backend. Compiled into both the app and CookbookShare.
 nonisolated enum ImportHandoff {
     static let scheme = "cookbook"
     private static let host = "import"
@@ -22,28 +22,37 @@ nonisolated enum ImportHandoff {
         url.scheme?.lowercased() == scheme && url.host?.lowercased() == host
     }
 
-    /// The canonical Instagram post URL carried by a `cookbook://import` link, or nil.
+    /// The canonical post URL carried by a `cookbook://import` link, or nil.
     /// Re-validated here because any app or web page can open the `cookbook` scheme.
     static func postURL(fromDeepLink url: URL) -> URL? {
         guard isImportLink(url),
               let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let value = comps.queryItems?.first(where: { $0.name == "url" })?.value else { return nil }
-        return InstagramLink.postURL(from: value)
+        return PostPlatform.post(from: value)?.url
     }
 
-    /// The first Instagram post or reel among what was shared: URL items first, then any
-    /// links inside shared text (Instagram often shares "Check out this reel … https://…").
-    static func instagramPostURL(urls: [URL], texts: [String]) -> URL? {
+    /// The first Instagram or TikTok post among what was shared: URL items first, then any
+    /// links inside shared text (both apps often share "Check out this … https://…").
+    static func postURL(urls: [URL], texts: [String]) -> URL? {
         for url in urls {
-            if let post = InstagramLink.postURL(from: url.absoluteString) { return post }
+            if let post = PostPlatform.post(from: url.absoluteString) { return post.url }
         }
         for text in texts {
-            if let post = InstagramLink.postURL(from: text) { return post }
+            if let post = PostPlatform.post(from: text) { return post.url }
             for link in links(in: text) {
-                if let post = InstagramLink.postURL(from: link.absoluteString) { return post }
+                if let post = PostPlatform.post(from: link.absoluteString) { return post.url }
             }
         }
         return nil
+    }
+
+    /// Whether what was shared includes a short TikTok link (vm.tiktok.com/…), so the
+    /// "not supported" message can say how to get the full one.
+    static func hasShortTikTokLink(urls: [URL], texts: [String]) -> Bool {
+        urls.contains { TikTokLink.isShortLink($0.absoluteString) }
+            || texts.contains { text in
+                TikTokLink.isShortLink(text) || links(in: text).contains { TikTokLink.isShortLink($0.absoluteString) }
+            }
     }
 
     private static func links(in text: String) -> [URL] {

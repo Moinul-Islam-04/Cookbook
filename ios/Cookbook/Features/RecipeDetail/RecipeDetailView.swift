@@ -179,7 +179,8 @@ struct RecipeDetailView: View {
                 .foregroundStyle(.secondary)
             if let link = recipe.sourceUrl.flatMap(URL.init(string:)) {
                 Link(destination: link) {
-                    Label("View on Instagram", systemImage: "arrow.up.right.square")
+                    Label(PostPlatform.of(link.absoluteString).map { "View on \($0.name)" } ?? "View Original",
+                          systemImage: "arrow.up.right.square")
                         .font(.subheadline.weight(.medium))
                 }
                 .buttonStyle(.bordered)

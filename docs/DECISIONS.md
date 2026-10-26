@@ -1044,3 +1044,39 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   survives an edit. Not yet run: on the iPhone against the deployed server (which already
   accepts both fields).
 - **Revisit:** when the review screen groups sub-recipes.
+
+## 2026-10-26: TikTok links in the iOS app, read in the same logged-out browser
+
+- **Context:** the API has accepted TikTok post links since 2026-10-24 (owner's choice: the
+  user's device reads the post), but the app only recognized Instagram links.
+- **Decision:** TikTok posts get the same flow and guardrails as Instagram (2026-10-14):
+  - `ios/Shared/TikTokLink.swift` mirrors `backend/app/source_urls.py`: `/@name/video/ID`
+    and `/@name/photo/ID` on tiktok.com, www. and m., canonical
+    `https://www.tiktok.com/@name/video/ID`. Short links (`vm.`/`vt.tiktok.com`, `/t/…`)
+    get a message saying how to copy the full link; resolving them means fetching TikTok.
+  - + → **Import from Link**, the clipboard banner, Share → Cookbook and the Source field
+    accept both platforms. The browser is a fresh, non-persistent `WKWebView` that stays
+    on tiktok.com, and it reads the page only when the user taps **Import Recipe**.
+  - TikTok page format, checked on a real public post in the iOS 27 Simulator: the
+    logged-out mobile page shows the whole caption in `<h1 data-e2e="video-desc">`, with a
+    "See more" button inside it, and has no og:/description meta tags. The script copies
+    that element, drops the button, and returns its text. TikTok's "Watch this video on
+    TikTok" pop-up covers the page but doesn't hide the caption from the script.
+  - TikTok's page keeps loading video long after the caption shows, so **Import Recipe** is
+    enabled once the page starts showing (not when loading finishes), and reading retries
+    for up to 5 s. This applies to Instagram too.
+  - The detail screen says "View on TikTok" or "View on Instagram"; source fields are
+    labelled "Post link".
+- **Known limit:** TikTok's page drops the caption's line breaks. The free `fake` extractor
+  splits on lines, so it finds no recipe in a real TikTok caption. Claude Haiku hasn't been
+  tried on one yet.
+- **Risk:** as for Instagram, this is user-initiated reading of a public page, not a
+  permitted API. TikTok can change its markup; the selector is isolated in
+  `TikTokPageText`, and a page with no caption falls back to paste or screenshots.
+  `LiveTikTokPageTests` (set `TEST_RUNNER_TIKTOK_PAGE_URL`) checks the real page.
+- **Verified:** 12 new offline tests and a live page test; 90 XCTest tests pass (79
+  offline, 10 live contract, 1 live TikTok page). Walkthrough tests 1–3 and the new
+  `test5TikTokLinkImport` pass in the iOS 27 Simulator: a short link is explained, then
+  the real post goes link prompt → TikTok page → caption on the review screen → saved
+  with the canonical TikTok link and "View on TikTok". Not verified: a real iPhone,
+  sharing from the TikTok app, and extraction with Claude Haiku.

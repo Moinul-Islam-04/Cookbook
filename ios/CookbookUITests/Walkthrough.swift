@@ -119,6 +119,17 @@ final class Walkthrough: XCTestCase {
         app.buttons[item].tap()
     }
 
+    /// Scrolls whichever way it takes to bring `element` on screen (swipes can overshoot).
+    private func reveal(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        scrollTo(element, up: true)
+        if !(element.exists && element.isHittable) { scrollTo(element, up: false) }
+        waitFor(element, element.label.isEmpty ? "field" : element.label, timeout: 2, file: file, line: line)
+    }
+
+    private func dismissKeyboard() {
+        if app.keyboards.count > 0 { app.navigationBars.staticTexts.firstMatch.tap() }
+    }
+
     private func back() {
         app.navigationBars.buttons.element(boundBy: 0).tap()
     }
@@ -350,7 +361,7 @@ final class Walkthrough: XCTestCase {
         titleField().tap(); titleField().typeText("Garlic noodles again")
         field("Ingredient name").tap(); field("Ingredient name").typeText("noodles")
         field("Step 1").tap(); field("Step 1").typeText("Boil.")
-        field("Instagram link").tap(); field("Instagram link").typeText(Self.duplicateLink)
+        field("Post link").tap(); field("Post link").typeText(Self.duplicateLink)
         app.navigationBars.buttons["Save"].tap()
         waitFor(app.alerts["Already in your cookbook"], "duplicate alert")
         snap("m2-05-duplicate-alert")
@@ -372,7 +383,7 @@ final class Walkthrough: XCTestCase {
         openAdd("New Recipe")
         waitFor(app.navigationBars["New Recipe"], "new recipe editor (2)")
         titleField().tap(); titleField().typeText("Third garlic noodles")
-        field("Instagram link").tap(); field("Instagram link").typeText("instagram.com/reel/WALKdup123")
+        field("Post link").tap(); field("Post link").typeText("instagram.com/reel/WALKdup123")
         app.navigationBars.buttons["Save"].tap()
         waitFor(app.alerts["Already in your cookbook"], "duplicate alert (open existing)")
         app.alerts.buttons["Open Existing"].tap()
@@ -460,7 +471,7 @@ final class Walkthrough: XCTestCase {
         let editor = app.textViews["Caption"]
         editor.tap()
         editor.typeText("Quick toast\nIngredients:\n- 1 slice bread\nMethod:\n1. Toast it.")
-        field("Instagram link").tap(); field("Instagram link").typeText("instagram.com/p/WALKfail1")
+        field("Post link").tap(); field("Post link").typeText("instagram.com/p/WALKfail1")
         app.navigationBars.buttons["Read Recipe"].tap()
         waitFor(app.buttons["Enter Manually Instead"], "import error", timeout: 60)
         snap("m3-06-import-failed")
@@ -477,7 +488,7 @@ final class Walkthrough: XCTestCase {
             XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue)).firstMatch
         scrollTo(notes, up: true)
         XCTAssertTrue(notes.exists, "caption in Notes")
-        XCTAssertTrue((field("Instagram link").value as? String)?.contains("WALKfail1") == true, "link kept")
+        XCTAssertTrue((field("Post link").value as? String)?.contains("WALKfail1") == true, "link kept")
         snap("m3-07-enter-manually")
         scrollTo(titleField(), up: false)
         titleField().tap(); titleField().typeText("Quick toast")
@@ -486,5 +497,77 @@ final class Walkthrough: XCTestCase {
         snap("m3-08-manual-saved")
         let id = try XCTUnwrap(recipeID(titled: "Quick toast"))
         XCTAssertTrue((recipeJSON(id)["notes"] as? String)?.contains("Toast it.") == true)
+    }
+
+    // MARK: TikTok link import
+
+    /// Link prompt → logged-out TikTok page → caption → review → save. Loads a real public
+    /// TikTok post, so it skips unless WALKTHROUGH_TIKTOK_URL is set. On the free `fake`
+    /// extractor the caption (TikTok's page drops its line breaks) finds no recipe, so the
+    /// rows are filled in by hand; the point is the app's wiring, not extraction.
+    func test5TikTokLinkImport() throws {
+        guard let tiktok = ProcessInfo.processInfo.environment["WALKTHROUGH_TIKTOK_URL"] else {
+            throw XCTSkip("Set WALKTHROUGH_TIKTOK_URL to a public TikTok post.")
+        }
+        resetRecipes()
+        launch(api: apiURL)
+        waitFor(app.staticTexts["No Recipes Yet"], "empty list")
+
+        // A short link is explained, not opened.
+        openAdd("Import from Link")
+        let prompt = app.alerts["Import from Link"]
+        waitFor(prompt, "link prompt", timeout: 5)
+        prompt.textFields.firstMatch.typeText("https://vm.tiktok.com/ZMabc123/")
+        prompt.buttons["Open"].tap()
+        waitFor(app.alerts["Can't import this link"], "short-link alert", timeout: 5)
+        XCTAssertTrue(text(containing: "full link").exists, "says how to get the full link")
+        snap("t-01-short-link")
+        app.alerts.buttons["OK"].tap()
+
+        openAdd("Import from Link")
+        waitFor(prompt, "link prompt again", timeout: 5)
+        prompt.textFields.firstMatch.typeText(tiktok)
+        snap("t-02-link-prompt")
+        prompt.buttons["Open"].tap()
+        waitFor(app.navigationBars["TikTok"], "TikTok browser")
+        waitFor(text(containing: "TikTok's public page"), "logged-out notice", timeout: 5)
+        let importButton = app.buttons["Import Recipe"]
+        let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: importButton)
+        XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 30), .completed, "page started showing")
+        snap("t-03-tiktok-page")
+        importButton.tap()
+
+        waitFor(app.navigationBars["Review Recipe"], "review screen", timeout: 60)
+        waitFor(text(containing: "Steak Cheese and Rice"), "caption read off the page")
+        snap("t-04-review")
+
+        // Fill in what the free extractor couldn't, then save. Rows first: typing leaves the
+        // keyboard up, and swipes on it don't scroll the form.
+        let name = field("Ingredient name")
+        reveal(name)
+        name.tap(); name.typeText("Sirloin steak")
+        dismissKeyboard()
+        let step = field("Step 1")
+        reveal(step)
+        step.tap(); step.typeText("Slice the steak thin.")
+        dismissKeyboard()
+        reveal(titleField())
+        titleField().tap(); titleField().typeText("Steak cheese and rice")
+        app.navigationBars.buttons["Save"].tap()
+        waitFor(app.staticTexts["Steak cheese and rice"], "saved recipe's detail")
+        waitFor(text(containing: "View on TikTok"), "View on TikTok link")
+        snap("t-05-saved-detail")
+
+        let id = try XCTUnwrap(recipeID(titled: "Steak cheese and rice"))
+        XCTAssertEqual(recipeJSON(id)["source_url"] as? String,
+                       TikTokCanonical.of(tiktok), "stored as the canonical TikTok link")
+    }
+}
+
+/// Mirrors TikTokLink's canonical form, which the UI test target doesn't compile.
+private enum TikTokCanonical {
+    static func of(_ link: String) -> String {
+        let path = URLComponents(string: link)?.path ?? ""
+        return "https://www.tiktok.com" + (path.hasSuffix("/") ? String(path.dropLast()) : path)
     }
 }

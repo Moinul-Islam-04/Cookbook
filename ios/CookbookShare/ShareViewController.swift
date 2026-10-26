@@ -3,9 +3,9 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// Share → Cookbook. Reads only the shared URL or text, checks it's an Instagram post or
-/// reel, and opens the app with `cookbook://import?url=…` (ImportHandoff). It never fetches
-/// Instagram or calls the backend; the app does the import the usual way.
+/// Share → Cookbook. Reads only the shared URL or text, checks it's an Instagram or TikTok
+/// post, and opens the app with `cookbook://import?url=…` (ImportHandoff). It never fetches
+/// the post or calls the backend; the app does the import the usual way.
 final class ShareViewController: UIViewController {
     private let log = Logger(subsystem: "com.moinulislam.cookbook.share", category: "handoff")
     private let state = ShareState()
@@ -23,8 +23,8 @@ final class ShareViewController: UIViewController {
 
     private func handleSharedItems() async {
         let (urls, texts) = await sharedURLsAndTexts()
-        guard let post = ImportHandoff.instagramPostURL(urls: urls, texts: texts) else {
-            state.phase = .notInstagram
+        guard let post = ImportHandoff.postURL(urls: urls, texts: texts) else {
+            state.phase = ImportHandoff.hasShortTikTokLink(urls: urls, texts: texts) ? .shortTikTokLink : .unsupported
             return
         }
         state.phase = .opening(post)
@@ -93,7 +93,8 @@ final class ShareState {
     enum Phase: Equatable {
         case reading
         case opening(URL)
-        case notInstagram
+        case unsupported
+        case shortTikTokLink
         case copied(URL)
     }
 
@@ -114,11 +115,16 @@ private struct ShareView: View {
                     ProgressView()
                     Text("Opening Cookbook…").font(.headline)
                     Text(url.absoluteString).font(.footnote).foregroundStyle(.secondary)
-                case .notInstagram:
+                case .unsupported:
                     ContentUnavailableView(
-                        "Not an Instagram post",
+                        "Not an Instagram or TikTok post",
                         systemImage: "link.badge.plus",
-                        description: Text("Cookbook can import a link to a single Instagram post or reel (…/p/… or …/reel/…). For anything else, open Cookbook and paste the recipe text."))
+                        description: Text("Cookbook can import a link to a single Instagram post or reel, or a TikTok post. For anything else, open Cookbook and paste the recipe text."))
+                case .shortTikTokLink:
+                    ContentUnavailableView(
+                        "Short TikTok link",
+                        systemImage: "link.badge.plus",
+                        description: Text(TikTokLink.shortLinkAdvice))
                 case .copied(let url):
                     ContentUnavailableView(
                         "Link copied",

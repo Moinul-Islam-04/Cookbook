@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Instagram link → in-app browser → caption → Import Caption (auto-reads) → review → save.
-/// If the page shows no caption (login wall, video-only post), the import screen opens with
-/// the link filled in and asks for the caption instead.
-struct InstagramImportFlow: View {
+/// Instagram or TikTok link → in-app browser → caption → Import Caption (auto-reads) →
+/// review → save. If the page shows no caption (login wall, video-only post), the import
+/// screen opens with the link filled in and asks for the caption instead.
+struct LinkImportFlow: View {
     let url: URL
+    let platform: PostPlatform
     var onSaved: (Recipe) -> Void
     var onOpenExisting: (UUID) -> Void
 
@@ -19,8 +20,8 @@ struct InstagramImportFlow: View {
     var body: some View {
         switch stage {
         case .browsing:
-            InstagramBrowserView(
-                url: url,
+            PostBrowserView(
+                url: url, platform: platform,
                 onCaption: { caption, link in stage = .caption(caption, link) },
                 onNoCaption: { link in stage = .noCaption(link) })
         case .caption(let caption, let link):
@@ -31,13 +32,14 @@ struct InstagramImportFlow: View {
             ImportCaptionView(
                 onSaved: onSaved, onOpenExisting: onOpenExisting,
                 link: link.absoluteString,
-                notice: "Instagram didn't show a caption for this post (it may need a login, or the recipe is only in the video). Paste the caption or a comment with the recipe below.")
+                notice: "\(platform.name) didn't show a caption for this post (it may need a login, or the recipe is only in the video). Paste the caption or a comment with the recipe below.")
         }
     }
 }
 
 /// Lets `.sheet(item:)` present the flow for a URL.
-struct InstagramImportRequest: Identifiable {
+struct LinkImportRequest: Identifiable {
     let url: URL
+    let platform: PostPlatform
     var id: String { url.absoluteString }
 }

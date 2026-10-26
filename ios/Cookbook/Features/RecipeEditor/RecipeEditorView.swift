@@ -100,17 +100,17 @@ struct RecipeEditorView: View {
                 stepsSection
 
                 Section {
-                    TextField("instagram.com/reel/…", text: $form.sourceUrl)
+                    TextField("Instagram or TikTok link", text: $form.sourceUrl)
                         .keyboardType(.URL)
                         .textContentType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .accessibilityLabel("Instagram link")
+                        .accessibilityLabel("Post link")
                     FieldErrorText(fieldErrors["source_url"])
                 } header: {
                     Text("Source")
                 } footer: {
-                    Text("Optional. Paste the post or reel link so you can find the original and avoid saving it twice.")
+                    Text("Optional. Paste the Instagram or TikTok link so you can find the original and avoid saving it twice.")
                 }
 
                 Section("Notes") {
