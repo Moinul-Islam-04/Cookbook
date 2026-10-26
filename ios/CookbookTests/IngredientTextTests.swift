@@ -37,4 +37,11 @@ final class IngredientTextTests: XCTestCase {
         let text = IngredientText.emphasized(rawText: "2 eggs", name: "eggs", quantity: nil, unit: nil)
         XCTAssertTrue(text.runs.allSatisfy { $0.inlinePresentationIntent == nil })
     }
+
+    func testNoteShownOnlyWhenTheLineDoesntSayIt() {
+        XCTAssertNil(IngredientText.separateNote(rawText: "2 onions, Finely Chopped", note: "finely chopped"))
+        XCTAssertEqual(IngredientText.separateNote(rawText: "2 onions", note: "diced"), "diced")
+        XCTAssertNil(IngredientText.separateNote(rawText: "2 onions", note: nil))
+        XCTAssertNil(IngredientText.separateNote(rawText: "2 onions", note: "  "))
+    }
 }

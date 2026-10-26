@@ -85,7 +85,15 @@ struct RecipeEditorView: View {
                 Section("Title") {
                     TextField("e.g. Weeknight tomato pasta", text: $form.title)
                         .textInputAutocapitalization(.words)
+                        .accessibilityLabel("Title")
                     FieldErrorText(fieldErrors["title"])
+                }
+
+                Section("Servings") {
+                    TextField("Optional, e.g. 4", text: $form.servings)
+                        .keyboardType(.numberPad)
+                        .accessibilityLabel("Servings")
+                    FieldErrorText(fieldErrors["servings"])
                 }
 
                 ingredientsSection
@@ -272,9 +280,14 @@ struct RecipeEditorView: View {
                             .lineLimit(1...4)
                             .accessibilityLabel("Ingredient name")
                     }
+                    TextField("Note, e.g. finely chopped", text: $row.note)
+                        .font(.subheadline)
+                        .textInputAutocapitalization(.never)
+                        .accessibilityLabel("Ingredient note")
                     if let index {
                         FieldErrorText(fieldErrors["ingredients.\(index).name"])
                         FieldErrorText(fieldErrors["ingredients.\(index).quantity"])
+                        FieldErrorText(fieldErrors["ingredients.\(index).note"])
                     }
                     if row.needsReview {
                         ReviewFlag(text: Self.reviewText(row.reviewReasons), systemImage: "exclamationmark.circle.fill")

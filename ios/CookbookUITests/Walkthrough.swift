@@ -79,7 +79,8 @@ final class Walkthrough: XCTestCase {
             .element(boundBy: index)
     }
 
-    private func titleField() -> XCUIElement { app.textFields.firstMatch }
+    /// By label: with the review form scrolled, the first text field may be Servings.
+    private func titleField() -> XCUIElement { field("Title") }
 
     /// Clears a field and types `text`. A tap can land mid-text in a multi-line field, so
     /// it taps the end and deletes until the field is empty.
@@ -196,9 +197,11 @@ final class Walkthrough: XCTestCase {
         waitFor(app.navigationBars["New Recipe"], "new recipe editor")
         titleField().tap()
         titleField().typeText("Walkthrough lentil soup")
+        field("Servings").tap(); field("Servings").typeText("4")
         field("Quantity").tap(); field("Quantity").typeText("1 1/2")
         field("Unit").tap(); field("Unit").typeText("cups")
         field("Ingredient name").tap(); field("Ingredient name").typeText("red lentils")
+        field("Ingredient note").tap(); field("Ingredient note").typeText("rinsed")
         app.buttons["Add Ingredient"].tap()
         field("Ingredient name", 1).tap(); field("Ingredient name", 1).typeText("salt to taste")
         field("Step 1").tap(); field("Step 1").typeText("Simmer the lentils for 20 minutes.")
@@ -212,20 +215,33 @@ final class Walkthrough: XCTestCase {
         XCTAssertEqual(rows.count, 2)
         XCTAssertEqual(rows.first?["raw_text"] as? String, "1 1/2 cups red lentils")
         XCTAssertTrue(rows.last?["quantity"] is NSNull, "salt keeps a null quantity")
+        XCTAssertEqual(created["servings"] as? Int, 4)
+        XCTAssertEqual(rows.first?["note"] as? String, "rinsed")
 
         // Detail, then edit
         recipe("Walkthrough lentil soup").tap()
         waitFor(app.staticTexts["Ingredients"], "recipe detail")
+        waitFor(text(containing: "Serves 4"), "servings on detail")
+        waitFor(text(containing: "rinsed"), "ingredient note on detail")
         snap("m1-04-detail")
         app.navigationBars.buttons["Edit"].tap()
         waitFor(app.navigationBars["Edit Recipe"], "editor")
+        XCTAssertEqual(field("Servings").value as? String, "4")
+        XCTAssertEqual(field("Ingredient note").value as? String, "rinsed")
         replaceText(titleField(), with: "Lentil soup")
+        // Editing another row resends every ingredient; the note must survive it.
+        replaceText(field("Ingredient name", 1), with: "sea salt to taste")
         snap("m1-05-edit")
         app.navigationBars.buttons["Save"].tap()
         waitGone(app.navigationBars["Edit Recipe"], "editor after save")
         waitFor(app.staticTexts["Lentil soup"], "edited title on detail")
         snap("m1-06-edited-detail")
-        XCTAssertEqual(recipeJSON(id)["title"] as? String, "Lentil soup")
+        let edited = recipeJSON(id)
+        XCTAssertEqual(edited["title"] as? String, "Lentil soup")
+        let editedRows = edited["ingredients"] as? [[String: Any]] ?? []
+        XCTAssertEqual(editedRows.last?["name"] as? String, "sea salt to taste")
+        XCTAssertEqual(editedRows.first?["note"] as? String, "rinsed", "note survives an edit to another row")
+        XCTAssertEqual(edited["servings"] as? Int, 4)
 
         // Stale edit → Save My Version
         app.navigationBars.buttons["Edit"].tap()
@@ -343,6 +359,7 @@ final class Walkthrough: XCTestCase {
         XCTAssertTrue(alert.buttons["Save Anyway"].exists)
         XCTAssertTrue(text(containing: "Garlic noodles\u{201D}").exists, "alert names the existing recipe")
         alert.buttons["Keep Editing"].tap()
+        scrollTo(titleField(), up: false)
         XCTAssertEqual(titleField().value as? String, "Garlic noodles again", "form kept")
         snap("m2-06-duplicate-keep-editing")
         app.navigationBars.buttons["Save"].tap()

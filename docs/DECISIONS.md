@@ -1018,3 +1018,29 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   steps); disabling the filter fails 2 of them. `pytest -q`: 353 passed. `evals.run fake`:
   no metric change. Not yet run: `evals.run anthropic`, and an import on the phone after
   deploying.
+
+## 2026-10-26: Servings and ingredient notes in the iOS app
+
+- **Context:** the API has stored `servings` and `note` since migration 0008, but the app
+  sent neither. Because PATCH replaces every ingredient row, editing any ingredient in
+  the app wiped all of a recipe's notes, and saving an import dropped the notes Claude
+  had read.
+- **Decision:**
+  - The editor has a Servings field (whole number, 1–1000, optional) and a Note field
+    under each ingredient. Detail shows "Serves N" in the summary line.
+  - Detail still shows `raw_text` exactly. The note is shown under it only when the line
+    doesn't already contain it, which is the case for a note typed in the editor (the
+    server composes `raw_text` without the note).
+  - A changed note counts as an edited row, so the server recomposes `raw_text` and the
+    old note doesn't linger in the line.
+  - `RecipeCreate` always sends `servings`, null included. When saving a draft, a missing
+    key means "use the draft's servings", which would undo the user clearing them.
+  - Draft corrections send `note` and `sub_recipe` back unchanged. Sub-recipes aren't
+    shown in the app yet.
+- **Verified:** 6 new unit tests and a live round trip (servings set, kept and cleared;
+  a note survives an edit to another row): 80 XCTest tests pass against a dev-mode
+  server. In the iOS 27 Simulator, Walkthrough tests 1–3 pass. Test 1 now creates a
+  recipe with servings and a note, checks the detail screen and checks that the note
+  survives an edit. Not yet run: on the iPhone against the deployed server (which already
+  accepts both fields).
+- **Revisit:** when the review screen groups sub-recipes.
