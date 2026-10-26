@@ -76,9 +76,29 @@ final class LiveContractTests: XCTestCase {
         let v4 = try await api.updateRecipe(id: created.id, form3.patchBody(version: v3.version, against: base3))
         XCTAssertNil(v4.notes)
 
+        // Servings and an ingredient note round-trip, and an edit to another row keeps the note.
+        var form5 = RecipeForm(recipe: v4)
+        let base5 = form5
+        form5.servings = "4"
+        form5.ingredients[1].note = "extra virgin"
+        let v5 = try await api.updateRecipe(id: created.id, form5.patchBody(version: v4.version, against: base5))
+        XCTAssertEqual(v5.servings, 4)
+        XCTAssertEqual(v5.ingredients.map(\.note), [nil, "extra virgin"])
+        var form6 = RecipeForm(recipe: v5)
+        let base6 = form6
+        form6.ingredients[0].name = "sea salt"
+        let v6 = try await api.updateRecipe(id: created.id, form6.patchBody(version: v5.version, against: base6))
+        XCTAssertEqual(v6.ingredients.map(\.note), [nil, "extra virgin"])
+        XCTAssertEqual(v6.servings, 4)
+        var form7 = RecipeForm(recipe: v6)
+        let base7 = form7
+        form7.servings = ""
+        let v7 = try await api.updateRecipe(id: created.id, form7.patchBody(version: v6.version, against: base7))
+        XCTAssertNil(v7.servings)
+
         let stale = await expectAPIError { try await self.api.updateRecipe(id: created.id, RecipePatch(version: 1, title: "stale")) }
         XCTAssertEqual(stale?.isStaleVersion, true)
-        if case .server(_, let body) = stale { XCTAssertEqual(body.details?.currentVersion, v4.version) }
+        if case .server(_, let body) = stale { XCTAssertEqual(body.details?.currentVersion, v7.version) }
 
         try await api.deleteRecipe(id: created.id)
         let gone = await expectAPIError { try await self.api.recipe(id: created.id) }

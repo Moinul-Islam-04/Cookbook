@@ -15,6 +15,15 @@ nonisolated enum IngredientText {
         return text
     }
 
+    /// The note to show under the line, or nil when raw_text already says it. Imported
+    /// lines usually include it ("2 onions, finely chopped"); a note typed in the editor
+    /// isn't part of the composed raw_text.
+    static func separateNote(rawText: String, note: String?) -> String? {
+        guard let note = note?.trimmingCharacters(in: .whitespaces), !note.isEmpty,
+              rawText.range(of: note, options: [.caseInsensitive, .diacriticInsensitive]) == nil else { return nil }
+        return note
+    }
+
     /// The leading amount, without trailing spaces, or nil if there isn't a clear one.
     static func amountRange(in rawText: String, name: String) -> Range<String.Index>? {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)

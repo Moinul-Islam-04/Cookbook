@@ -9,6 +9,11 @@ nonisolated struct RecipeForm: Equatable {
         var quantity = ""
         var unit = ""
         var name = ""
+        /// "finely chopped". Optional; kept separate from the name.
+        var note = ""
+        /// From an import draft: the separately made part this row belongs to. Not editable,
+        /// only carried back to the draft.
+        var subRecipe: Int?
         /// The server's raw_text and the fields it was loaded with. If the user leaves the
         /// row untouched, the original wording ("salt to taste") is sent back unchanged.
         var original: Original?
@@ -18,22 +23,27 @@ nonisolated struct RecipeForm: Equatable {
 
         var needsReview: Bool { !reviewReasons.isEmpty && isUnedited }
         var isUnedited: Bool {
-            original.map { $0.quantity == quantity.trimmed && $0.unit == unit.trimmed && $0.name == name.trimmed } ?? true
+            original.map {
+                $0.quantity == quantity.trimmed && $0.unit == unit.trimmed && $0.name == name.trimmed
+                    && $0.note == note.trimmed
+            } ?? true
         }
 
         struct Original: Equatable {
             let quantity: String
             let unit: String
             let name: String
+            let note: String
             let rawText: String
         }
 
-        var isBlank: Bool { [quantity, unit, name].allSatisfy { $0.trimmed.isEmpty } }
+        var isBlank: Bool { [quantity, unit, name, note].allSatisfy { $0.trimmed.isEmpty } }
     }
 
     struct StepRow: Identifiable, Equatable {
         let id = UUID()
         var instruction = ""
+        var subRecipe: Int?
         var reviewReasons: [String] = []
         var originalInstruction: String?
 
@@ -42,6 +52,8 @@ nonisolated struct RecipeForm: Equatable {
 
     var title = ""
     var notes = ""
+    /// Whole number of servings, as typed. Empty means not stated.
+    var servings = ""
     /// Instagram post or reel link, as typed or pasted.
     var sourceUrl = ""
     var ingredients: [IngredientRow] = [IngredientRow()]
@@ -52,13 +64,15 @@ nonisolated struct RecipeForm: Equatable {
     init(recipe: Recipe) {
         title = recipe.title
         notes = recipe.notes ?? ""
+        servings = recipe.servings.map(String.init) ?? ""
         sourceUrl = recipe.sourceUrl ?? ""
         ingredients = recipe.ingredients.map { ing in
             let quantity = ing.quantity.map(QuantityText.format) ?? ""
             let unit = ing.unit ?? ""
+            let note = ing.note ?? ""
             return IngredientRow(
-                quantity: quantity, unit: unit, name: ing.name,
-                original: .init(quantity: quantity, unit: unit, name: ing.name, rawText: ing.rawText))
+                quantity: quantity, unit: unit, name: ing.name, note: note,
+                original: .init(quantity: quantity, unit: unit, name: ing.name, note: note, rawText: ing.rawText))
         }
         steps = recipe.steps.map { StepRow(instruction: $0.instruction) }
     }
@@ -67,18 +81,21 @@ nonisolated struct RecipeForm: Equatable {
     /// their original wording and carry its review flags.
     init(draft: ImportDraft) {
         title = draft.title ?? ""
+        servings = draft.servings.map(String.init) ?? ""
         sourceUrl = draft.sourceUrl ?? ""
         ingredients = draft.ingredients.map { ing in
             let quantity = ing.quantity.map(QuantityText.format) ?? ""
             let unit = ing.unit ?? ""
             let name = ing.name ?? ""
+            let note = ing.note ?? ""
             return IngredientRow(
-                quantity: quantity, unit: unit, name: name,
-                original: .init(quantity: quantity, unit: unit, name: name, rawText: ing.rawText),
+                quantity: quantity, unit: unit, name: name, note: note, subRecipe: ing.subRecipe,
+                original: .init(quantity: quantity, unit: unit, name: name, note: note, rawText: ing.rawText),
                 reviewReasons: ing.needsReview ? ing.reviewReasons : [])
         }
         steps = draft.steps.map {
             StepRow(instruction: $0.instruction,
+                    subRecipe: $0.subRecipe,
                     reviewReasons: $0.needsReview ? $0.reviewReasons : [],
                     originalInstruction: $0.instruction)
         }
@@ -97,6 +114,9 @@ nonisolated struct RecipeForm: Equatable {
     func validationErrors(reviewedImport: Bool) -> [String: String] {
         var errors: [String: String] = [:]
         if title.trimmed.isEmpty { errors["title"] = "Give the recipe a title." }
+        if !servings.trimmed.isEmpty, parsedServings == nil {
+            errors["servings"] = "Use a whole number from 1 to 1000."
+        }
         if reviewedImport {
             if nonBlankIngredients.isEmpty { errors["ingredients"] = "Add at least one ingredient before saving." }
             if stepInputs.isEmpty { errors["steps"] = "Add at least one step before saving." }
@@ -119,6 +139,7 @@ nonisolated struct RecipeForm: Equatable {
             draftId: draftID,
             title: title.trimmed,
             notes: notes.trimmed.nilIfEmpty,
+            servings: parsedServings,
             sourceUrl: sourceUrl.trimmed.nilIfEmpty,
             allowDuplicate: allowDuplicate,
             ingredients: ingredientInputs,
@@ -131,6 +152,7 @@ nonisolated struct RecipeForm: Equatable {
         patch.allowDuplicate = allowDuplicate
         if title.trimmed != baseline.title.trimmed { patch.title = title.trimmed }
         if notes.trimmed != baseline.notes.trimmed { patch.notes = .some(notes.trimmed.nilIfEmpty) }
+        if parsedServings != baseline.parsedServings { patch.servings = .some(parsedServings) }
         if sourceUrl.trimmed != baseline.sourceUrl.trimmed {
             patch.sourceUrl = .some(sourceUrl.trimmed.nilIfEmpty)
         }
@@ -151,11 +173,17 @@ nonisolated struct RecipeForm: Equatable {
                     // The draft schema needs raw_text; compose it when the server would.
                     rawText: input.rawText ?? [row.quantity.trimmed, row.unit.trimmed, row.name.trimmed]
                         .filter { !$0.isEmpty }.joined(separator: " "),
+                    note: input.note, subRecipe: row.subRecipe,
                     needsReview: row.needsReview)
             },
             steps: steps.filter { !$0.instruction.trimmed.isEmpty }.map {
-                StepDraftInput(instruction: $0.instruction.trimmed, needsReview: $0.needsReview)
+                StepDraftInput(instruction: $0.instruction.trimmed, subRecipe: $0.subRecipe, needsReview: $0.needsReview)
             })
+    }
+
+    /// nil when empty or not a whole number the server accepts (1–1000).
+    var parsedServings: Int? {
+        Int(servings.trimmed).flatMap { (1...1000).contains($0) ? $0 : nil }
     }
 
     /// Blank rows are the form's "add another" affordance, not data; they are never sent.
@@ -167,8 +195,10 @@ nonisolated struct RecipeForm: Equatable {
             let quantity = row.quantity.trimmed
             let unit = row.unit.trimmed
             let name = row.name.trimmed
+            let note = row.note.trimmed
+            // A changed note counts too: the original raw_text may still hold the old one.
             let unchanged = row.original.map {
-                $0.quantity == quantity && $0.unit == unit && $0.name == name
+                $0.quantity == quantity && $0.unit == unit && $0.name == name && $0.note == note
             } ?? false
             let parsed = QuantityText.parse(quantity)
             let rawText: String?
@@ -184,7 +214,7 @@ nonisolated struct RecipeForm: Equatable {
                 rawText = nil
             }
             return IngredientInput(
-                name: name, quantity: parsed, unit: unit.nilIfEmpty, rawText: rawText)
+                name: name, quantity: parsed, unit: unit.nilIfEmpty, rawText: rawText, note: note.nilIfEmpty)
         }
     }
 

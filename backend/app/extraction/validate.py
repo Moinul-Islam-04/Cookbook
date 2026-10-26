@@ -200,6 +200,23 @@ def _ingredient(item: RawIngredient, source: str, sub_recipe: int | None) -> Ing
     )
 
 
+# A short line ending in a colon ("For the sticky chicken:", "Cooking instructions:") is a
+# section heading, not something to do.
+MAX_HEADING_WORDS = 6
+
+
+def _line_key(text: str) -> str:
+    """Compare lines ignoring case, punctuation and emoji: "Avocado oil, spray 🥑" == "avocado oil spray"."""
+    return re.sub(r"[\W_]+", " ", _norm(text)).strip()
+
+
+def _not_a_step(instruction: str, ingredient_keys: set[str]) -> bool:
+    """Models sometimes copy headings and ingredient lines into steps (seen on a real reel)."""
+    if instruction.endswith(":") and len(instruction.split()) <= MAX_HEADING_WORDS:
+        return True
+    return _line_key(instruction) in ingredient_keys
+
+
 def _step(item: RawStep, source: str, sub_recipe: int | None) -> StepDraft | None:
     instruction, clipped = _clip(item.instruction, 2000)
     if instruction is None:
@@ -284,9 +301,23 @@ def validate_extraction(raw: str, post: RawPost | str) -> DraftContent:
     for sub_recipe, item in raw_ingredients:
         if (row := _ingredient(item, source, sub_recipe)) is not None:
             ingredients.append(row)
+    ingredient_keys = {_line_key(i.raw_text) for i in ingredients} - {""}
+    removed = 0
     for sub_recipe, item in raw_steps:
-        if (row := _step(item, source, sub_recipe)) is not None:
-            steps.append(row)
+        if (row := _step(item, source, sub_recipe)) is None:
+            continue
+        if _not_a_step(row.instruction, ingredient_keys):
+            removed += 1
+            continue
+        steps.append(row)
+    if removed:
+        warnings.append(
+            DraftWarning(
+                code="steps_removed",
+                message=f"Removed {removed} line(s) from the steps that were headings or ingredients.",
+                field="steps",
+            )
+        )
 
     if not ingredients:
         warnings.append(DraftWarning(code="missing_ingredients", message="No ingredients were found. Add them before saving.", field="ingredients"))

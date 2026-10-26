@@ -120,6 +120,71 @@ final class RecipeFormTests: XCTestCase {
         XCTAssertEqual(patch.ingredients?.map(\.needsReview), [false, false])
     }
 
+    func testTitleOnlyEditKeepsIngredientNotes() throws {
+        // Before servings/notes were wired up, any ingredient edit resent the rows without
+        // their notes, and the server replaced them.
+        let (recipe, baseline) = try loadedRecipe()
+        XCTAssertEqual(baseline.ingredients[1].note, "extra virgin")
+        var form = baseline
+        form.ingredients[0].name = "sea salt"
+        let rows = try XCTUnwrap(form.patchBody(version: recipe.version, against: baseline).ingredients)
+        XCTAssertEqual(rows.map(\.note), [nil, "extra virgin"])
+        XCTAssertEqual(rows[1].rawText, "1 1/2 tbsp olive oil, extra virgin")
+    }
+
+    func testEditingANoteLetsTheServerRecomposeTheLine() throws {
+        let (recipe, baseline) = try loadedRecipe()
+        var form = baseline
+        form.ingredients[1].note = "light"
+        let rows = try XCTUnwrap(form.patchBody(version: recipe.version, against: baseline).ingredients)
+        XCTAssertEqual(rows[1].note, "light")
+        XCTAssertNotEqual(rows[1].rawText, "1 1/2 tbsp olive oil, extra virgin", "the old note must not survive in raw_text")
+    }
+
+    func testServingsAreSentOnlyWhenChangedAndCanBeCleared() throws {
+        let (recipe, baseline) = try loadedRecipe()
+        XCTAssertEqual(baseline.servings, "4")
+        var form = baseline
+        form.title = "x"
+        XCTAssertFalse(try wireJSON(form.patchBody(version: recipe.version, against: baseline)).contains("servings"))
+        form.servings = " 6 "
+        XCTAssertTrue(try wireJSON(form.patchBody(version: recipe.version, against: baseline)).contains(#""servings":6"#))
+        form.servings = ""
+        let json = try wireJSON(form.patchBody(version: recipe.version, against: baseline))
+        XCTAssertTrue(json.contains(#""servings":null"#), json)
+    }
+
+    func testServingsValidation() {
+        var form = RecipeForm()
+        form.title = "x"
+        for bad in ["0", "1001", "2.5", "four"] {
+            form.servings = bad
+            XCTAssertNotNil(form.validationErrors["servings"], bad)
+        }
+        form.servings = "12"
+        XCTAssertTrue(form.validationErrors.isEmpty)
+        XCTAssertEqual(form.createBody().servings, 12)
+    }
+
+    func testDraftReviewKeepsServingsNotesAndSubRecipes() throws {
+        let draft = try decode(ImportDraft.self, Fixtures.draftJSON)
+        var form = RecipeForm(draft: draft)
+        XCTAssertEqual(form.servings, "2")
+        XCTAssertEqual(form.ingredients[1].note, "minced")
+
+        let patch = form.draftPatch(version: draft.version)
+        XCTAssertEqual(patch.ingredients?.map(\.note), [nil, "minced"])
+        XCTAssertEqual(patch.ingredients?.map(\.subRecipe), [nil, 0])
+        let body = form.createBody(draftID: draft.id)
+        XCTAssertEqual(body.servings, 2)
+        XCTAssertEqual(body.ingredients.map(\.note), [nil, "minced"])
+
+        // Clearing servings on a draft must send null: an omitted key means "use the draft's".
+        form.servings = ""
+        let json = try wireJSON(form.createBody(draftID: draft.id))
+        XCTAssertTrue(json.contains(#""servings":null"#), json)
+    }
+
     func testEmptyDraftGivesOneBlankRowToFill() throws {
         let json = Fixtures.draftJSON
             .replacingOccurrences(of: #"\"ingredients\": \[[\s\S]*?\],\n  \"steps\": \[[\s\S]*?\],"#,

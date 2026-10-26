@@ -198,11 +198,19 @@ struct RecipeDetailView: View {
                     if offset > 0 { Divider() }
                     // raw_text is the recipe's own wording, so "salt to taste" reads naturally
                     // and nothing is shown that wasn't written.
-                    Text(IngredientText.emphasized(
-                        rawText: ingredient.rawText, name: ingredient.name,
-                        quantity: ingredient.quantity, unit: ingredient.unit))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 10)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(IngredientText.emphasized(
+                            rawText: ingredient.rawText, name: ingredient.name,
+                            quantity: ingredient.quantity, unit: ingredient.unit))
+                        if let note = IngredientText.separateNote(rawText: ingredient.rawText, note: ingredient.note) {
+                            Text(note)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 10)
+                    .accessibilityElement(children: .combine)
                 }
             }
         }
@@ -245,7 +253,8 @@ struct RecipeDetailView: View {
     private func summary(_ recipe: Recipe) -> String {
         let ingredients = recipe.ingredients.count == 1 ? "1 ingredient" : "\(recipe.ingredients.count) ingredients"
         let steps = recipe.steps.count == 1 ? "1 step" : "\(recipe.steps.count) steps"
-        return "\(ingredients) · \(steps)"
+        let parts = [recipe.servings.map { "Serves \($0)" }, ingredients, steps].compactMap { $0 }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: Actions

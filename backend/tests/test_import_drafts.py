@@ -717,3 +717,78 @@ def test_unit_written_differently_by_the_model_falls_back_to_the_lines_unit() ->
         "steps": [{"instruction": "Mix."}]})
     row = d["ingredients"][0]
     assert (row["quantity"], row["unit"], row["needs_review"]) == (0.5, "cup", False)
+
+
+# ---------- steps that aren't steps ----------
+
+REEL = (
+    "For the fries:\n2-3 medium russet potatoes, cut into thin fries 🥔🍟\nAvocado oil spray 🥑\n\n"
+    "Cooking instructions:\nAir fry at 400°F FOR 12-15 mins shake every 5 mins.\n\n"
+    "For the sticky chicken:\n1.5 lbs ground chicken 🐓\nSalt & Pepper, to taste 🧂\n"
+    "1 tsp garlic powder 🧄\nAvocado oil, spray 🥑\n\n"
+    "Cook on high heat for 6-7 mins! Turn heat to low and add enough sauce to coat the chicken."
+)
+
+
+def test_headings_and_ingredient_lines_are_removed_from_steps() -> None:
+    # The steps a real reel produced on the phone (2026-10-26 screenshot).
+    d = validate(REEL, {
+        "is_recipe": True,
+        "title": None,
+        "ingredients": [
+            {"raw_text": "2-3 medium russet potatoes, cut into thin fries"},
+            {"raw_text": "Avocado oil spray"},
+            {"raw_text": "1.5 lbs ground chicken", "quantity": 1.5, "unit": "lbs"},
+            {"raw_text": "Salt & Pepper, to taste"},
+            {"raw_text": "1 tsp garlic powder", "quantity": 1, "unit": "tsp"},
+            {"raw_text": "Avocado oil, spray"},
+        ],
+        "steps": [
+            {"instruction": "Air fry at 400°F FOR 12-15 mins shake every 5 mins."},
+            {"instruction": "For the sticky chicken:"},
+            {"instruction": "1.5 lbs ground chicken"},
+            {"instruction": "Salt & Pepper, to taste 🧂"},
+            {"instruction": "1 tsp garlic powder"},
+            {"instruction": "Avocado oil spray"},
+            {"instruction": "Cook on high heat for 6-7 mins! Turn heat to low and add enough sauce to coat the chicken."},
+        ],
+    })
+    assert [s["instruction"] for s in d["steps"]] == [
+        "Air fry at 400°F FOR 12-15 mins shake every 5 mins.",
+        "Cook on high heat for 6-7 mins! Turn heat to low and add enough sauce to coat the chicken.",
+    ]
+    removed = [w for w in d["warnings"] if w["code"] == "steps_removed"]
+    assert len(removed) == 1 and "5 line(s)" in removed[0]["message"]
+    assert len(d["ingredients"]) == 6
+
+
+def test_real_steps_with_colons_or_ingredient_words_are_kept() -> None:
+    caption = (
+        "Garlic toast\n2 slices bread\n1 tbsp butter\n"
+        "Make the garlic butter: mash 1 tbsp butter with garlic.\nToast the bread\n"
+        "Spread the butter on the bread and serve with the following:"
+    )
+    steps = [
+        "Make the garlic butter: mash 1 tbsp butter with garlic.",
+        "Toast the bread",
+        "Spread the butter on the bread and serve with the following:",
+    ]
+    d = validate(caption, {
+        "is_recipe": True,
+        "title": "Garlic toast",
+        "ingredients": [{"raw_text": "2 slices bread"}, {"raw_text": "1 tbsp butter"}],
+        "steps": [{"instruction": s} for s in steps],
+    })
+    assert [s["instruction"] for s in d["steps"]] == steps
+    assert "steps_removed" not in [w["code"] for w in d["warnings"]]
+
+
+def test_only_heading_steps_leave_missing_steps_warning() -> None:
+    d = validate("Toast\n1 slice bread\nMethod:", {
+        "is_recipe": True,
+        "title": "Toast",
+        "ingredients": [{"raw_text": "1 slice bread"}],
+        "steps": [{"instruction": "Method:"}],
+    })
+    assert d["steps"] == []
+    assert {"steps_removed", "missing_steps"} <= {w["code"] for w in d["warnings"]}

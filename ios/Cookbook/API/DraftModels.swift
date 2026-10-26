@@ -13,6 +13,8 @@ nonisolated struct ImportDraft: Decodable, Identifiable, Equatable {
     let ingredients: [IngredientDraft]
     let steps: [StepDraft]
     let warnings: [DraftWarning]
+    /// Kept only when the post states it ("serves 4").
+    let servings: Int?
     let extractionVersion: String
     let version: Int
     let savedRecipeId: UUID?
@@ -24,6 +26,11 @@ nonisolated struct IngredientDraft: Decodable, Equatable {
     let quantity: Decimal?
     let unit: String?
     let rawText: String
+    /// "heaping", "finely chopped": read from raw_text, never added.
+    let note: String?
+    /// Index of the separately made part (a sauce) this row belongs to; nil for the main
+    /// recipe. Not shown yet, but sent back so corrections don't drop it.
+    let subRecipe: Int?
     /// The server couldn't match this row to the caption; highlight it for the user.
     let needsReview: Bool
     let reviewReasons: [String]
@@ -31,6 +38,7 @@ nonisolated struct IngredientDraft: Decodable, Equatable {
 
 nonisolated struct StepDraft: Decodable, Equatable {
     let instruction: String
+    let subRecipe: Int?
     let needsReview: Bool
     let reviewReasons: [String]
 }
@@ -55,11 +63,14 @@ nonisolated struct IngredientDraftInput: Encodable, Equatable {
     var quantity: Decimal?
     var unit: String?
     var rawText: String
+    var note: String?
+    var subRecipe: Int?
     var needsReview: Bool
 }
 
 nonisolated struct StepDraftInput: Encodable, Equatable {
     var instruction: String
+    var subRecipe: Int?
     var needsReview: Bool
 }
 

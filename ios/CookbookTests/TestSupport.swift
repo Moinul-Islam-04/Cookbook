@@ -21,6 +21,7 @@ enum Fixtures {
       "id": "11111111-1111-1111-1111-111111111111",
       "title": "Tomato pasta",
       "notes": "Weeknight",
+      "servings": 4,
       "source_kind": "manual",
       "source_url": null,
       "created_at": "2026-10-14T19:39:17.693103Z",
@@ -30,7 +31,8 @@ enum Fixtures {
         {"id": "22222222-2222-2222-2222-222222222222", "position": 0, "name": "salt",
          "quantity": null, "unit": null, "raw_text": "salt to taste"},
         {"id": "33333333-3333-3333-3333-333333333333", "position": 1, "name": "olive oil",
-         "quantity": 1.5, "unit": "tbsp", "raw_text": "1 1/2 tbsp olive oil"}
+         "quantity": 1.5, "unit": "tbsp", "raw_text": "1 1/2 tbsp olive oil, extra virgin",
+         "note": "extra virgin"}
       ],
       "steps": [{"id": "44444444-4444-4444-4444-444444444444", "position": 0, "instruction": "Cook pasta."}],
       "images": [],
@@ -49,11 +51,14 @@ enum Fixtures {
       "ingredients": [
         {"name": "noodles", "quantity": 8, "unit": "oz", "raw_text": "8 oz noodles",
          "needs_review": false, "review_reasons": []},
-        {"name": "garlic", "quantity": 4, "unit": "cloves", "raw_text": "4 cloves garlic",
+        {"name": "garlic", "quantity": 4, "unit": "cloves", "raw_text": "4 cloves garlic, minced",
+         "note": "minced", "sub_recipe": 0,
          "needs_review": true, "review_reasons": ["quantity_not_in_source"]}
       ],
       "steps": [{"instruction": "Boil noodles.", "needs_review": false, "review_reasons": []}],
       "warnings": [],
+      "servings": 2,
+      "sub_recipes": [{"title": "Garlic sauce"}],
       "extraction_version": "rules:1",
       "version": 1,
       "saved_recipe_id": null,
