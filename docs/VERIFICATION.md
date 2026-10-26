@@ -195,7 +195,7 @@ recipe without saving anything. All passed.
   once. It requires at least one ingredient and one step.
 - **Instagram links:**
   - Copy a reel or post link and open the app, then tap **Import** on the banner.
-    **+ → Import from Instagram Link** also works.
+    **+ → Import from Link** also works (named Import from Instagram Link until 2026-10-26).
   - The post opens in a logged-out in-app browser. Tap **Import Recipe** to read the
     caption off the page and start a draft.
   - The server never contacts Instagram. See `docs/DECISIONS.md` for the guardrails and

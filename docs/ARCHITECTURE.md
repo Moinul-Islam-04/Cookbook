@@ -47,10 +47,11 @@ nothing else.
 
 ### 1. Getting the post (iOS, on the device)
 Three ways in, all ending at `APIClient.createDraft` (`ios/Cookbook/API/APIClient.swift`):
-- **Instagram link:** `Features/InstagramImport/InstagramImportFlow.swift` opens the post
-  in an in-app browser, and `InstagramPageText.swift` reads the caption from the page (the
-  `<h1>`, or the `og:description`/`og:title` meta tags). On a login wall or a video-only
-  post, it falls back to asking the user to paste.
+- **Instagram or TikTok link:** `Features/LinkImport/LinkImportFlow.swift` opens the post
+  in an in-app browser (`PostBrowserView.swift`). `InstagramPageText.swift` reads the
+  caption from an Instagram page (the `<h1>`, or the `og:description`/`og:title` meta tags);
+  `TikTokPageText.swift` reads TikTok's `<h1 data-e2e="video-desc">`. On a login wall or a
+  video-only post, it falls back to asking the user to paste.
 - **Paste:** `Features/Import/ImportCaptionView.swift`.
 - **Screenshots:** `Features/Import/ScreenshotText.swift` runs on-device OCR, and the user
   checks the text first.
