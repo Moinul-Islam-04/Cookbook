@@ -4,12 +4,19 @@
     .venv/bin/python -m evals.run anthropic                  # Claude Haiku + LLM judge; costs about $0.01
     .venv/bin/python -m evals.run anthropic --no-judge       # fuzzy title/step scoring instead of the judge
     .venv/bin/python -m evals.run anthropic --category transcript_only --case tiktok_spoken_pasta
+    .venv/bin/python -m evals.run anthropic --synthetic-only # only the committed synthetic cases
 
 Runs the real run_extraction (provider, deadline, retry, validator) on every case, prints
 a summary by category, writes every case's output and scores to
 evals/results/<UTC timestamp>-<provider>.json, and diffs against the previous results
 file for the same provider. Re-run it before merging any change to the extraction prompt
 or model (DECISIONS 2026-10-24).
+
+Real posts are the main set. They live in evals/golden_real/, which git ignores (the repo
+is public and they are other people's captions), and every run includes them when this
+machine has them. A run with real posts writes to evals/results_real/ (also ignored),
+since results repeat the captions; only --synthetic-only runs write to the committed
+evals/results/. The summary scores real and synthetic cases separately.
 """
 
 import argparse
@@ -28,6 +35,8 @@ from evals import scoring
 ROOT = Path(__file__).parent
 GOLDEN = ROOT / "golden"
 RESULTS = ROOT / "results"
+GOLDEN_REAL = ROOT / "golden_real"
+RESULTS_REAL = ROOT / "results_real"
 EXTRACTION_PRICES = {"claude-haiku-5-5": (0.10, 0.50)}  # USD per million (input, output) tokens
 # Columns of the printed table: (metric, header, format).
 COLUMNS = [
@@ -42,9 +51,16 @@ def load_cases(golden: Path = GOLDEN) -> list[dict]:
     return [json.loads(p.read_text()) for p in sorted(golden.glob("*.json"))]
 
 
+def load_real_cases() -> list[dict]:
+    """The git-ignored real posts, if this machine has them."""
+    return load_cases(GOLDEN_REAL) if GOLDEN_REAL.is_dir() else []
+
+
 def case_categories(case: dict) -> list[str]:
-    """The case's own categories plus its platform ("none" for a pasted caption)."""
-    return list(case["categories"]) + [case["input"]["platform"] or "none"]
+    """The case's own categories, its platform ("none" for a pasted caption), and whether
+    it's a real post or a synthetic one."""
+    return list(case["categories"]) + [case["input"]["platform"] or "none",
+                                       "synthetic" if case["synthetic"] else "real"]
 
 
 def run(
@@ -198,9 +214,14 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--no-judge", action="store_true", help="score titles and steps with fuzzy matching (no API calls)")
     ap.add_argument("--case", action="append", help="only these case ids (repeatable)")
     ap.add_argument("--category", action="append", help="only cases in these categories (repeatable)")
-    ap.add_argument("--results-dir", type=Path, default=RESULTS)
+    ap.add_argument("--synthetic-only", action="store_true", help="skip the real posts in evals/golden_real/")
+    ap.add_argument("--results-dir", type=Path,
+                    help="default: evals/results_real/ when real posts run, else evals/results/")
     args = ap.parse_args(argv)
     cases = load_cases()
+    private_ids = set() if args.synthetic_only else {c["id"] for c in load_real_cases()}
+    if not args.synthetic_only:
+        cases += load_real_cases()
     if args.case:
         unknown = set(args.case) - {c["id"] for c in cases}
         if unknown:
@@ -212,7 +233,10 @@ def main(argv: list[str] | None = None) -> dict:
         ap.error("no cases selected")
     # The judge needs the API, so it's on only for the hosted provider unless turned off.
     use_judge = args.provider == "anthropic" and not args.no_judge
-    return run(args.provider, cases=cases, use_judge=use_judge, results_dir=args.results_dir)
+    # Results repeat each case's input, so a run with private cases stays out of git.
+    has_private = any(c["id"] in private_ids for c in cases)
+    results_dir = args.results_dir or (RESULTS_REAL if has_private else RESULTS)
+    return run(args.provider, cases=cases, use_judge=use_judge, results_dir=results_dir)
 
 
 if __name__ == "__main__":

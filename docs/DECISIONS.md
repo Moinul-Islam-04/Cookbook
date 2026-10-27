@@ -1087,3 +1087,31 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
   the real post goes link prompt → TikTok page → caption on the review screen → saved
   with the canonical TikTok link and "View on TikTok". Not verified: a real iPhone and
   sharing from the TikTok app.
+
+## 2026-10-26: Real posts for the eval stay off the public repo
+
+- **Context:** the owner has a list of 23 real Instagram and TikTok posts with full recipes
+  in their captions, to use as golden eval cases. The GitHub repo is public, and committing
+  creators' captions word for word would republish them. Eval results files hold each
+  case's output, so they would leak captions too.
+- **Decision (owner's choice):** real cases live in `backend/evals/golden_real/` and their
+  results in `backend/evals/results_real/`, both git-ignored. Real posts are the main eval
+  set: every `python -m evals.run` includes them when present, scores them in their own
+  "real" row, and writes to `results_real/`. `--synthetic-only` runs just the committed
+  cases and is the only run that writes to the committed `results/`. `tests/test_evals.py` checks real cases with the same
+  never-invent rules when the folder exists.
+- **Exception to "never scrape" (owner's explicit choice, 2026-10-26):** for the 22 other
+  posts on the owner's candidate list, an agent reads the captions instead of the owner
+  copying them by hand. Limits: only those 22 public posts, once; a fresh logged-out
+  session; one page at a time with a pause between; only the caption text the page
+  already shows, read with the app's own page scripts (`InstagramPageText`,
+  `TikTokPageText`) in the Simulator; no comments, media or other pages. Captions stay
+  in the git-ignored `golden_real/`. This is still automated collection, which Instagram's
+  and TikTok's terms restrict; it is not a precedent for fetching posts anywhere else, and
+  the app and server keep the "user taps, one post" rule.
+- **First case:** `tiktok_real_steak_cheese_rice`, from the caption the app read on
+  2026-10-26 (no line breaks). Its steps are the creator's six instruction paragraphs, a
+  target for grouping steps when a caption has no line breaks.
+- **Alternatives:** make the repo private (owner's call, not taken), or commit the
+  captions publicly (republishes others' content).
+
