@@ -30,7 +30,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 
 alembic upgrade head
-pytest -q                       # 353 passed (the test DB is dropped and recreated)
+pytest -q                       # 355 passed, +27 with the real eval cases (the test DB is dropped and recreated)
 uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
@@ -92,7 +92,8 @@ Instagram access spike was never run.
 | Accounts and access | Sign in with Google; each Google account has its own recipes. The owner's recipes moved from the Mac and are linked to their Google account. Only Google test users can sign in. Pairing codes (`python -m app.tokens create`) still work, for development and the live contract tests. |
 
 **Verified:**
-- Backend: 353 tests against PostgreSQL.
+- Backend: 355 tests against PostgreSQL (382 with the real eval cases on the owner's Mac).
+- Extraction evals: 57 cases, 28 of them real posts; see `backend/evals/RESULTS.md`.
 - iOS: 90 XCTest tests (including a live TikTok page check), plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
 - Imports checked by hand on the iPhone.

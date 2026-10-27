@@ -48,13 +48,18 @@ def _singular(word: str) -> str:
     return word
 
 
+# Letters and digits in any script stay: an a-z-only filter turned Japanese names into ""
+# (so they never matched) and split German words at their umlauts.
+_NON_WORD = re.compile(r"[\W_]+")
+
+
 def norm_name(name: str | None) -> str:
-    words = re.sub(r"[^a-z0-9 ]+", " ", (name or "").lower()).split()
+    words = _NON_WORD.sub(" ", (name or "").lower()).split()
     return " ".join(_singular(w) for w in words)
 
 
 def norm_text(text: str | None) -> str:
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]+", " ", (text or "").lower())).strip()
+    return re.sub(r"\s+", " ", _NON_WORD.sub(" ", (text or "").lower())).strip()
 
 
 def ratio(a: str | None, b: str | None) -> float:
