@@ -1,14 +1,16 @@
 # Extraction evals
 
 `python -m evals.run anthropic` (from `backend/`) runs the real pipeline (`run_extraction`:
-provider, deadline, one retry, validator) on the 30 cases in `evals/golden/`. It prints
-a table by category and platform, writes every case to
-`evals/results/<UTC timestamp>-<provider>.json`, and diffs against the previous file for
-the same provider. `python -m evals.run fake` is free and offline. Case format and
+provider, deadline, one retry, validator) on the 30 committed cases in `evals/golden/` plus
+the real posts in `evals/golden_real/` (27 on the owner's Mac; git-ignored, since the repo
+is public). It prints a table by category, platform and real/synthetic, writes every case
+to `evals/results_real/<UTC timestamp>-<provider>.json` (also git-ignored), and diffs
+against the previous file for the same provider. `--synthetic-only` runs just the
+committed cases and writes to `evals/results/`. `python -m evals.run fake` is free and offline. Case format and
 labelling rules: [golden/README.md](golden/README.md). Metrics: `evals/scoring.py`.
 
 **Re-run before merging any change to the extraction prompt, model or validator**, and
-compare with the latest committed results file.
+compare with the previous run. The **real** row is the one that matters most.
 
 ## Judge
 
@@ -21,7 +23,50 @@ scorer was used. Steps from the main recipe and its sub-recipes are compared in 
 they appear in the post, so a step filed under a different part isn't counted as out of
 order.
 
-## Baseline: 2026-10-25 (UTC), prompt-7, `claude-haiku-5-5`
+## Baseline: 2026-10-27 (UTC), prompt-7, `claude-haiku-5-5`, with real posts
+
+Results file (on the owner's Mac): `results_real/20261027T003952Z-anthropic.json`. 57 cases:
+29 synthetic, 28 real (27 from the owner's list plus the committed real reel).
+
+| category | n | recipe | title | ing P | ing R | qty+unit | steps /5 | sub # | sub R | servings |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 57 | 98% | 92% | 99% | 95% | 94% | 4.82 | 57% | 73% | 86% |
+| **real** | 28 | 96% | 96% | 99% | 91% | 94% | 4.71 | 50% | 64% | 75% |
+| synthetic | 29 | 100% | 88% | 100% | 99% | 95% | 4.96 | 75% | 100% | 100% |
+| instagram | 21 | 100% | 95% | 98% | 94% | 94% | 4.89 | 100% | 100% | 100% |
+| tiktok | 22 | 95% | 86% | 100% | 93% | 93% | 4.70 | 50% | 64% | 50% |
+| sub_recipe | 12 | 92% | 92% | 100% | 88% | 95% | 4.50 | 67% | 73% | 50% |
+| messy_formatting | 12 | 100% | 100% | 98% | 94% | 90% | 5.00 | 100% | 100% | 100% |
+
+One error: `tiktok_real_pepper_steak` (21 ingredients, 2 sub-recipes) hit the extraction
+deadline at 26 s. It took 17 s and scored 1.0 in the run before, so it's variance on long
+outputs, but a long recipe can time out in the app too. Latency: 8.1 s median, 13.1 s at
+p90. **Cost:** $0.066 a run (180k input / 82k output tokens for extraction, $0.007 judge),
+about 3× the synthetic-only run, because real captions are long.
+
+The first live run of this baseline was discarded: the scorer's normalizer kept only a–z
+and 0–9, so Japanese ingredient names never matched (the Japanese case scored 0% recall
+with every name correct). Fixed in `evals/scoring.py`, with a test.
+
+### What real posts miss (this run)
+
+1. **Sub-recipes on real TikToks (sub # 50%, sub R 64%).** The taco cheese sauce and the
+   kabob's cucumber yogurt came back merged into the main recipe; the donut coating was
+   split out when the label keeps it in the main list. Synthetic sub-recipe cases all
+   passed, so real posts are where this shows.
+2. **Plain seasonings are dropped (ing R 91% on real posts).** Pepper alone was missed in
+   5 posts, plus salt and parmesan named in passing. "Seasonings (S&P, garlic powder,
+   onion powder, paprika)" came back as one row called "seasonings".
+3. **Units outside the canonical list are kept as written:** 大さじ/小さじ/個 (Japanese
+   spoons and pieces), "pints", "pcs", "strips", "boxes", "Flocke" (German). The Japanese
+   case scored 59% on qty+unit with every amount right. Mapping 大さじ→tbsp and
+   小さじ→tsp in `canonical_unit` is a cheap app fix; the rest is a labelling convention
+   to settle.
+4. **Yield read as servings:** "makes about 18" shells came back as servings 18.
+5. Choice quantities ("1–2 boxes" vs a total weight) and a pasta-water amount stated only
+   in a step were the other qty+unit misses.
+
+## Earlier baseline: 2026-10-25 (UTC), prompt-7, `claude-haiku-5-5`, synthetic only
 
 Results file: `results/20261025T011855Z-anthropic.json`. 30 cases: 29 synthetic, 1 real.
 
@@ -94,13 +139,12 @@ something a regression.
 
 ## What to do next
 
-1. **Add real posts.** 29 of 30 cases are synthetic and the model aces most of them. The
-   owner will paste 30–50 real Instagram and TikTok posts; label them per
-   `golden/README.md`. Real captions are messier and will move these numbers more than
-   any prompt tweak.
-2. **Settle the three labelling conventions** above (vague-amount units, casual titles,
-   shared-method sections). Then update the prompt or the labels, bump the prompt version,
-   and re-run.
+1. **Real posts are in (27, 2026-10-26).** The real row is now the one to move. Easiest
+   wins: map Japanese spoon units in `canonical_unit`; tell the prompt to list each named
+   seasoning (including lone "pepper") as its own row; and settle yield vs servings.
+2. **Settle the labelling conventions** above (vague-amount units, casual titles,
+   shared-method sections, non-canonical units like "pints"). Then update the prompt or
+   the labels, bump the prompt version, and re-run.
 3. **Then, if needed, a prompt change** for ingredients named only in steps, measured
    against this baseline. Not done here on purpose.
 4. The transcript and comment cases are only 3 each. Real "recipe in comments" posts,

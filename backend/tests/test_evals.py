@@ -93,6 +93,14 @@ def test_real_case_ids_are_unique_and_match_filenames() -> None:
 def test_names_match_after_lowercasing_and_singularizing() -> None:
     assert scoring.norm_name("Cherry Tomatoes,") == "cherry tomato"
     assert scoring.norm_name("berries") == "berry" and scoring.norm_name("glass") == "glass"
+
+
+def test_names_in_other_scripts_match() -> None:
+    assert scoring.norm_name("粒マスタード") == "粒マスタード"
+    assert scoring.norm_name("Würstchen") == "würstchen"
+    assert scoring.norm_text("🍯 はちみつ、大さじ4") == "はちみつ 大さじ4"
+    got = [{"name": "粒マスタード", "quantity": 3, "unit": "tbsp"}]
+    assert scoring.ingredient_scores(got, got)["ing_recall"] == 1.0
     pairs = scoring.match_ingredients([ing("garlic"), ing("eggs")], [ing("Egg"), ing("garlic cloves")])
     assert [(e["name"], g["name"]) for e, g in pairs] == [("eggs", "Egg"), ("garlic", "garlic cloves")]
 
