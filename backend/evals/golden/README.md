@@ -56,17 +56,24 @@ category and platform.
 
 ## Adding a real post
 
-All but one case (`sections_with_own_steps`, a real reel) are synthetic, written for the
-eval. Real posts are what this set needs most:
+All but one committed case (`sections_with_own_steps`, a real reel) are synthetic, written
+for the eval. Real posts are what this set needs most, but the repo is public and a real
+caption is someone else's content, so new real posts go in **`evals/golden_real/`**, which
+git ignores (DECISIONS 2026-10-26):
 
 1. Copy the caption (and the transcript or creator's comment, if the recipe is there)
-   exactly as it appears. Don't fix typos or emoji.
-2. Make `<id>.json` with `"synthetic": false`, the post's platform, ID and canonical
-   link (`https://www.instagram.com/p/<shortcode>/` or
+   exactly as it appears. Don't fix typos or emoji. For a post imported through the app,
+   prefer the text the app read: TikTok's page drops the caption's line breaks, and the
+   eval should see what the extractor really gets.
+2. Make `evals/golden_real/<id>.json` with `"synthetic": false`, the post's platform, ID
+   and canonical link (`https://www.instagram.com/p/<shortcode>/` or
    `https://www.tiktok.com/@<handle>/video/<id>`), and the categories it fits.
 3. Label `expected` by hand with the rules above.
-4. Run `pytest tests/test_evals.py` (checks the file), then `python -m evals.run anthropic`
-   and look at the case's line and its entry in the results file.
+4. Run `pytest tests/test_evals.py` (it checks real cases too when the folder exists),
+   then `python -m evals.run anthropic` and look at the case's line and its entry in the
+   results file. Real posts are the main set: every run includes them, scores them in a
+   separate "real" row, and writes to `evals/results_real/` (also git-ignored).
+   `--synthetic-only` runs just the committed cases and writes to `evals/results/`.
 
 **When a real post parses badly in the app, add it here** before changing the prompt, so
 the fix can be measured and doesn't regress later.

@@ -30,3 +30,8 @@ ios/CookbookUITests/DemoTour.swift
 # Deployment secrets and machine-specific settings
 deploy/server.env
 deploy/server.conf
+
+# Real posts for the extraction eval, and results that include them: other people's
+# captions, kept off this public repo (backend/evals/run.py --real)
+backend/evals/golden_real/
+backend/evals/results_real/

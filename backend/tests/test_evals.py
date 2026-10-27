@@ -15,6 +15,8 @@ from evals import scoring
 from tests.conftest import test_settings as make_settings
 
 CASES = runner.load_cases()
+# Real posts (git-ignored, so present only on the owner's Mac) are checked the same way.
+REAL_CASES = runner.load_real_cases()
 CONTENT_CATEGORIES = {"caption", "transcript_only", "comments", "link_in_bio", "not_a_recipe", "sub_recipe", "messy_formatting"}
 
 
@@ -42,7 +44,7 @@ def test_golden_ids_are_unique_and_match_filenames() -> None:
     assert len(ids) >= 30
 
 
-@pytest.mark.parametrize("c", CASES, ids=[c["id"] for c in CASES])
+@pytest.mark.parametrize("c", CASES + REAL_CASES, ids=[c["id"] for c in CASES + REAL_CASES])
 def test_golden_case_is_valid_and_copied_from_its_post(c: dict) -> None:
     assert set(c) >= {"id", "categories", "synthetic", "notes", "input", "expected"}
     assert set(c["categories"]) <= CONTENT_CATEGORIES and c["categories"]
@@ -75,6 +77,14 @@ def test_every_category_and_platform_has_at_least_three_cases() -> None:
 def test_only_real_posts_are_marked_not_synthetic() -> None:
     real = [c["id"] for c in CASES if not c["synthetic"]]
     assert real == ["sections_with_own_steps"]
+    assert all(not c["synthetic"] for c in REAL_CASES)
+
+
+def test_real_case_ids_are_unique_and_match_filenames() -> None:
+    files = sorted(runner.GOLDEN_REAL.glob("*.json")) if runner.GOLDEN_REAL.is_dir() else []
+    ids = [json.loads(f.read_text())["id"] for f in files]
+    assert ids == [f.stem for f in files]
+    assert not set(ids) & {c["id"] for c in CASES}, "a real case shadows a committed one"
 
 
 # ---------- scoring ----------
