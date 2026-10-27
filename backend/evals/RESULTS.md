@@ -57,11 +57,9 @@ with every name correct). Fixed in `evals/scoring.py`, with a test.
 2. **Plain seasonings are dropped (ing R 91% on real posts).** Pepper alone was missed in
    5 posts, plus salt and parmesan named in passing. "Seasonings (S&P, garlic powder,
    onion powder, paprika)" came back as one row called "seasonings".
-3. **Units outside the canonical list are kept as written:** 大さじ/小さじ/個 (Japanese
-   spoons and pieces), "pints", "pcs", "strips", "boxes", "Flocke" (German). The Japanese
-   case scored 59% on qty+unit with every amount right. Mapping 大さじ→tbsp and
-   小さじ→tsp in `canonical_unit` is a cheap app fix; the rest is a labelling convention
-   to settle.
+3. **Units outside the canonical list are kept as written:** "pints", "pcs", "strips",
+   "boxes". The two non-English cases add 大さじ/小さじ/個 and "Flocke"; posts are assumed
+   to be English (DECISIONS 2026-10-27), so those are edge cases, not priorities.
 4. **Yield read as servings:** "makes about 18" shells came back as servings 18.
 5. Choice quantities ("1–2 boxes" vs a total weight) and a pasta-water amount stated only
    in a step were the other qty+unit misses.
@@ -140,8 +138,10 @@ something a regression.
 ## What to do next
 
 1. **Real posts are in (27, 2026-10-26).** The real row is now the one to move. Easiest
-   wins: map Japanese spoon units in `canonical_unit`; tell the prompt to list each named
-   seasoning (including lone "pepper") as its own row; and settle yield vs servings.
+   wins: tell the prompt to list each named seasoning (including lone "pepper") as its
+   own row, settle yield vs servings, and look at sub-recipes on TikToks. Posts are
+   assumed English: don't tune for the Japanese and German cases, but don't let a change
+   break them badly either.
 2. **Settle the labelling conventions** above (vague-amount units, casual titles,
    shared-method sections, non-canonical units like "pints"). Then update the prompt or
    the labels, bump the prompt version, and re-run.

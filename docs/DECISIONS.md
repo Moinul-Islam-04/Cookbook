@@ -1115,3 +1115,13 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **Alternatives:** make the repo private (owner's call, not taken), or commit the
   captions publicly (republishes others' content).
 
+## 2026-10-27: Posts are assumed to be English
+
+- **Decision (owner):** the app and its extraction prompt are tuned for English posts.
+  Non-English posts are unlikely, so they're edge cases: the Japanese
+  (`tiktok_real_honey_mustard_chicken`) and German (`instagram_real_pasta_wurst_salbei`)
+  eval cases stay in the set to catch a change that breaks them badly, but their misses
+  (Japanese spoon units, "Flocke") aren't worked on.
+- **How to apply:** prioritize fixes by the English real posts; when a prompt change is
+  measured, judge it on the real row without those two cases moving the decision.
+
