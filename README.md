@@ -96,9 +96,9 @@ Instagram access spike was never run.
 - Extraction evals: 57 cases, 28 of them real posts; see `backend/evals/RESULTS.md`.
 - iOS: 90 XCTest tests (including a live TikTok page check), plus UI tests.
 - Every main flow walked through in the iOS 27 Simulator.
-- Imports checked by hand on the iPhone.
+- Imports checked by hand on the iPhone, including a long TikTok recipe (21 ingredients).
 
-**Not verified:** an iOS 17/18 runtime; the share extension, screenshot import, servings and notes, and TikTok links on a real device.
+**Not verified:** an iOS 17/18 runtime; the share extension, screenshot import, and servings and notes on a real device.
 
 **Known issues:**
 - Pull to refresh does nothing on the empty recipe list.
@@ -108,9 +108,8 @@ estimates and video/audio import.
 
 ## Next smallest task
 
-1. Install the new build on the iPhone and import a TikTok link (no deploy needed: the
-   server already accepts them). Then consider a golden eval case for a TikTok caption
-   without line breaks, to tune how steps are grouped.
+1. Consider a golden eval case for a TikTok caption without line breaks, to tune how
+   steps are grouped (TikTok imports work on the iPhone).
 2. Add Andrew as a Google test user and install the app on his phone.
 3. Try the share extension and screenshot import on the iPhone: does the extension install
    with free signing and open the app? Does sharing from the Instagram app itself work?
