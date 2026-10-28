@@ -538,7 +538,7 @@ def test_anthropic_adapter_failures_map_to_extraction_errors(response, error) ->
         _claude(response).extract("caption")
 
 
-def _claude_sequence(responses, timeout_s: float = 30):
+def _claude_sequence(responses, timeout_s: float = 60):
     """An adapter whose mocked API answers with `responses` in order; returns (extractor, calls)."""
     import anthropic
     import httpx2
@@ -568,9 +568,11 @@ def test_claude_is_retried_once_within_the_deadline() -> None:
     ok = httpx2.Response(200, json=_claude_message(json.dumps(BRIEF_OUTPUT)))
     ex, calls = _claude_sequence([_overloaded(), ok])
     assert json.loads(ex.extract(BRIEF_CAPTION)) == BRIEF_OUTPUT
-    # Each attempt waits at most 3 s to connect and 15 s for the reply: two fit in 30 s.
+    # Each attempt waits at most 3 s to connect and 35 s for the reply, so a long recipe's
+    # 16 s reply isn't cut off. Both attempts fit in the 60 s deadline.
     assert len(calls) == 2
-    assert all(t["connect"] == 3.0 and t["read"] <= 15.0 for t in calls)
+    assert calls[0]["read"] == 35.0
+    assert all(t["connect"] == 3.0 and t["read"] <= 35.0 for t in calls)
 
     ex, calls = _claude_sequence([_overloaded(), _overloaded(), ok])
     with pytest.raises(ExtractionError):
@@ -587,7 +589,7 @@ def test_claude_retry_after_longer_than_the_deadline_is_not_waited_for() -> None
 
 
 def test_claude_with_a_short_deadline_makes_one_short_attempt() -> None:
-    # 5 s deadline: no room for a 10 s retry, and the one attempt fits inside the deadline.
+    # 5 s deadline: no room for a 15 s retry, and the one attempt fits inside the deadline.
     ex, calls = _claude_sequence([_overloaded()], timeout_s=5)
     with pytest.raises(ExtractionError):
         ex.extract("caption")
@@ -597,8 +599,8 @@ def test_claude_with_a_short_deadline_makes_one_short_attempt() -> None:
 def test_default_extraction_timeout_is_sized_for_haiku() -> None:
     from app.config import Settings
 
-    # The iOS client waits 45 s for POST /v1/import-drafts (APIClient.createDraft).
-    assert Settings(_env_file=None).extraction_timeout_s == 30.0
+    # The iOS client waits 75 s for POST /v1/import-drafts (APIClient.createDraft).
+    assert Settings(_env_file=None).extraction_timeout_s == 60.0
 
 
 def test_anthropic_provider_needs_a_key() -> None:

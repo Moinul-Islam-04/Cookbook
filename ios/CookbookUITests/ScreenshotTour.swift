@@ -166,7 +166,7 @@ final class ScreenshotTour: XCTestCase {
         app.navigationBars.buttons["Read Recipe"].tap()
         Thread.sleep(forTimeInterval: 3)
         snap("14-import-reading")
-        waitFor(app.navigationBars["Review Recipe"], "review screen", timeout: 45)
+        waitFor(app.navigationBars["Review Recipe"], "review screen", timeout: 75)
         snap("15-review")
         app.swipeUp()
         snap("16-review-scrolled")

@@ -25,13 +25,13 @@ from app.ingest import RawPost
 # Room for adaptive thinking plus the JSON; a long reel's JSON is about 1,500 tokens.
 _MAX_OUTPUT_TOKENS = 8000
 
-# Time budget (DECISIONS 2026-10-20). Haiku took 1.9-3.3 s median and 9.4 s at most in
-# eval/RESULTS.md. The SDK's own retry is off: it sleeps for any Retry-After the API sends,
-# with no cap, so one retry could outlive run_extraction's deadline. Instead extract()
+# Time budget (DECISIONS 2026-10-20, 2026-10-28). Haiku takes a few seconds for most posts,
+# but a long recipe (21 ingredients, 15 steps; about 4,400 output tokens) took 15-16 s.
+# The SDK's own retry is off: it sleeps for any Retry-After the API sends, with no cap, so one retry could outlive run_extraction's deadline. Instead extract()
 # makes at most two attempts, both inside `timeout_s` minus a margin.
-_ATTEMPT_READ_S = 15.0  # one call's wait for the reply: about 1.6x the slowest eval call
+_ATTEMPT_READ_S = 35.0  # one call's wait for the reply: about 2x the slowest recipe seen
 _CONNECT_S = 3.0
-_MIN_RETRY_READ_S = 10.0  # retry only with more time than the slowest eval call took
+_MIN_RETRY_READ_S = 15.0  # retry only with time for a typical post's reply
 _RETRY_DELAY_S = 0.5  # the SDK's first backoff, when the API doesn't send Retry-After
 _DEADLINE_MARGIN_S = 1.0  # fail here before run_extraction gives up, so the error is precise
 
