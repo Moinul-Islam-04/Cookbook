@@ -21,9 +21,9 @@ class Settings(BaseSettings):
     # Which extraction provider turns captions into drafts: "fake" (rule-based, no model) or
     # "anthropic" (Claude over the API: captions go to Anthropic and each import costs money).
     extraction_provider: str = "fake"
-    # Claude Haiku usually answers in a few seconds (9.4 s at most in the eval); this is the
-    # ceiling before a 504. The iOS client waits 45 s, so it always gets the 504 envelope.
-    extraction_timeout_s: float = 30.0
+    # Claude Haiku usually answers in a few seconds, but a long recipe took 16 s; this is the
+    # ceiling before a 504. The iOS client waits 75 s, so it always gets the 504 envelope.
+    extraction_timeout_s: float = 60.0
     # Photos: "s3" (AWS S3 on the server) or "memory" (tests and local development; photos
     # are lost when the process restarts).
     storage_backend: str = "memory"

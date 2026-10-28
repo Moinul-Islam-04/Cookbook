@@ -1125,3 +1125,28 @@ review before save) stand as written in `BRIEF.md` §7 and aren't repeated here.
 - **How to apply:** prioritize fixes by the English real posts; when a prompt change is
   measured, judge it on the real row without those two cases moving the decision.
 
+
+## 2026-10-28: Extraction timeouts sized for long recipes
+
+- **Context:** A long TikTok recipe (21 ingredients, 6 numbered steps plus sponsor text)
+  failed twice on the phone with `504 extraction_timeout` after 26 s. Timed locally,
+  Haiku took 16.4 s and 14.8 s for it, writing about 4,000-4,400 output tokens (its
+  thinking plus the JSON). Each attempt was cut off at 15 s, so this post failed every
+  time. The real-post eval already showed 13.1 s at p90.
+- **Decision:** Each attempt waits up to 35 s for the reply (was 15), about 2x the
+  slowest recipe seen. The server gives up after 60 s (was 30), and a retry happens only if
+  at least 15 s for the reply are left (was 10). Worst case: 3 + 35 for the first attempt
+  and 0.5 s before the retry leaves 20.5 s of the 59 s budget, so a timed-out first attempt
+  is still retried once. The app waits 75 s (was 45), so the server's 504 envelope still
+  arrives first. Effort stays at "medium" (at "low", Haiku split paragraphs; prompt-6).
+- **Consequences:** A stuck call can keep the user waiting up to a minute before the
+  error. Cost doesn't change: a call that takes longer isn't billed more. An app built
+  before this change still gives up after 45 s, and shows a transport error instead of the
+  504 only for imports that take 45-60 s.
+- **Supersedes:** the 15 s / 30 s / 45 s numbers in "Extraction timeouts sized for Haiku"
+  (2026-10-20).
+- **Verified:** `pytest -q` 382 passed (with the real eval cases); the retry test now
+  checks the 35 s read timeout. The failing caption went through `run_extraction` with
+  the new defaults against the real API in 17.1 s (21 ingredients, 6 steps). The iOS app
+  builds for a device. After deploying, the same post imported on the owner's iPhone
+  (201 in 15.5 s).
